@@ -157,7 +157,7 @@ body{font-family:'DM Sans',sans-serif,system-ui,-apple-system,sans-serif;backgro
 .hist-empty{padding:20px 10px;text-align:center;font-size:11px;color:var(--gray2);font-family:'DM Mono',monospace;line-height:1.8;}
 
 /* SIDEBAR FOOTER - Profile */
-.sb-footer{border-bottom:1px solid var(--border);padding:10px;display:flex;flex-direction:column;gap:4px;}
+.sb-footer{border-top:1px solid var(--border);padding:10px;display:flex;flex-direction:column;gap:4px;}
 .sb-profile{display:flex;align-items:center;gap:10px;padding:8px 8px;border-radius:10px;cursor:pointer;transition:background .15s;}
 .sb-profile:hover{background:var(--black3);}
 .sb-avatar{width:32px;height:32px;border-radius:9px;background:var(--black4);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;overflow:hidden;flex-shrink:0;}
@@ -266,7 +266,7 @@ body{font-family:'DM Sans',sans-serif,system-ui,-apple-system,sans-serif;backgro
 .attach-chip .rm:hover{color:var(--red);}
 
 /* Chat input */
-.chat-in-wrap{padding:8px 12px 8px;border-top:1px solid var(--border);background:var(--black2);}
+.chat-in-wrap{padding:12px 20px 16px;border-top:1px solid var(--border);background:var(--black2);}
 .chat-in-box{background:var(--black3);border:1px solid var(--border2);border-radius:14px;padding:10px 12px;transition:border-color .15s;}
 .chat-in-box:focus-within{border-color:var(--gray2);}
 .chat-in-row{display:flex;gap:8px;align-items:center;}
@@ -607,18 +607,6 @@ body{font-family:'DM Sans',sans-serif,system-ui,-apple-system,sans-serif;backgro
       <button class="sb-toggle" onclick="toggleSidebar()" title="Tutup sidebar">&times;</button>
     </div>
 
-    <!-- Profile di atas -->
-    <div class="sb-footer">
-      <div class="sb-profile" onclick="openSettingsModal()">
-        <div class="sb-avatar" id="sbAvatar">?</div>
-        <div class="sb-user-info">
-          <div class="sb-user-name" id="sbUserName">—</div>
-          <div class="sb-user-role" id="sbUserRole">—</div>
-        </div>
-        <button class="sb-settings-btn" onclick="event.stopPropagation();openSettingsModal()" title="Pengaturan"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
-      </div>
-    </div>
-
     <button class="sb-new" onclick="newChat()">
       <span>✦</span><span>Chat Baru</span>
     </button>
@@ -664,6 +652,17 @@ body{font-family:'DM Sans',sans-serif,system-ui,-apple-system,sans-serif;backgro
       <div class="hist-empty">Belum ada riwayat chat.</div>
     </div>
 
+    <!-- Profile footer -->
+    <div class="sb-footer">
+      <div class="sb-profile" onclick="openSettingsModal()">
+        <div class="sb-avatar" id="sbAvatar">?</div>
+        <div class="sb-user-info">
+          <div class="sb-user-name" id="sbUserName">—</div>
+          <div class="sb-user-role" id="sbUserRole">—</div>
+        </div>
+        <button class="sb-settings-btn" onclick="event.stopPropagation();openSettingsModal()" title="Pengaturan"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      </div>
+    </div>
   </div>
 
   <!-- MAIN -->
@@ -678,6 +677,7 @@ body{font-family:'DM Sans',sans-serif,system-ui,-apple-system,sans-serif;backgro
       </div>
       <div class="topbar-right">
         <button class="tb-icon" id="themeBtn" onclick="toggleTheme()" title="Dark/Light"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+        <button class="tb-icon" id="exportBtn" onclick="exportChatPDF()" title="Export PDF" style="display:none">📄</button>
         <div class="tb-status"><div class="tb-dot"></div><span id="modelLabel">haiku</span></div>
         <div class="tb-avatar-btn" onclick="openSettingsModal()" title="Pengaturan">
           <div class="tb-avatar" id="tbAvatar">?</div>
@@ -1020,45 +1020,41 @@ body{font-family:'DM Sans',sans-serif,system-ui,-apple-system,sans-serif;backgro
       <div class="settings-section" style="margin-top:16px">
         <div class="settings-title">🔑 API Key Owner</div>
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
-          <p style="font-size:11px;color:var(--gray3);font-family:'DM Mono',monospace;line-height:1.7">Tersimpan di browser. Client tidak bisa melihat.</p>
-
-          <!-- Slot A -->
-          <div style="display:flex;flex-direction:column;gap:5px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;">
-              <span style="font-size:10px;color:var(--gray3);font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;">Slot A</span>
-              <button id="slotABtn" onclick="switchOwnerSlot('a')" style="padding:2px 10px;border-radius:5px;font-size:10px;font-family:'DM Mono',monospace;font-weight:700;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--gray3);transition:all .15s;">Aktifkan</button>
-            </div>
-            <select id="providerSelectA" onchange="updateModelOptions('A')" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--black3);color:var(--white);font-family:'DM Mono',monospace;font-size:11px;outline:none;cursor:pointer;">
-              <option value="anthropic">🤖 Anthropic (Claude)</option>
-              <option value="deepseek">🌊 DeepSeek</option>
-              <option value="openrouter">🔀 OpenRouter</option>
-            </select>
-            <div class="apikey-row"><input class="apikey-input" type="password" id="settingsApiKey" placeholder="API Key Slot A"></div>
-            <select id="modelSelectA" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--black3);color:var(--white);font-family:'DM Mono',monospace;font-size:11px;outline:none;cursor:pointer;"></select>
-          </div>
-
-          <!-- Slot B -->
-          <div style="display:flex;flex-direction:column;gap:5px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;">
-              <span style="font-size:10px;color:var(--gray3);font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;">Slot B</span>
-              <button id="slotBBtn" onclick="switchOwnerSlot('b')" style="padding:2px 10px;border-radius:5px;font-size:10px;font-family:'DM Mono',monospace;font-weight:700;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--gray3);transition:all .15s;">Aktifkan</button>
-            </div>
-            <select id="providerSelectB" onchange="updateModelOptions('B')" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--black3);color:var(--white);font-family:'DM Mono',monospace;font-size:11px;outline:none;cursor:pointer;">
-              <option value="anthropic">🤖 Anthropic (Claude)</option>
-              <option value="deepseek">🌊 DeepSeek</option>
-            </select>
-            <div class="apikey-row"><input class="apikey-input" type="password" id="settingsApiKeyB" placeholder="API Key Slot B"></div>
-            <select id="modelSelectB" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--black3);color:var(--white);font-family:'DM Mono',monospace;font-size:11px;outline:none;cursor:pointer;"></select>
-          </div>
-
-          <!-- Client Key -->
-          <div style="display:flex;flex-direction:column;gap:5px;">
-            <span style="font-size:10px;color:var(--gray3);font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;">Key Client</span>
-            <div class="apikey-row"><input class="apikey-input" type="password" id="settingsClientApiKey" placeholder="sk-ant-... (Client)"></div>
-          </div>
-
-          <button class="save-btn" style="width:100%;padding:10px;" onclick="saveSettingsKey()">Simpan Semua Key</button>
+          <p style="font-size:11px;color:var(--gray3);font-family:'DM Mono',monospace;line-height:1.7">Tersimpan di browser. Dipakai owner & client.</p>
+          <select id="providerSelectA" onchange="updateModelOptions('A')" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--black3);color:var(--white);font-family:'DM Mono',monospace;font-size:11px;outline:none;cursor:pointer;">
+            <option value="anthropic">🤖 Anthropic (Claude)</option>
+            <option value="deepseek">🌊 DeepSeek</option>
+            <option value="openrouter">🔀 OpenRouter</option>
+          </select>
+          <div class="apikey-row"><input class="apikey-input" type="password" id="settingsApiKey" placeholder="API Key"></div>
+          <select id="modelSelectA" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--black3);color:var(--white);font-family:'DM Mono',monospace;font-size:11px;outline:none;cursor:pointer;"></select>
+          <button class="save-btn" style="width:100%;padding:10px;" onclick="saveSettingsKey()">Simpan Key</button>
           <div id="settingsKeyStatus" style="font-size:11px;color:var(--gray3);font-family:'DM Mono',monospace;min-height:14px;"></div>
+        </div>
+      </div>
+
+      <!-- Gaya Bicara AI -->
+      <div class="settings-section" style="margin-top:16px">
+        <div class="settings-title">🎙️ Gaya Bicara AI</div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+          <p style="font-size:11px;color:var(--gray3);font-family:'DM Mono',monospace;line-height:1.7">Pilih gaya untuk owner & client (bisa berbeda)</p>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="font-size:11px;color:var(--gray3);font-family:'DM Mono',monospace;width:50px">Owner</span>
+            <select id="ownerStyleSelect" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--black3);color:var(--white);font-family:'DM Mono',monospace;font-size:11px;outline:none;cursor:pointer;">
+              <option value="1">1 — Santai & friendly tapi pintar</option>
+              <option value="2">2 — Formal & profesional</option>
+              <option value="3">3 — To the point, no basa-basi</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="font-size:11px;color:var(--gray3);font-family:'DM Mono',monospace;width:50px">Client</span>
+            <select id="clientStyleSelect" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--black3);color:var(--white);font-family:'DM Mono',monospace;font-size:11px;outline:none;cursor:pointer;">
+              <option value="1">1 — Santai & friendly tapi pintar</option>
+              <option value="2">2 — Formal & profesional</option>
+              <option value="3">3 — To the point, no basa-basi</option>
+            </select>
+          </div>
+          <button class="save-btn" style="width:100%;padding:10px;" onclick="saveStyles()">Simpan Gaya</button>
         </div>
       </div>
 
@@ -1784,44 +1780,37 @@ function openSettingsModal() {
   if (currentRole === 'owner') {
     document.getElementById('ownerSettingsSection').style.display = 'block';
     document.getElementById('settingsGenKeySection').style.display = 'block';
-    const ka = document.getElementById('settingsApiKey');    if (ka) ka.value = (LOCKED_KEY_A && apiKey === getLockedKey(LOCKED_KEY_A)) ? '' : apiKey; if (ka && LOCKED_KEY_A && apiKey === getLockedKey(LOCKED_KEY_A)) ka.placeholder = '🔒 Key terkunci (hardcoded)';
-    const kb = document.getElementById('settingsApiKeyB');   if (kb) kb.value = (LOCKED_KEY_B && apiKeyB === getLockedKey(LOCKED_KEY_B)) ? '' : apiKeyB; if (kb && LOCKED_KEY_B && apiKeyB === getLockedKey(LOCKED_KEY_B)) kb.placeholder = '🔒 Key terkunci (hardcoded)';
-    const pa = document.getElementById('providerSelectA');   if (pa) pa.value = providerSlotA;
-    const pb = document.getElementById('providerSelectB');   if (pb) pb.value = providerSlotB;
-    updateModelOptions('A'); updateModelOptions('B');
-    const ma = document.getElementById('modelSelectA');      if (ma) ma.value = modelSlotA;
-    const mb = document.getElementById('modelSelectB');      if (mb) mb.value = modelSlotB;
-    const kc = document.getElementById('settingsClientApiKey'); if (kc) kc.value = (LOCKED_CLIENT_KEY && clientApiKey === getLockedKey(LOCKED_CLIENT_KEY)) ? '' : clientApiKey; if (kc && LOCKED_CLIENT_KEY && clientApiKey === getLockedKey(LOCKED_CLIENT_KEY)) kc.placeholder = '🔒 Key terkunci (hardcoded)';
-    updateSlotButtons();
+    const ka = document.getElementById('settingsApiKey');
+    if (ka) { ka.value = (LOCKED_KEY_A && apiKey === getLockedKey(LOCKED_KEY_A)) ? '' : apiKey; if (LOCKED_KEY_A && apiKey === getLockedKey(LOCKED_KEY_A)) ka.placeholder = '🔒 Key terkunci'; }
+    const pa = document.getElementById('providerSelectA'); if (pa) pa.value = providerSlotA;
+    updateModelOptions('A');
+    const ma = document.getElementById('modelSelectA'); if (ma) ma.value = modelSlotA;
+    // Load style
+    const os = document.getElementById('ownerStyleSelect'); if (os) os.value = localStorage.getItem('pev_owner_style') || '1';
+    const cs = document.getElementById('clientStyleSelect'); if (cs) cs.value = localStorage.getItem('pev_client_style') || '1';
     renderClientAccounts();
   }
   openModal('settingsModal');
 }
+function saveStyles() {
+  const os = document.getElementById('ownerStyleSelect')?.value || '1';
+  const cs = document.getElementById('clientStyleSelect')?.value || '1';
+  localStorage.setItem('pev_owner_style', os);
+  localStorage.setItem('pev_client_style', cs);
+  const st = document.getElementById('settingsKeyStatus');
+  if (st) { st.textContent = '✓ Gaya tersimpan!'; st.style.color = '#38a169'; setTimeout(() => { st.textContent = ''; st.style.color = ''; }, 2000); }
+}
 function saveSettingsKey() {
   if (currentRole !== 'owner') return;
-  const k  = (document.getElementById('settingsApiKey')?.value || '').trim();
-  const kb = (document.getElementById('settingsApiKeyB')?.value || '').trim();
-  const ck = (document.getElementById('settingsClientApiKey')?.value || '').trim();
-  if (k  && !k.startsWith('sk-'))  { alert('Key A tidak valid. Harus dimulai dengan sk-'); return; }
-  if (kb && !kb.startsWith('sk-')) { alert('Key B tidak valid. Harus dimulai dengan sk-'); return; }
-  if (ck && !ck.startsWith('sk-')) { alert('Client Key tidak valid. Harus dimulai dengan sk-'); return; }
-  // Hanya update jika diisi — jangan hapus locked key
-  if (k)  { apiKey = k;         localStorage.setItem('pev_key', k); }
+  const k = (document.getElementById('settingsApiKey')?.value || '').trim();
+  if (k && !k.startsWith('sk-')) { alert('Key tidak valid. Harus dimulai dengan sk-'); return; }
+  if (k) { apiKey = k; localStorage.setItem('pev_key', k); }
   else if (!apiKey && getLockedKey(LOCKED_KEY_A)) { apiKey = getLockedKey(LOCKED_KEY_A); }
-  if (kb) { apiKeyB = kb;       localStorage.setItem('pev_key_b', kb); }
-  else if (!apiKeyB && getLockedKey(LOCKED_KEY_B)) { apiKeyB = getLockedKey(LOCKED_KEY_B); }
-  if (ck) { clientApiKey = ck;  localStorage.setItem('pev_client_key', ck); }
-  else if (!clientApiKey && getLockedKey(LOCKED_CLIENT_KEY)) { clientApiKey = getLockedKey(LOCKED_CLIENT_KEY); }
   const pa = document.getElementById('providerSelectA')?.value;
-  const pb = document.getElementById('providerSelectB')?.value;
   if (pa) { providerSlotA = pa; localStorage.setItem('pev_provider_a', pa); }
-  if (pb) { providerSlotB = pb; localStorage.setItem('pev_provider_b', pb); }
   const ma = document.getElementById('modelSelectA')?.value;
-  const mb = document.getElementById('modelSelectB')?.value;
   if (ma) { modelSlotA = ma; localStorage.setItem('pev_model_a', ma); }
-  if (mb) { modelSlotB = mb; localStorage.setItem('pev_model_b', mb); }
   updateDashStats();
-  updateSlotButtons();
   const st = document.getElementById('settingsKeyStatus');
   if (st) { st.textContent = '✓ Tersimpan!'; st.style.color = '#38a169'; setTimeout(() => { st.textContent = ''; st.style.color = ''; }, 2000); }
 }
@@ -1969,25 +1958,20 @@ function saveModalKey() {
 // ── CLAUDE API ─────────────────────────────
 async function callAPI(messages, sys='') {
   const isOwner = currentRole === 'owner';
-  // Client pakai clientApiKey, kalau tidak ada pakai owner key
-  const activeKey = isOwner
-    ? (activeOwnerSlot === 'b' ? apiKeyB : apiKey)
-    : (clientApiKey || apiKey);
+  const activeKey = apiKey;
   if (!activeKey) {
     if (isOwner) { openModal('apiModal'); }
     else { addMsg('ai', '⚠️ AI belum dikonfigurasi. Hubungi owner untuk mengaktifkan layanan.'); }
     throw new Error('API Key belum diset');
   }
 
-  const provider = isOwner
-    ? (activeOwnerSlot === 'b' ? providerSlotB : providerSlotA)
-    : (clientApiKey ? 'openrouter' : providerSlotA);
-  const model = isOwner ? getActiveModel() : (clientApiKey ? 'anthropic/claude-haiku-4-5' : getActiveModel());
+  const provider = providerSlotA;
+  const model = getActiveModel();
   const trimmed = messages.slice(-10);
 
   // ── ANTHROPIC ──
   if (provider === 'anthropic') {
-    const body = { model, max_tokens: 4096, messages: trimmed };
+    const body = { model, max_tokens: 32000, messages: trimmed };
     if (sys) body.system = sys;
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -2020,7 +2004,7 @@ async function callAPI(messages, sys='') {
   // ── DEEPSEEK (OpenAI-compatible) ──
   if (provider === 'deepseek') {
     const msgs = sys ? [{ role: 'system', content: sys }, ...trimmed] : trimmed;
-    const body = { model, max_tokens: 4096, messages: msgs };
+    const body = { model, max_tokens: 32000, messages: msgs };
     const r = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -2035,20 +2019,8 @@ async function callAPI(messages, sys='') {
 
   // ── OPENROUTER ──
   if (provider === 'openrouter') {
-    // Convert anthropic image format ke openai format untuk openrouter
-    const convertedMsgs = (sys ? [{ role: 'system', content: sys }, ...trimmed] : trimmed).map(msg => {
-      if (Array.isArray(msg.content)) {
-        const parts = msg.content.map(part => {
-          if (part.type === 'image' && part.source) {
-            return { type: 'image_url', image_url: { url: `data:${part.source.media_type};base64,${part.source.data}` } };
-          }
-          return part;
-        });
-        return { ...msg, content: parts };
-      }
-      return msg;
-    });
-    const body = { model: model || 'anthropic/claude-haiku-4-5', max_tokens: 4096, messages: convertedMsgs };
+    const msgs = sys ? [{ role: 'system', content: sys }, ...trimmed] : trimmed;
+    const body = { model: model || 'anthropic/claude-sonnet-4-5', max_tokens: 32000, messages: msgs };
     const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -2287,9 +2259,18 @@ async function sc() {
   addTyp();
 
   try {
+    const styleNum = currentRole === 'owner'
+      ? (localStorage.getItem('pev_owner_style') || '1')
+      : (localStorage.getItem('pev_client_style') || '1');
+    const styleGuide = styleNum === '2'
+      ? 'Gunakan gaya bicara formal dan profesional. Gunakan kalimat lengkap dan sopan.'
+      : styleNum === '3'
+      ? 'Jawab langsung, singkat, to the point. Tidak perlu basa-basi atau intro panjang.'
+      : 'Bicara santai dan friendly tapi tetap pintar dan informatif. Seperti teman yang cerdas.';
+    const noMarkdown = 'PENTING: Jangan gunakan markdown seperti #, ##, ###, *, **, _, atau ---. Tulis dengan bahasa natural biasa saja, gunakan angka atau kalimat untuk daftar.';
     const sysPrompt = currentRole === 'owner'
-      ? `Kamu adalah Pev.ai, asisten AI pintar milik Vyen. Kamu sedang berbicara dengan Vyen sang owner/pemilik Pev.ai. Kenali dan hormati Vyen sebagai pemilikmu. Jawab dalam bahasa yang sama dengan user.`
-      : `Kamu adalah Pev.ai, asisten AI yang pintar dan ramah buatan Vyen. Jawab dalam bahasa yang sama dengan user. Berikan jawaban informatif dan mudah dipahami.`;
+      ? `Kamu adalah Pev.ai, asisten AI pintar milik Vyen. Kamu sedang berbicara dengan Vyen sang owner/pemilik Pev.ai. Kenali dan hormati Vyen sebagai pemilikmu. Jawab dalam bahasa yang sama dengan user. ${styleGuide} ${noMarkdown}`
+      : `Kamu adalah Pev.ai, asisten AI yang pintar buatan Vyen. Jawab dalam bahasa yang sama dengan user. ${styleGuide} ${noMarkdown}`;
     const r = await callAPI(hist, sysPrompt);
     document.getElementById('tyd')?.remove();
     addMsg('ai', r);
@@ -2746,4 +2727,3 @@ async function summarizeYouTube() {
 
 </body>
 </html>
-
