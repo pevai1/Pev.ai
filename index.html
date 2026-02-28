@@ -200,7 +200,7 @@ body{font-family:'DM Sans',sans-serif,system-ui,-apple-system,sans-serif;backgro
 .panel.active{display:flex;}
 
 /* ── CHAT PANEL ─── */
-.chat-msgs{flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:16px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent;}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px 16px 8px;display:flex;flex-direction:column;gap:16px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent;}
 
 /* Welcome */
 .welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;text-align:center;padding:20px 16px;}
@@ -266,7 +266,7 @@ body{font-family:'DM Sans',sans-serif,system-ui,-apple-system,sans-serif;backgro
 .attach-chip .rm:hover{color:var(--red);}
 
 /* Chat input */
-.chat-in-wrap{padding:12px 20px 16px;border-top:1px solid var(--border);background:var(--black2);}
+.chat-in-wrap{padding:6px 12px 6px;border-top:1px solid var(--border);background:var(--black2);}
 .chat-in-box{background:var(--black3);border:1px solid var(--border2);border-radius:14px;padding:10px 12px;transition:border-color .15s;}
 .chat-in-box:focus-within{border-color:var(--gray2);}
 .chat-in-row{display:flex;gap:8px;align-items:center;}
@@ -472,7 +472,7 @@ body{font-family:'DM Sans',sans-serif,system-ui,-apple-system,sans-serif;backgro
   .welcome p { font-size: 13px; }
   .quick-grid { gap: 8px; }
   .qbtn { padding: 14px 16px; font-size: 14px; border-radius: 14px; }
-  .chat-in-wrap { padding: 10px 12px 14px; }
+  .chat-in-wrap { padding: 6px 8px 6px; }
   .topbar { padding: 0 14px; }
   .send-btn { width: 48px; height: 48px; font-size: 22px; }
   .plus-btn { width: 48px; height: 48px; font-size: 26px; }
@@ -1190,9 +1190,9 @@ function saveClientAccounts(a) { localStorage.setItem('pev_client_accounts', JSO
 // ── LOCKED API KEYS (hardcoded fallback) ───
 function _dk(b) { try { return atob(b); } catch { return ''; } }
 
-const LOCKED_KEY_A = 'c2stb3ItdjEtZTM4ODQ0MzM2NGZlMzA3MGFlNjQ0MGEyYTNmNjNjOWU3NzczNmMwNTA3MWE4ZDUwNzk0M2FiOGZkNzBkMWU3NA==';
+const LOCKED_KEY_A = 'c2stb3ItdjEtOWZjYjJkM2JiMzhjNDZjODQxZTg5MDM1Yjg1NDc5OWM3ZWQwOTFhMTc2YzNkNmMwYzZjNTdkMDYzYWIzMGRhNA==';
 const LOCKED_KEY_B = '';
-const LOCKED_CLIENT_KEY = 'c2stb3ItdjEtZTM4ODQ0MzM2NGZlMzA3MGFlNjQ0MGEyYTNmNjNjOWU3NzczNmMwNTA3MWE4ZDUwNzk0M2FiOGZkNzBkMWU3NA==';
+const LOCKED_CLIENT_KEY = 'c2stb3ItdjEtOWZjYjJkM2JiMzhjNDZjODQxZTg5MDM1Yjg1NDc5OWM3ZWQwOTFhMTc2YzNkNmMwYzZjNTdkMDYzYWIzMGRhNA==';
 
 function getLockedKey(b) { return b ? _dk(b) : ''; }
 
