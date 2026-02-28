@@ -172,21 +172,28 @@ body{font-family:'DM Sans',sans-serif,system-ui,-apple-system,sans-serif;backgro
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
 
 /* TOPBAR */
-.topbar{height:58px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 18px;flex-shrink:0;background:#0a0a0a;}
-.topbar-left{display:flex;align-items:center;gap:10px;}
+.topbar{height:58px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 10px;flex-shrink:0;background:#0a0a0a;overflow:hidden;}
+.topbar-left{display:flex;align-items:center;gap:6px;min-width:0;flex:1;overflow:hidden;}
 .tb-menu{width:40px;height:40px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--gray3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .15s;}
 .tb-menu:hover{border-color:var(--gray2);color:var(--white);}
 .topbar-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;}
 .role-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;}
 .role-badge.owner{background:var(--white);color:var(--black);}
 .role-badge.client{border:1px solid var(--border2);color:var(--gray3);}
-.topbar-right{display:flex;align-items:center;gap:8px;}
-.tb-icon{width:40px;height:40px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--gray3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .15s;}
+.topbar-right{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.tb-icon{width:34px;height:34px;border-radius:9px;border:1px solid var(--border2);background:transparent;color:var(--gray3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;}
 .tb-icon:hover{border-color:var(--gray2);color:var(--white);}
-.tb-status{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--gray3);font-family:'DM Mono',monospace;}
+.tb-status{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--gray3);font-family:'DM Mono',monospace;}
+@media(max-width:480px){.role-badge{display:none;}.tier-badge-top{display:none;}.tb-icon#themeBtn{display:none;}}
 .tb-dot{width:6px;height:6px;border-radius:50%;background:var(--white);animation:blink 2.5s infinite;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 .tier-badge-top{font-size:12px;font-family:'DM Mono',monospace;cursor:pointer;}
+
+/* Avatar di topbar */
+.tb-avatar-btn{width:38px;height:38px;border-radius:10px;border:1px solid var(--border2);cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:border-color .15s;flex-shrink:0;}
+.tb-avatar-btn:hover{border-color:var(--gray2);}
+.tb-avatar{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;background:var(--black4);color:var(--white);}
+.tb-avatar img{width:100%;height:100%;object-fit:cover;}
 
 /* PANELS */
 .panel{display:none;flex:1;flex-direction:column;overflow:hidden;}
@@ -427,9 +434,9 @@ body{font-family:'DM Sans',sans-serif,system-ui,-apple-system,sans-serif;backgro
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ── MODALS ─── */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(6px);z-index:200;display:none;align-items:center;justify-content:center;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(6px);z-index:200;display:none;align-items:center;justify-content:center;padding:16px;overflow-y:auto;}
 .modal-overlay.open{display:flex;}
-.modal-box{background:var(--black2);border:1px solid var(--border2);border-radius:18px;padding:28px;width:400px;max-width:90vw;display:flex;flex-direction:column;gap:14px;}
+.modal-box{background:var(--black2);border:1px solid var(--border2);border-radius:18px;padding:28px;width:400px;max-width:100%;display:flex;flex-direction:column;gap:14px;margin:auto;}
 .modal-box h3{font-family:'Playfair Display',serif;font-size:18px;}
 .modal-close{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--gray3);cursor:pointer;font-size:18px;}
 
@@ -672,6 +679,9 @@ body{font-family:'DM Sans',sans-serif,system-ui,-apple-system,sans-serif;backgro
         <button class="tb-icon" id="themeBtn" onclick="toggleTheme()" title="Dark/Light"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
         <button class="tb-icon" id="exportBtn" onclick="exportChatPDF()" title="Export PDF" style="display:none">📄</button>
         <div class="tb-status"><div class="tb-dot"></div><span id="modelLabel">haiku</span></div>
+        <div class="tb-avatar-btn" onclick="openSettingsModal()" title="Pengaturan">
+          <div class="tb-avatar" id="tbAvatar">?</div>
+        </div>
         <button class="tb-icon" onclick="logout()" title="Keluar" style="font-size:12px;width:auto;padding:0 14px;font-family:'DM Sans',sans-serif;font-weight:600;">Keluar</button>
       </div>
     </div>
@@ -986,7 +996,7 @@ body{font-family:'DM Sans',sans-serif,system-ui,-apple-system,sans-serif;backgro
 
 <!-- Settings Modal -->
 <div class="modal-overlay" id="settingsModal">
-  <div class="modal-box" style="width:460px;max-height:80vh;overflow-y:auto;">
+  <div class="modal-box" style="width:460px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;">
     <h3>⚙️ Pengaturan</h3>
     <div class="settings-section">
       <div class="settings-title">Tampilan</div>
@@ -1182,34 +1192,13 @@ function getClientAccounts() { return JSON.parse(localStorage.getItem('pev_clien
 function saveClientAccounts(a) { localStorage.setItem('pev_client_accounts', JSON.stringify(a)); }
 
 // ── LOCKED API KEYS (hardcoded fallback) ───
-// Isi key lu di sini — akan dipakai otomatis jika localStorage kosong
-// Format: xorEncode('sk-ant-...', 'pevai')
-function xorEncode(str, key) {
-  return str.split('').map((c, i) =>
-    String.fromCharCode(c.charCodeAt(0) ^ key.charCodeAt(i % key.length))
-  ).join('');
-}
-function xorDecode(encoded, key) { return xorEncode(encoded, key); }
+function _dk(b) { try { return atob(b); } catch { return ''; } }
 
-// ════════════════════════════════════════════
-// GANTI BAGIAN INI DENGAN KEY LU:
-// Caranya: di console browser ketik:
-//   xorRaw('sk-ant-api03-KEYLU...', 'pevai')
-// Lalu paste hasilnya di LOCKED_KEY_A
-// ════════════════════════════════════════════
-const _XK = 'pevai';
-const LOCKED_KEY_A = "\u0003\u000e[\u000e\u001b]\u0013GL\fC]NU]CV@U\u000f\u0015VFVY\u0011\u0000@U]@\u0004D\u0000Z\u0016SE\u0002P\u0015RAVZF\u0006FTYGT\u0017Y\rEUAX]C\u0004\u0014Y\u000f\u0014RF\u0005X\u0015RB"; // OpenRouter key
-const LOCKED_KEY_B = ''; // <-- paste encoded key B di sini (opsional)
-const LOCKED_CLIENT_KEY = ''; // <-- paste encoded client key di sini (opsional)
+const LOCKED_KEY_A = 'c2stb3ItdjEtZTM4ODQ0MzM2NGZlMzA3MGFlNjQ0MGEyYTNmNjNjOWU3NzczNmMwNTA3MWE4ZDUwNzk0M2FiOGZkNzBkMWU3NA==';
+const LOCKED_KEY_B = '';
+const LOCKED_CLIENT_KEY = 'c2stb3ItdjEtZTM4ODQ0MzM2NGZlMzA3MGFlNjQ0MGEyYTNmNjNjOWU3NzczNmMwNTA3MWE4ZDUwNzk0M2FiOGZkNzBkMWU3NA==';
 
-function getLockedKey(encoded) {
-  if (!encoded) return '';
-  try { return xorDecode(encoded, _XK); } catch { return ''; }
-}
-
-// Helper untuk generate encoded key (bisa dipanggil dari console)
-window.xorRaw = (str, k) => xorEncode(str, k || _XK);
-// ════════════════════════════════════════════
+function getLockedKey(b) { return b ? _dk(b) : ''; }
 
 let currentRole = null;
 let currentUser = null;
@@ -1728,6 +1717,16 @@ function enterApp(role, user) {
   document.getElementById('sbUserName').textContent = user.name;
   document.getElementById('sbUserRole').textContent = role === 'owner' ? '👑 Owner' : '👤 Client';
 
+  // Update topbar avatar
+  const tbAv = document.getElementById('tbAvatar');
+  if (tbAv) {
+    if (user.photo) {
+      tbAv.innerHTML = `<img src="${user.photo}" onerror="this.parentElement.textContent='${user.name[0].toUpperCase()}'">`;
+    } else {
+      tbAv.textContent = user.name[0].toUpperCase();
+    }
+  }
+
   if (role === 'owner') {
     document.getElementById('nav-dash').style.display = 'block';
     document.getElementById('owner-features').style.display = 'block';
@@ -1981,8 +1980,8 @@ async function callAPI(messages, sys='') {
 
   const provider = isOwner
     ? (activeOwnerSlot === 'b' ? providerSlotB : providerSlotA)
-    : 'anthropic';
-  const model = getActiveModel();
+    : 'openrouter';
+  const model = isOwner ? getActiveModel() : 'anthropic/claude-haiku-4-5';
   const trimmed = messages.slice(-10);
 
   // ── ANTHROPIC ──
