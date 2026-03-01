@@ -924,6 +924,10 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 </div>
 
 <!-- Toast -->
+<div id="bukti-modal" onclick="if(event.target===this)closeBuktiModal()">
+  <img id="bukti-modal-img" src="">
+  <button id="bukti-modal-close" onclick="closeBuktiModal()">✕ Tutup</button>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1710,7 +1714,7 @@ function renderDashSection(id) {
         const isOwnerCoowner = ['owner','coowner'].includes(u.role);
         if (isSellerOrOwner) {
           if (o.status === 'menunggu-konfirmasi' && isOwnerCoowner) {
-            const buktiHtml = o.bukti_transfer ? `<div style="margin-bottom:8px;"><img src="${o.bukti_transfer}" style="width:100%;border-radius:8px;max-height:150px;object-fit:contain;background:#111;" onclick="window.open('${o.bukti_transfer}')"></div><div style="font-size:11px;color:var(--muted);margin-bottom:6px;">📎 Bukti transfer dari buyer (tap untuk perbesar)</div>` : '<div style="font-size:11px;color:#ff6584;margin-bottom:6px;">⚠️ Buyer belum upload bukti transfer</div>';
+            const buktiHtml = o.bukti_transfer ? `<div style="margin-bottom:8px;"><img src="${o.bukti_transfer}" style="width:100%;border-radius:8px;max-height:150px;object-fit:contain;background:#111;cursor:zoom-in;" onclick="showBuktiModal('${o.bukti_transfer}')"></div><div style="font-size:11px;color:var(--muted);margin-bottom:6px;">📎 Bukti transfer dari buyer (tap untuk perbesar)</div>` : '<div style="font-size:11px;color:#ff6584;margin-bottom:6px;">⚠️ Buyer belum upload bukti transfer</div>';
             actionBtn = buktiHtml + `<div style="display:flex;gap:6px;"><button class="action-btn btn-approve" style="margin-top:0;flex:1;" onclick="updateStatusPesanan(${o.id},'menunggu-kirim')">✅ Konfirmasi</button><button class="action-btn btn-reject" style="margin-top:0;flex:1;" onclick="updateStatusPesanan(${o.id},'dibatalkan')">❌ Tolak</button></div>`;
           } else if (o.status === 'menunggu-bayar') {
             actionBtn = `<button class="action-btn btn-approve" style="margin-top:8px;width:100%;opacity:0.5;cursor:not-allowed;" disabled>⏳ Menunggu Bukti Bayar</button>`;
@@ -3136,6 +3140,14 @@ async function finalizeOrder(kode, total) {
   showLoading(false);
   showToast('🎉 Pembelian berhasil! Cek Profil > Pesanan');
   checkoutQty = 1;
+}
+
+function showBuktiModal(src) {
+  document.getElementById('bukti-modal-img').src = src;
+  document.getElementById('bukti-modal').classList.add('open');
+}
+function closeBuktiModal() {
+  document.getElementById('bukti-modal').classList.remove('open');
 }
 
 // =================== STARTUP ===================
