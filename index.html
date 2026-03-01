@@ -923,7 +923,8 @@ async function fetchUsers() {
   return _cache.users;
 }
 async function fetchProduk() {
-  const { data } = await db.from('dm_produk').select('*').neq('status','nonaktif');
+  const { data, error } = await db.from('dm_produk').select('*');
+  if (error) console.error('fetchProduk error:', error);
   _cache.produk = data || [];
   return _cache.produk;
 }
@@ -1083,7 +1084,7 @@ function renderNavbar() {
 
 // =================== HERO STATS ===================
 function renderHeroStats() {
-  const produk = getProduk().filter(p => p.status !== 'nonaktif');
+  const produk = getProduk().filter(p => p.status === 'aktif' || p.status === 'active' || (p.status !== 'nonaktif' && p.status !== 'inactive'));
   const sellers = getUsers().filter(u => ['admin','preadmin'].includes(u.role) && u.status === 'active');
   const pesanan = getPesanan();
   document.getElementById('stat-produk').textContent = produk.length;
@@ -1100,7 +1101,7 @@ function filterKategori(kat, btn) {
 }
 
 function renderProdukGrid() {
-  let produk = getProduk().filter(p => p.status !== 'nonaktif');
+  let produk = getProduk().filter(p => p.status === 'aktif' || p.status === 'active' || (p.status !== 'nonaktif' && p.status !== 'inactive'));
   const q = document.getElementById('search-input')?.value.toLowerCase() || '';
   if (q) produk = produk.filter(p => p.nama.toLowerCase().includes(q) || p.deskripsi.toLowerCase().includes(q));
   if (filterKat !== 'semua') produk = produk.filter(p => p.kategori === filterKat);
