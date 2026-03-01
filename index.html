@@ -946,7 +946,9 @@ async function fetchChats() {
 
 // Sync helpers - get from cache or fetch
 function getUsers() { return _cache.users || []; }
+function getUser(id) { return (_cache.users || []).find(u => u.id == id) || null; }
 function getProduk() { return _cache.produk || []; }
+function getProdukById(id) { return (_cache.produk || []).find(p => p.id == id) || null; }
 function getPesanan() { return _cache.pesanan || []; }
 function getReviews() { return _cache.reviews || []; }
 function getChats() { return _cache.chats || []; }
