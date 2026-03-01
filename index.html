@@ -373,7 +373,9 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 .drawer-item{display:flex;align-items:center;gap:12px;padding:11px 12px;
   border-radius:10px;cursor:pointer;transition:all 0.2s;margin-bottom:2px;}
 .drawer-item:hover,.drawer-item:active{background:var(--surface2);}
-.drawer-item .di-icon{font-size:18px;width:24px;text-align:center;}
+.drawer-item .di-icon{font-size:18px;width:24px;text-align:center;display:flex;align-items:center;justify-content:center;}
+.drawer-item .di-icon svg{width:20px;height:20px;stroke:var(--muted);}
+.drawer-item:hover .di-icon svg{stroke:var(--accent);}
 .drawer-item .di-label{font-size:14px;font-weight:500;}
 .drawer-item .di-badge{margin-left:auto;background:var(--accent2);color:#fff;
   padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;}
@@ -729,7 +731,7 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
         <div class="pm-info"><div class="pm-name">QRIS</div><div class="pm-desc">GoPay · OVO · Dana · ShopeePay</div></div>
         <div class="pm-check"></div>
       </div>
-      <div class="payment-method" id="pm-cod" onclick="selectPayment('cod')">
+      <div class="payment-method" id="pm-voucher" onclick="selectPayment('voucher')">
         <div class="pm-icon">💵</div>
         <div class="pm-info"><div class="pm-name">Bayar via Voucher</div><div class="pm-desc">Masukkan kode voucher DigiMart</div></div>
         <div class="pm-check"></div>
@@ -827,7 +829,7 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
   <!-- Kembali ke Beranda -->
   <div class="drawer-section">
     <div class="drawer-item" onclick="closeDrawer();showPage('page-home');">
-      <span class="di-icon">🏠</span><span class="di-label">Kembali ke Beranda</span>
+      <span class="di-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></span><span class="di-label">Kembali ke Beranda</span>
     </div>
   </div>
   <div class="drawer-divider"></div>
@@ -836,13 +838,13 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
   <div class="drawer-section">
     <div class="drawer-section-title">Umum</div>
     <div class="drawer-item" onclick="openDrawerPage('profil')">
-      <span class="di-icon">👤</span><span class="di-label">Profil Akun</span>
+      <span class="di-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></span><span class="di-label">Profil Akun</span>
     </div>
     <div class="drawer-item" onclick="openDrawerPage('support')">
-      <span class="di-icon">🎧</span><span class="di-label">Support</span>
+      <span class="di-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg></span><span class="di-label">Support</span>
     </div>
     <div class="drawer-item" onclick="openDrawerPage('peraturan')">
-      <span class="di-icon">📋</span><span class="di-label">Peraturan</span>
+      <span class="di-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></span><span class="di-label">Peraturan</span>
     </div>
   </div>
 
@@ -851,7 +853,7 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
   <div class="drawer-section" id="drawer-seller-menu" style="display:none;">
     <div class="drawer-section-title">Seller</div>
     <div class="drawer-item" onclick="closeDrawer();showPage('page-dashboard');">
-      <span class="di-icon">📊</span><span class="di-label">Dashboard</span>
+      <span class="di-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></span><span class="di-label">Dashboard</span>
     </div>
   </div>
 
@@ -860,13 +862,13 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
   <div class="drawer-section" id="drawer-owner-menu" style="display:none;">
     <div class="drawer-section-title">Management</div>
     <div class="drawer-item" onclick="openDrawerPage('kelola-user')">
-      <span class="di-icon">👥</span><span class="di-label">Kelola User & Role</span>
+      <span class="di-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></span><span class="di-label">Kelola User & Role</span>
     </div>
     <div class="drawer-item" onclick="openDrawerPage('gift-title')">
-      <span class="di-icon">🎁</span><span class="di-label">Gift Title</span>
+      <span class="di-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg></span><span class="di-label">Gift Title</span>
     </div>
     <div class="drawer-item" onclick="openDrawerPage('statistik')">
-      <span class="di-icon">📈</span><span class="di-label">Statistik Lengkap</span>
+      <span class="di-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg></span><span class="di-label">Statistik Lengkap</span>
     </div>
   </div>
 
@@ -1694,6 +1696,7 @@ function renderDashSection(id) {
         }[o.status] || 'badge-pending';
         const statusLabel = {
           'menunggu-bayar':'⏳ Menunggu Bayar',
+          'menunggu-konfirmasi':'🔍 Menunggu Konfirmasi Owner',
           'menunggu-kirim':'📦 Menunggu Kirim',
           'dikirim':'🚚 Dikirim',
           'selesai':'✅ Selesai',
@@ -1704,9 +1707,13 @@ function renderDashSection(id) {
         const isSellerOrOwner = ['owner','coowner'].includes(u.role) || o.seller_id == u.id;
 
         let actionBtn = '';
+        const isOwnerCoowner = ['owner','coowner'].includes(u.role);
         if (isSellerOrOwner) {
-          if (o.status === 'menunggu-bayar') {
-            actionBtn = `<button class="action-btn btn-approve" style="margin-top:8px;width:100%;" onclick="updateStatusPesanan(${o.id},'menunggu-kirim')">✅ Konfirmasi Pembayaran</button>`;
+          if (o.status === 'menunggu-konfirmasi' && isOwnerCoowner) {
+            const buktiHtml = o.bukti_transfer ? `<div style="margin-bottom:8px;"><img src="${o.bukti_transfer}" style="width:100%;border-radius:8px;max-height:150px;object-fit:contain;background:#111;" onclick="window.open('${o.bukti_transfer}')"></div><div style="font-size:11px;color:var(--muted);margin-bottom:6px;">📎 Bukti transfer dari buyer (tap untuk perbesar)</div>` : '<div style="font-size:11px;color:#ff6584;margin-bottom:6px;">⚠️ Buyer belum upload bukti transfer</div>';
+            actionBtn = buktiHtml + `<div style="display:flex;gap:6px;"><button class="action-btn btn-approve" style="margin-top:0;flex:1;" onclick="updateStatusPesanan(${o.id},'menunggu-kirim')">✅ Konfirmasi</button><button class="action-btn btn-reject" style="margin-top:0;flex:1;" onclick="updateStatusPesanan(${o.id},'dibatalkan')">❌ Tolak</button></div>`;
+          } else if (o.status === 'menunggu-bayar') {
+            actionBtn = `<button class="action-btn btn-approve" style="margin-top:8px;width:100%;opacity:0.5;cursor:not-allowed;" disabled>⏳ Menunggu Bukti Bayar</button>`;
           } else if (o.status === 'menunggu-kirim') {
             actionBtn = `<button class="action-btn btn-approve" style="margin-top:8px;width:100%;background:rgba(0,212,170,0.2);color:var(--green);border-color:rgba(0,212,170,0.4);" onclick="updateStatusPesanan(${o.id},'dikirim')">🚚 Tandai Terkirim</button>`;
           } else if (o.status === 'dikirim') {
@@ -2087,7 +2094,7 @@ function renderDrawer() {
       document.getElementById('drawer-owner-menu').style.display = 'block';
       document.getElementById('drawer-owner-divider').style.display = 'block';
     }
-    document.getElementById('drawer-auth-icon').textContent = '🚪';
+    document.getElementById('drawer-auth-icon').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>';
     document.getElementById('drawer-auth-label').textContent = 'Keluar';
   } else {
     document.getElementById('drawer-avatar').textContent = '👤';
@@ -2097,7 +2104,7 @@ function renderDrawer() {
     document.getElementById('drawer-seller-menu').style.display = 'none';
     document.getElementById('drawer-owner-menu').style.display = 'none';
     document.getElementById('drawer-owner-divider').style.display = 'none';
-    document.getElementById('drawer-auth-icon').textContent = '🔑';
+    document.getElementById('drawer-auth-icon').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>';
     document.getElementById('drawer-auth-label').textContent = 'Masuk / Daftar';
   }
 }
@@ -2946,7 +2953,7 @@ function goCheckoutStep(step) {
 
 function selectPayment(method) {
   selectedPayment = method;
-  ['transfer','qris','cod'].forEach(m => {
+  ['transfer','qris','voucher'].forEach(m => {
     const el = document.getElementById('pm-' + m);
     if (el) {
       el.classList.toggle('selected', m === method);
@@ -2972,7 +2979,19 @@ function renderPaymentDetail() {
           <div>Jumlah Transfer: <strong style="color:var(--accent);">${formatRp(total)}</strong></div>
         </div>
         <div style="margin-top:10px;padding:10px;background:rgba(255,200,0,0.1);border-radius:8px;font-size:12px;color:#ffc800;">
-          ⚠️ Transfer tepat sesuai nominal untuk verifikasi otomatis
+          ⚠️ Transfer tepat sesuai nominal, lalu upload bukti di bawah
+        </div>
+        <div style="margin-top:14px;">
+          <div style="font-weight:700;font-size:13px;margin-bottom:8px;">📎 Upload Bukti Transfer</div>
+          <div id="bukti-preview" style="width:100%;height:120px;border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--surface);overflow:hidden;" onclick="document.getElementById('bukti-input').click()">
+            <div id="bukti-placeholder" style="text-align:center;color:var(--muted);font-size:12px;">
+              <div style="font-size:28px;margin-bottom:4px;">📷</div>
+              Tap untuk upload foto bukti
+            </div>
+            <img id="bukti-img" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:8px;">
+          </div>
+          <input type="file" id="bukti-input" accept="image/*" style="display:none;" onchange="previewBukti(this)">
+          <input type="hidden" id="bukti-base64">
         </div>
       </div>`;
   } else if (selectedPayment === 'qris') {
@@ -2984,15 +3003,66 @@ function renderPaymentDetail() {
         </div>
         <div style="margin-top:12px;font-size:13px;color:var(--muted);">Scan dengan GoPay, OVO, Dana, atau ShopeePay</div>
         <div style="margin-top:6px;font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--accent);">${formatRp(total)}</div>
+        <div style="margin-top:14px;text-align:left;">
+          <div style="font-weight:700;font-size:13px;margin-bottom:8px;">📎 Upload Bukti Pembayaran</div>
+          <div id="bukti-preview" style="width:100%;height:120px;border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--surface);overflow:hidden;" onclick="document.getElementById('bukti-input').click()">
+            <div id="bukti-placeholder" style="text-align:center;color:var(--muted);font-size:12px;">
+              <div style="font-size:28px;margin-bottom:4px;">📷</div>
+              Tap untuk upload foto bukti
+            </div>
+            <img id="bukti-img" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:8px;">
+          </div>
+          <input type="file" id="bukti-input" accept="image/*" style="display:none;" onchange="previewBukti(this)">
+          <input type="hidden" id="bukti-base64">
+        </div>
       </div>`;
-  } else if (selectedPayment === 'cod') {
+  } else if (selectedPayment === 'voucher') {
     el.innerHTML = `
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;">
-        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">💵 Masukkan Kode Voucher</div>
-        <input class="form-input" id="voucher-input" placeholder="Contoh: DIGI-XXXX-XXXX" style="margin-bottom:10px;">
-        <div style="font-size:12px;color:var(--muted);">Gunakan kode voucher yang sudah kamu beli sebelumnya</div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">🎫 Masukkan Kode Voucher</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <input class="form-input" id="voucher-input" placeholder="Contoh: DIGI-XXXX-XXXX" style="flex:1;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+          <button onclick="validasiVoucher()" style="background:var(--accent);border:none;color:#fff;padding:0 14px;border-radius:10px;font-weight:700;cursor:pointer;white-space:nowrap;">Cek</button>
+        </div>
+        <div id="voucher-status" style="font-size:12px;min-height:18px;"></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;">Voucher akan otomatis divalidasi ke database</div>
       </div>`;
   }
+}
+
+function previewBukti(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 3 * 1024 * 1024) { showToast('⚠️ Foto maksimal 3MB!'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('bukti-base64').value = e.target.result;
+    document.getElementById('bukti-img').src = e.target.result;
+    document.getElementById('bukti-img').style.display = 'block';
+    document.getElementById('bukti-placeholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function validasiVoucher() {
+  const kode = document.getElementById('voucher-input').value.trim().toUpperCase();
+  const statusEl = document.getElementById('voucher-status');
+  if (!kode) { statusEl.innerHTML = '<span style="color:#ff6584;">⚠️ Masukkan kode voucher dulu</span>'; return; }
+  statusEl.innerHTML = '<span style="color:var(--muted);">⏳ Mengecek...</span>';
+  const { data, error } = await db.from('dm_vouchers').select('*').eq('kode', kode).eq('status', 'aktif').single();
+  if (error || !data) {
+    statusEl.innerHTML = '<span style="color:#ff6584;">❌ Voucher tidak valid atau sudah digunakan</span>';
+    return;
+  }
+  const p = getProdukById(currentProdukId);
+  const total = p.harga * checkoutQty + Math.round(p.harga * checkoutQty * 0.02);
+  if (data.min_belanja && total < data.min_belanja) {
+    statusEl.innerHTML = `<span style="color:#ff6584;">❌ Minimum belanja ${formatRp(data.min_belanja)}</span>`;
+    return;
+  }
+  const diskon = data.tipe === 'persen' ? Math.round(total * data.nilai / 100) : data.nilai;
+  statusEl.innerHTML = `<span style="color:#00d4aa;">✅ Voucher valid! Diskon ${formatRp(diskon)}</span>`;
+  window._voucherValid = {kode, diskon, id: data.id};
 }
 
 function renderCheckoutConfirm() {
@@ -3034,11 +3104,30 @@ async function finalizeOrder(kode, total) {
   const qty = checkoutQty;
   if (qty > p.stok) { showToast('❌ Stok tidak mencukupi!'); return; }
 
+  // Validasi bukti transfer
+  const buktiEl = document.getElementById('bukti-base64');
+  const bukti = buktiEl ? buktiEl.value : null;
+  if ((selectedPayment === 'transfer' || selectedPayment === 'qris') && !bukti) {
+    showToast('⚠️ Upload bukti pembayaran dulu!'); return;
+  }
+  // Validasi voucher
+  if (selectedPayment === 'voucher' && !window._voucherValid) {
+    showToast('⚠️ Validasi voucher dulu!'); return;
+  }
+
+  let finalTotal = total;
+  if (selectedPayment === 'voucher' && window._voucherValid) {
+    finalTotal = Math.max(0, total - window._voucherValid.diskon);
+    // Tandai voucher sudah dipakai
+    await db.from('dm_vouchers').update({status:'used', used_by: currentUser.id}).eq('id', window._voucherValid.id);
+    window._voucherValid = null;
+  }
+
   showLoading(true);
   await db.from('dm_pesanan').insert({
     produk_id: p.id, buyer_id: currentUser.id,
-    seller_id: p.seller_id, harga: total, qty, status: 'menunggu-bayar',
-    created_at: Date.now(), kode, payment: selectedPayment
+    seller_id: p.seller_id, harga: finalTotal, qty, status: 'menunggu-konfirmasi',
+    created_at: Date.now(), kode, payment: selectedPayment, bukti_transfer: bukti || null
   });
   await db.from('dm_produk').update({
     terjual: p.terjual + qty, stok: Math.max(0, p.stok - qty)
