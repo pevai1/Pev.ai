@@ -927,9 +927,9 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 </div>
 
 <!-- Toast -->
-<div id="bukti-modal" onclick="if(event.target===this)closeBuktiModal()">
-  <img id="bukti-modal-img" src="">
-  <button id="bukti-modal-close" onclick="closeBuktiModal()">✕ Tutup</button>
+<div id="bukti-modal" onclick="if(event.target===this)closeBuktiModal()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:99999;align-items:center;justify-content:center;flex-direction:column;padding:20px;">
+  <img id="bukti-modal-img" src="" style="max-width:100%;max-height:80vh;object-fit:contain;border-radius:12px;display:block;">
+  <button id="bukti-modal-close" onclick="closeBuktiModal()" style="margin-top:20px;background:#6c63ff;border:none;color:#fff;padding:12px 36px;border-radius:30px;font-size:15px;cursor:pointer;font-weight:700;">✕ Tutup</button>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -3180,28 +3180,30 @@ async function finalizeOrder(kode, total) {
 
 function downloadBukti(src, kode) {
   if (!src) return;
-  const a = document.createElement('a');
-  a.href = src;
-  a.download = 'bukti-transfer-' + kode + '.jpg';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  // Konversi base64 ke blob lalu download
+  fetch(src)
+    .then(r => r.blob())
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'bukti-transfer-' + kode + '.jpg';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    })
+    .catch(() => showToast('⚠️ Gagal download, coba perbesar dulu'));
 }
 
 function showBuktiModal(src) {
   if (!src) return;
   document.getElementById('bukti-modal-img').src = src;
-  document.getElementById('bukti-modal').classList.add('open');
+  document.getElementById('bukti-modal').style.display = 'flex';
 }
-
-// Event delegation untuk bukti transfer images
-document.addEventListener('click', function(e) {
-  if (e.target && e.target.id && e.target.id.startsWith('bukti-img-')) {
-    showBuktiModal(e.target.src);
-  }
-});
 function closeBuktiModal() {
-  document.getElementById('bukti-modal').classList.remove('open');
+  document.getElementById('bukti-modal').style.display = 'none';
+  document.getElementById('bukti-modal-img').src = '';
 }
 
 // =================== STARTUP ===================
