@@ -805,6 +805,9 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
     </div>
     <div style="margin-top:8px;display:flex;gap:10px;">
       <button class="btn-full btn-outline" style="margin-top:0;" onclick="closeModal('modal-review')">Batal</button>
+      <div id="review-warning" style="display:none;background:rgba(255,101,132,0.1);border:1px solid rgba(255,101,132,0.3);border-radius:8px;padding:10px;font-size:12px;color:#ff6584;margin-bottom:8px;">
+        ⚠️ Kamu hanya bisa review produk yang sudah kamu beli dan selesai
+      </div>
       <button class="btn-full btn-accent" style="margin-top:0;" onclick="submitReview()">Kirim Ulasan</button>
     </div>
   </div>
@@ -1496,6 +1499,31 @@ async function submitReview() {
   if (!teks) { showToast('⚠️ Tulis ulasan dulu!'); return; }
 
   showLoading(true);
+
+  // Bug Fix 1: Cek apakah user sudah pernah beli produk ini (status selesai)
+  const pesananSelesai = getPesanan().filter(o => 
+    o.buyer_id == currentUser.id && 
+    o.produk_id == currentProdukId && 
+    o.status === 'selesai'
+  );
+  if (pesananSelesai.length === 0) {
+    showLoading(false);
+    closeModal('modal-review');
+    showToast('⚠️ Kamu harus membeli & menyelesaikan pesanan dulu!');
+    return;
+  }
+
+  // Bug Fix 2: Cek apakah user sudah pernah review produk ini
+  const sudahReview = getReviews().find(r => 
+    r.user_id == currentUser.id && r.produk_id == currentProdukId
+  );
+  if (sudahReview) {
+    showLoading(false);
+    closeModal('modal-review');
+    showToast('⚠️ Kamu sudah pernah memberikan ulasan untuk produk ini!');
+    return;
+  }
+
   await db.from('dm_reviews').insert({
     produk_id: currentProdukId, user_id: currentUser.id,
     username: currentUser.username, rating: currentRating, teks,
@@ -1715,7 +1743,7 @@ function renderDashSection(id) {
         if (isSellerOrOwner) {
           if (o.status === 'menunggu-konfirmasi' && isOwnerCoowner) {
             const buktiSrc = o.bukti_transfer || '';
-            const buktiHtml = buktiSrc ? `<div style="margin-bottom:8px;"><img src="${buktiSrc}" style="width:100%;border-radius:8px;max-height:150px;object-fit:contain;background:#111;cursor:zoom-in;" id="bukti-img-${o.id}"></div><div style="font-size:11px;color:var(--muted);margin-bottom:6px;">📎 Bukti transfer (tap untuk perbesar)</div>` : '<div style="font-size:11px;color:#ff6584;margin-bottom:6px;">⚠️ Buyer belum upload bukti transfer</div>';
+            const buktiHtml = buktiSrc ? `<div style="margin-bottom:8px;"><img src="${buktiSrc}" style="width:100%;border-radius:8px;max-height:150px;object-fit:contain;background:#111;" id="bukti-img-${o.id}"></div><div style="display:flex;gap:6px;margin-bottom:6px;"><a href="${buktiSrc}" download="bukti-transfer-${o.kode || o.id}.jpg" style="flex:1;text-align:center;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:8px;font-size:11px;text-decoration:none;font-weight:600;">⬇️ Download Bukti</a><button onclick="showBuktiModal('${buktiSrc}')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:600;">🔍 Perbesar</button></div>` : '<div style="font-size:11px;color:#ff6584;margin-bottom:6px;">⚠️ Buyer belum upload bukti transfer</div>';
             actionBtn = buktiHtml + `<div style="display:flex;gap:6px;"><button class="action-btn btn-approve" style="margin-top:0;flex:1;" onclick="updateStatusPesanan(${o.id},'menunggu-kirim')">✅ Konfirmasi</button><button class="action-btn btn-reject" style="margin-top:0;flex:1;" onclick="updateStatusPesanan(${o.id},'dibatalkan')">❌ Tolak</button></div>`;
           } else if (o.status === 'menunggu-bayar') {
             actionBtn = `<button class="action-btn btn-approve" style="margin-top:8px;width:100%;opacity:0.5;cursor:not-allowed;" disabled>⏳ Menunggu Bukti Bayar</button>`;
@@ -1813,9 +1841,10 @@ function renderDashSection(id) {
 
     // Seller hanya lihat chat yang melibatkan mereka
     // Owner/coowner lihat semua chat
+    // Owner/coowner: lihat semua chat. Admin/preadmin: lihat chat mereka sendiri
     const visibleChats = ['owner','coowner'].includes(u.role)
       ? allChats
-      : allChats.filter(c => c.uid1 === u.id || c.uid2 === u.id);
+      : allChats.filter(c => c.uid1 == u.id || c.uid2 == u.id);
 
     function renderChatCard(chat) {
       const u1 = getUser(chat.uid1), u2 = getUser(chat.uid2);
@@ -2523,7 +2552,10 @@ function openChatPage() {
 
 function renderChatList() {
   const chats = getChats();
-  const myChats = chats.filter(c => c.uid1 == currentUser.id || c.uid2 == currentUser.id);
+  // Owner & coowner lihat semua chat, admin/preadmin lihat chat mereka sendiri
+  const myChats = ['owner','coowner'].includes(currentUser.role)
+    ? chats
+    : chats.filter(c => c.uid1 == currentUser.id || c.uid2 == currentUser.id);
   const el = document.getElementById('chat-list-content');
   document.getElementById('chat-list-count').textContent = myChats.length + ' percakapan';
 
