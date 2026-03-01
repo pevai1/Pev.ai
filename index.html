@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Mulish:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- ═══ SUPABASE SDK ═══ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Heroicons via inline SVG helpers -->
 <script>
 const SUPABASE_URL = 'https://telnfgpqyeruqiarbgue.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_i2NkK7O5bFT3QG2dd6griQ_9ac-9gd8';
@@ -419,7 +420,9 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 .bn-item{display:flex;flex-direction:column;align-items:center;gap:4px;
   cursor:pointer;padding:4px 20px;border-radius:12px;transition:all 0.2s;flex:1;}
 .bn-item:active{background:var(--surface2);}
-.bn-icon{font-size:22px;position:relative;}
+.bn-icon{font-size:22px;position:relative;display:flex;align-items:center;justify-content:center;}
+.bn-icon svg{width:24px;height:24px;stroke:var(--muted);transition:stroke 0.2s;}
+.bn-item.active .bn-icon svg{stroke:var(--accent);}
 .bn-label{font-size:10px;font-weight:600;color:var(--muted);}
 .bn-item.active .bn-label{color:var(--accent);}
 .bn-badge{position:absolute;top:-4px;right:-6px;width:8px;height:8px;
@@ -892,15 +895,28 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 <!-- ===== BOTTOM NAVBAR ===== -->
 <div class="bottom-nav" id="bottom-nav" style="display:none;">
   <div class="bn-item active" id="bn-home" onclick="bottomNav('home')">
-    <div class="bn-icon">🏠</div>
+    <div class="bn-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+      </svg>
+    </div>
     <div class="bn-label">Beranda</div>
   </div>
   <div class="bn-item" id="bn-chat" onclick="bottomNav('chat')">
-    <div class="bn-icon">💬<span class="bn-badge" id="bn-chat-badge"></span></div>
+    <div class="bn-icon" style="position:relative;">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+      </svg>
+      <span class="bn-badge" id="bn-chat-badge"></span>
+    </div>
     <div class="bn-label">Chat</div>
   </div>
   <div class="bn-item" id="bn-profile" onclick="bottomNav('profile')">
-    <div class="bn-icon">👤</div>
+    <div class="bn-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+      </svg>
+    </div>
     <div class="bn-label">Profil & Order</div>
   </div>
 </div>
@@ -1124,7 +1140,7 @@ function renderProdukGrid() {
     return `
     <div class="produk-card" onclick="showDetail(${p.id})">
       <div class="produk-img">
-        ${p.emoji || catEmoji[p.kategori] || '📦'}
+        ${p.foto ? `<img src="${p.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:0;">` : (p.emoji || catEmoji[p.kategori] || '📦')}
         <span class="produk-cat-badge">${p.kategori}</span>
       </div>
       <div class="produk-body">
@@ -1160,7 +1176,12 @@ function showDetail(id) {
   const sellerRatings = getReviews().filter(r => sellerProduk.some(x => x.id === r.produk_id));
   const sellerAvg = sellerRatings.length ? (sellerRatings.reduce((s,r)=>s+r.rating,0)/sellerRatings.length).toFixed(1) : '-';
 
-  document.getElementById('detail-img').textContent = p.emoji || '📦';
+  const detailImgEl = document.getElementById('detail-img');
+  if (p.foto) {
+    detailImgEl.innerHTML = `<img src="${p.foto}" style="width:100%;height:100%;object-fit:cover;">`;
+  } else {
+    detailImgEl.innerHTML = p.emoji || '📦';
+  }
   document.getElementById('detail-breadcrumb').textContent = p.nama;
   document.getElementById('detail-cat-badge').textContent = p.kategori;
   document.getElementById('detail-nama').textContent = p.nama;
@@ -1587,7 +1608,9 @@ function renderDashSection(id) {
         myProduk.map(p => `
           <div class="card" style="cursor:pointer;">
             <div style="display:flex;align-items:center;gap:10px;">
-              <div style="font-size:32px;">${p.emoji}</div>
+              <div style="width:44px;height:44px;border-radius:10px;overflow:hidden;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;">
+                ${p.foto ? `<img src="${p.foto}" style="width:100%;height:100%;object-fit:cover;">` : (p.emoji || '📦')}
+              </div>
               <div style="flex:1;">
                 <div style="font-weight:600;font-size:13px;">${p.nama}</div>
                 <div style="font-size:12px;color:var(--accent);font-weight:700;">${formatRp(p.harga)}</div>
@@ -1617,7 +1640,20 @@ function renderDashSection(id) {
             <div class="form-group"><label class="form-label">Harga (Rp)</label><input class="form-input" id="fp-harga" type="number" placeholder="15000"></div>
             <div class="form-group"><label class="form-label">Stok</label><input class="form-input" id="fp-stok" type="number" placeholder="100"></div>
           </div>
-          <div class="form-group"><label class="form-label">Emoji Produk</label><input class="form-input" id="fp-emoji" placeholder="🎮"></div>
+          <div class="form-group">
+            <label class="form-label">Foto Produk</label>
+            <div id="fp-img-preview" style="width:100%;height:140px;border:2px dashed var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;background:var(--surface2);cursor:pointer;overflow:hidden;" onclick="document.getElementById('fp-img-input').click()">
+              <div id="fp-img-placeholder" style="text-align:center;color:var(--muted);">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width:40px;height:40px;margin:0 auto 6px;display:block;color:var(--accent);"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <div style="font-size:12px;">Tap untuk upload foto</div>
+                <div style="font-size:10px;margin-top:2px;">JPG, PNG max 2MB</div>
+              </div>
+              <img id="fp-img-result" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:10px;">
+            </div>
+            <input type="file" id="fp-img-input" accept="image/*" style="display:none;" onchange="previewFotoProduk(this)">
+            <input type="hidden" id="fp-img-base64">
+          </div>
+          <div class="form-group"><label class="form-label">Emoji Produk (opsional, jika tidak ada foto)</label><input class="form-input" id="fp-emoji" placeholder="🎮"></div>
           <div class="form-group"><label class="form-label">Deskripsi</label><textarea class="form-input form-textarea" id="fp-desc" placeholder="Deskripsi produk..."></textarea></div>
           <div class="form-group"><label class="form-label">Panduan Aktivasi</label><textarea class="form-input form-textarea" id="fp-panduan" placeholder="Langkah 1...\nLangkah 2..."></textarea></div>
           <input type="hidden" id="fp-id">
@@ -1860,6 +1896,21 @@ function renderDashSection(id) {
 }
 
 // =================== PRODUK ACTIONS ===================
+function previewFotoProduk(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('⚠️ Foto maksimal 2MB!'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const base64 = e.target.result;
+    document.getElementById('fp-img-base64').value = base64;
+    document.getElementById('fp-img-result').src = base64;
+    document.getElementById('fp-img-result').style.display = 'block';
+    document.getElementById('fp-img-placeholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
 function openAddProduk() {
   document.getElementById('fp-id').value = '';
   document.getElementById('fp-nama').value = '';
@@ -1868,6 +1919,9 @@ function openAddProduk() {
   document.getElementById('fp-emoji').value = '';
   document.getElementById('fp-desc').value = '';
   document.getElementById('fp-panduan').value = '';
+  document.getElementById('fp-img-base64').value = '';
+  document.getElementById('fp-img-result').style.display = 'none';
+  document.getElementById('fp-img-placeholder').style.display = 'block';
   document.getElementById('form-produk-wrap').style.display = 'block';
   document.getElementById('form-produk-wrap').scrollIntoView({behavior:'smooth'});
 }
@@ -1884,6 +1938,12 @@ function editProduk(id) {
   document.getElementById('fp-emoji').value = p.emoji || '';
   document.getElementById('fp-desc').value = p.deskripsi;
   document.getElementById('fp-panduan').value = p.panduan || '';
+  if (p.foto) {
+    document.getElementById('fp-img-base64').value = p.foto;
+    document.getElementById('fp-img-result').src = p.foto;
+    document.getElementById('fp-img-result').style.display = 'block';
+    document.getElementById('fp-img-placeholder').style.display = 'none';
+  }
 }
 
 async function saveProduk() {
@@ -1895,18 +1955,21 @@ async function saveProduk() {
   const kategori = document.getElementById('fp-kat').value;
   const deskripsi = document.getElementById('fp-desc').value.trim();
   const panduan = document.getElementById('fp-panduan').value.trim();
+  const imgBase64 = document.getElementById('fp-img-base64').value || null;
 
   if (!nama || !harga || !stok) { showToast('⚠️ Lengkapi data produk!'); return; }
 
   showLoading(true);
   if (id) {
-    await db.from('dm_produk').update({nama, harga, stok, emoji, kategori, deskripsi, panduan}).eq('id', id);
+    const updateData = {nama, harga, stok, emoji, kategori, deskripsi, panduan};
+    if (imgBase64) updateData.foto = imgBase64;
+    await db.from('dm_produk').update(updateData).eq('id', id);
     showToast('✅ Produk diperbarui!');
   } else {
     const myProduk = getProduk().filter(p => p.seller_id == currentUser.id);
     const limit = canAddProduk(currentUser.role);
     if (myProduk.length >= limit) { showLoading(false); showToast('⚠️ Limit produk tercapai!'); return; }
-    await db.from('dm_produk').insert({nama, harga, stok, emoji, kategori, deskripsi, panduan, seller_id: currentUser.id, terjual:0});
+    await db.from('dm_produk').insert({nama, harga, stok, emoji, kategori, deskripsi, panduan, foto: imgBase64, seller_id: currentUser.id, terjual:0, status:'aktif'});
     showToast('✅ Produk ditambahkan!');
   }
   await fetchProduk();
