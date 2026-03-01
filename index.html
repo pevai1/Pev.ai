@@ -1743,7 +1743,10 @@ function renderDashSection(id) {
         if (isSellerOrOwner) {
           if (o.status === 'menunggu-konfirmasi' && isOwnerCoowner) {
             const buktiSrc = o.bukti_transfer || '';
-            const buktiHtml = buktiSrc ? `<div style="margin-bottom:8px;"><img src="${buktiSrc}" style="width:100%;border-radius:8px;max-height:150px;object-fit:contain;background:#111;" id="bukti-img-${o.id}"></div><div style="display:flex;gap:6px;margin-bottom:6px;"><a href="${buktiSrc}" download="bukti-transfer-${o.kode || o.id}.jpg" style="flex:1;text-align:center;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:8px;font-size:11px;text-decoration:none;font-weight:600;">⬇️ Download Bukti</a><button onclick="showBuktiModal('${buktiSrc}')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:600;">🔍 Perbesar</button></div>` : '<div style="font-size:11px;color:#ff6584;margin-bottom:6px;">⚠️ Buyer belum upload bukti transfer</div>';
+            // Simpan bukti ke window object biar bisa diakses dari onclick
+            window._buktiMap = window._buktiMap || {};
+            window._buktiMap[o.id] = buktiSrc;
+            const buktiHtml = buktiSrc ? `<div style="margin-bottom:8px;"><img src="${buktiSrc}" style="width:100%;border-radius:8px;max-height:150px;object-fit:contain;background:#111;cursor:pointer;" onclick="showBuktiModal(window._buktiMap[${o.id}])"></div><div style="display:flex;gap:6px;margin-bottom:6px;"><button onclick="downloadBukti(window._buktiMap[${o.id}], '${o.kode || o.id}')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:600;">⬇️ Download Bukti</button><button onclick="showBuktiModal(window._buktiMap[${o.id}])" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:600;">🔍 Perbesar</button></div>` : '<div style="font-size:11px;color:#ff6584;margin-bottom:6px;">⚠️ Buyer belum upload bukti transfer</div>';
             actionBtn = buktiHtml + `<div style="display:flex;gap:6px;"><button class="action-btn btn-approve" style="margin-top:0;flex:1;" onclick="updateStatusPesanan(${o.id},'menunggu-kirim')">✅ Konfirmasi</button><button class="action-btn btn-reject" style="margin-top:0;flex:1;" onclick="updateStatusPesanan(${o.id},'dibatalkan')">❌ Tolak</button></div>`;
           } else if (o.status === 'menunggu-bayar') {
             actionBtn = `<button class="action-btn btn-approve" style="margin-top:8px;width:100%;opacity:0.5;cursor:not-allowed;" disabled>⏳ Menunggu Bukti Bayar</button>`;
@@ -3173,6 +3176,16 @@ async function finalizeOrder(kode, total) {
   showLoading(false);
   showToast('🎉 Pembelian berhasil! Cek Profil > Pesanan');
   checkoutQty = 1;
+}
+
+function downloadBukti(src, kode) {
+  if (!src) return;
+  const a = document.createElement('a');
+  a.href = src;
+  a.download = 'bukti-transfer-' + kode + '.jpg';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 function showBuktiModal(src) {
