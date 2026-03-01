@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>DigiMart — Marketplace Digital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Mulish:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -18,8 +20,8 @@
   --text: #f0f0ff;
   --muted: #7070a0;
   --radius: 14px;
-  --font-head: 'Syne', sans-serif;
-  --font-body: 'Mulish', sans-serif;
+  --font-head: 'Syne', 'Arial Black', 'Trebuchet MS', sans-serif;
+  --font-body: 'Mulish', 'Segoe UI', Arial, sans-serif;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
@@ -77,9 +79,19 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 .hero-tag{display:inline-flex;align-items:center;gap:6px;
   background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);
   color:var(--accent);padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:16px;}
-.hero h1{font-family:var(--font-head);font-size:28px;font-weight:800;margin-bottom:10px;line-height:1.35;
-  background:linear-gradient(to right, #ffffff 0%, #ffffff 40%, #a8a4ff 70%, var(--accent) 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero h1{
+  font-family:var(--font-head);
+  font-size:22px;
+  font-weight:800;
+  margin-bottom:10px;
+  line-height:1.4;
+  color:#ffffff;
+  position:relative;
+  z-index:1;
+  letter-spacing:-0.3px;
+}
+.hero h1 .h1-white{ color:#ffffff; }
+.hero h1 .h1-purple{ color:var(--accent); }
 .hero p{font-size:14px;color:var(--muted);max-width:320px;margin:0 auto 24px;}
 .hero-stats{display:flex;justify-content:center;gap:24px;}
 .hero-stat{text-align:center;}
@@ -131,8 +143,8 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
   display:flex;align-items:center;gap:4px;}
 .produk-rating{display:flex;align-items:center;gap:3px;font-size:11px;margin-bottom:6px;}
 .produk-rating .star{color:var(--gold);}
-.produk-harga{font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--accent);}
-.produk-meta{display:flex;justify-content:space-between;align-items:center;margin-top:4px;}
+.produk-harga{font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--accent);line-height:1.4;word-break:break-word;}
+.produk-meta{display:flex;justify-content:space-between;align-items:flex-end;margin-top:4px;gap:4px;}
 .produk-terjual{font-size:10px;color:var(--muted);}
 
 /* ===== DETAIL PRODUK ===== */
@@ -145,11 +157,11 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
   height:220px;display:flex;align-items:center;justify-content:center;font-size:80px;
   border-bottom:1px solid var(--border);}
 .detail-info{padding:16px;}
-.detail-nama{font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:6px;}
-.detail-harga{font-family:var(--font-head);font-size:26px;font-weight:800;color:var(--accent);margin-bottom:12px;word-break:break-word;line-height:1.4;letter-spacing:-0.5px;}
-.detail-stats{display:flex;gap:16px;margin-bottom:16px;}
+.detail-nama{font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:6px;line-height:1.3;word-break:break-word;}
+.detail-harga{font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--accent);margin-bottom:12px;word-break:break-word;line-height:1.4;}
+.detail-stats{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
 .detail-stat{text-align:center;background:var(--surface2);border:1px solid var(--border);
-  border-radius:10px;padding:8px 14px;}
+  border-radius:10px;padding:8px 14px;flex:1;min-width:70px;}
 .detail-stat .ds-val{font-weight:700;font-size:14px;color:var(--text);}
 .detail-stat .ds-lbl{font-size:10px;color:var(--muted);margin-top:2px;}
 
@@ -380,6 +392,25 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 .stars-input span{opacity:0.3;transition:opacity 0.1s;}
 .stars-input span.active{opacity:1;}
 
+
+/* ===== BOTTOM NAV ===== */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:300;
+  background:rgba(13,13,26,0.98);border-top:1px solid var(--border);
+  border-radius:20px 20px 0 0;
+  backdrop-filter:blur(20px);
+  display:flex;align-items:center;justify-content:space-around;
+  padding:12px 0 calc(14px + env(safe-area-inset-bottom));
+  box-shadow:0 -4px 24px rgba(0,0,0,0.4);}
+.bn-item{display:flex;flex-direction:column;align-items:center;gap:4px;
+  cursor:pointer;padding:4px 20px;border-radius:12px;transition:all 0.2s;flex:1;}
+.bn-item:active{background:var(--surface2);}
+.bn-icon{font-size:22px;position:relative;}
+.bn-label{font-size:10px;font-weight:600;color:var(--muted);}
+.bn-item.active .bn-label{color:var(--accent);}
+.bn-badge{position:absolute;top:-4px;right:-6px;width:8px;height:8px;
+  background:var(--accent2);border-radius:50%;border:2px solid var(--bg);display:none;}
+.page-pad{padding-bottom:80px;}
+
 /* ===== CHAT ===== */
 .chat-list-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer;}
 .chat-list-item:hover{opacity:0.8;}
@@ -401,8 +432,8 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 .chat-bubble .cb-time{font-size:10px;opacity:0.7;margin-top:4px;text-align:right;}
 .chat-bubble.recv .cb-time{text-align:left;}
 .chat-input-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,15,0.97);
-  border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:10px;max-width:500px;margin:0 auto;
-  backdrop-filter:blur(20px);}
+  border-top:1px solid var(--border);padding:12px 16px 20px;display:flex;gap:10px;
+  backdrop-filter:blur(20px);z-index:500;}
 .chat-input-bar input{flex:1;background:var(--surface2);border:1px solid var(--border);
   color:var(--text);padding:10px 14px;border-radius:20px;font-family:var(--font-body);font-size:14px;outline:none;}
 .chat-input-bar input::placeholder{color:var(--muted);}
@@ -413,6 +444,20 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 .chat-date-divider{text-align:center;font-size:11px;color:var(--muted);margin:8px 0;
   display:flex;align-items:center;gap:10px;}
 .chat-date-divider::before,.chat-date-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+
+/* ===== ORDER STATUS ===== */
+.order-tabs{display:flex;overflow-x:auto;scrollbar-width:none;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px;}
+.order-tabs::-webkit-scrollbar{display:none;}
+.order-tab{padding:10px 14px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;
+  white-space:nowrap;border-bottom:2px solid transparent;transition:all 0.2s;flex-shrink:0;}
+.order-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.order-status-badge{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;}
+.status-menunggu-bayar{background:rgba(255,200,0,0.15);color:#ffc800;border:1px solid rgba(255,200,0,0.3);}
+.status-menunggu-kirim{background:rgba(108,99,255,0.15);color:var(--accent);border:1px solid rgba(108,99,255,0.3);}
+.status-dikirim{background:rgba(0,212,170,0.15);color:var(--green);border:1px solid rgba(0,212,170,0.3);}
+.status-selesai{background:rgba(0,212,170,0.1);color:var(--green);border:1px solid rgba(0,212,170,0.2);}
+.status-dibatalkan{background:rgba(255,101,132,0.15);color:var(--accent2);border:1px solid rgba(255,101,132,0.3);}
 
 /* ===== CHECKOUT ===== */
 .checkout-step{display:none;}
@@ -462,7 +507,9 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
   </nav>
   <div class="hero">
     <div class="hero-tag">⚡ Marketplace Digital #1</div>
-    <h1>Jual & Beli Produk Digital dengan Aman</h1>
+    <h1>
+      <span class="h1-white">Jual &amp; Beli Produk Digital </span><span class="h1-purple">dengan Aman</span>
+    </h1>
     <p>Game, voucher, jasa desain, dan masih banyak lagi</p>
     <div class="hero-stats">
       <div class="hero-stat"><div class="num" id="stat-produk">0</div><div class="lbl">Produk</div></div>
@@ -481,10 +528,9 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
     <button class="cat-btn" onclick="filterKategori('game',this)">🎮 Game</button>
     <button class="cat-btn" onclick="filterKategori('voucher',this)">🎫 Voucher</button>
     <button class="cat-btn" onclick="filterKategori('jasa',this)">🛠️ Jasa</button>
-    <button class="cat-btn" onclick="filterKategori('software',this)">💻 Software</button>
-    <button class="cat-btn" onclick="filterKategori('lainnya',this)">📦 Lainnya</button>
+
   </div>
-  <div class="section">
+  <div class="section page-pad">
     <div class="section-title">
       <span>Produk Terbaru</span>
       <span style="font-size:12px;color:var(--muted);" id="produk-count"></span>
@@ -526,11 +572,7 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
     <div class="tab-content" id="tab-panduan"></div>
     <div class="tab-content" id="tab-ulasan"></div>
   </div>
-  <div style="height:120px;"></div>
-  <div class="buy-bar">
-    <button class="btn-chat" onclick="handleChat()">💬</button>
-    <button class="btn-buy" onclick="handleBuy()">🛒 Beli Sekarang</button>
-  </div>
+  <div style="height:20px;"></div>
 </div>
 
 <!-- ===== PAGE: LOGIN ===== -->
@@ -707,10 +749,12 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 </div>
 
 <!-- ===== MODAL: BELI ===== -->
-<div class="modal-overlay" id="modal-beli">
+<div class="modal-overlay" id="modal-beli" onclick="if(event.target===this)closeModal('modal-beli')">
   <div class="modal">
-    <div class="modal-handle"></div>
-    <h3>Konfirmasi Pembelian</h3>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h3 style="margin:0;">Konfirmasi Pembelian</h3>
+      <button onclick="closeModal('modal-beli')" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;">✕</button>
+    </div>
     <div id="modal-beli-content"></div>
     <div style="margin-top:16px;display:flex;gap:10px;">
       <button class="btn-full btn-outline" style="margin-top:0;" onclick="closeModal('modal-beli')">Batal</button>
@@ -720,10 +764,12 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 </div>
 
 <!-- ===== MODAL: REVIEW ===== -->
-<div class="modal-overlay" id="modal-review">
+<div class="modal-overlay" id="modal-review" onclick="if(event.target===this)closeModal('modal-review')">
   <div class="modal">
-    <div class="modal-handle"></div>
-    <h3>Tulis Ulasan</h3>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h3 style="margin:0;">Tulis Ulasan</h3>
+      <button onclick="closeModal('modal-review')" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;">✕</button>
+    </div>
     <div id="modal-review-content">
       <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Berikan rating untuk produk ini:</p>
       <div class="stars-input" id="stars-input">
@@ -759,6 +805,14 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
       </div>
     </div>
   </div>
+
+  <!-- Kembali ke Beranda -->
+  <div class="drawer-section">
+    <div class="drawer-item" onclick="closeDrawer();showPage('page-home');">
+      <span class="di-icon">🏠</span><span class="di-label">Kembali ke Beranda</span>
+    </div>
+  </div>
+  <div class="drawer-divider"></div>
 
   <!-- Menu untuk semua user -->
   <div class="drawer-section">
@@ -799,6 +853,7 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
   </div>
 
   <div style="flex:1;"></div>
+  <div class="drawer-divider"></div>
   <div class="drawer-section">
     <div class="drawer-item" id="drawer-auth-btn" onclick="drawerAuthAction()">
       <span class="di-icon" id="drawer-auth-icon">🚪</span>
@@ -808,10 +863,30 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 </div>
 
 <!-- ===== DRAWER PAGES ===== -->
-<div class="modal-overlay" id="modal-drawer-page">
-  <div class="modal" style="border-radius:20px 20px 0 0;max-height:90vh;">
-    <div class="modal-handle"></div>
+<div class="modal-overlay" id="modal-drawer-page" onclick="handleDrawerOverlayClick(event)">
+  <div class="modal" style="border-radius:20px 20px 0 0;max-height:90vh;position:relative;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <div class="modal-handle" style="margin:0;"></div>
+      <button onclick="closeModal('modal-drawer-page')" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
     <div id="drawer-page-content"></div>
+  </div>
+</div>
+
+
+<!-- ===== BOTTOM NAVBAR ===== -->
+<div class="bottom-nav" id="bottom-nav" style="display:none;">
+  <div class="bn-item active" id="bn-home" onclick="bottomNav('home')">
+    <div class="bn-icon">🏠</div>
+    <div class="bn-label">Beranda</div>
+  </div>
+  <div class="bn-item" id="bn-chat" onclick="bottomNav('chat')">
+    <div class="bn-icon">💬<span class="bn-badge" id="bn-chat-badge"></span></div>
+    <div class="bn-label">Chat</div>
+  </div>
+  <div class="bn-item" id="bn-profile" onclick="bottomNav('profile')">
+    <div class="bn-icon">👤</div>
+    <div class="bn-label">Profil & Order</div>
   </div>
 </div>
 
@@ -844,8 +919,8 @@ function initData() {
       {id:6, nama:'Free Fire Diamond 70', kategori:'game', harga:12000, stok:8000, deskripsi:'Top up Diamond Free Fire murah, aman, dan cepat.', panduan:'1. Buka game FF\n2. Klik top up\n3. Masukkan ID player\n4. Pilih nominal dan konfirmasi', seller_id:3, terjual:28000, emoji:'🔥'},
     ]);
     DB.set('dm_pesanan', [
-      {id:1, produk_id:1, buyer_id:5, seller_id:3, harga:11400, status:'selesai', created_at: Date.now()-86400000*3, kode:'TRX-001'},
-      {id:2, produk_id:3, buyer_id:5, seller_id:3, harga:55000, status:'selesai', created_at: Date.now()-86400000*2, kode:'TRX-002'},
+      {id:1, produk_id:1, buyer_id:5, seller_id:3, harga:11400, status:'selesai', qty:1, created_at: Date.now()-86400000*3, kode:'TRX-001'},
+      {id:2, produk_id:3, buyer_id:5, seller_id:3, harga:55000, status:'selesai', qty:1, created_at: Date.now()-86400000*2, kode:'TRX-002'},
     ]);
     DB.set('dm_reviews', [
       {id:1, produk_id:1, user_id:5, username:'buyer1', rating:5, teks:'Cepet banget, ga sampe 5 menit udah masuk. Recommended!', created_at: Date.now()-86400000*2},
@@ -859,6 +934,7 @@ function initData() {
 let currentUser = DB.get('dm_session', null);
 let currentProdukId = null;
 let currentRating = 0;
+let currentOrderId = null;
 let currentQty = 1;
 let filterKat = 'semua';
 
@@ -902,6 +978,27 @@ function showPage(id) {
   window.scrollTo(0,0);
   if (id === 'page-home') { renderNavbar(); renderProdukGrid(); renderHeroStats(); }
   if (id === 'page-dashboard') renderDashboard();
+  // Show/hide bottom nav — disembunyikan di chatroom karena ada input bar
+  const showBotNav = currentUser && ['page-home','page-chat','page-detail'].includes(id);
+  const botNav = document.getElementById('bottom-nav');
+  if (botNav) botNav.style.display = showBotNav ? 'flex' : 'none';
+  // Update active state
+  if (id === 'page-home') setBottomNavActive('home');
+  else if (id === 'page-chat' || id === 'page-chatroom') setBottomNavActive('chat');
+}
+
+function setBottomNavActive(tab) {
+  ['home','chat','profile'].forEach(t => {
+    const el = document.getElementById('bn-' + t);
+    if (el) el.classList.toggle('active', t === tab);
+  });
+}
+
+function bottomNav(tab) {
+  if (!currentUser) { showPage('page-login'); return; }
+  if (tab === 'home') { showPage('page-home'); }
+  else if (tab === 'chat') { renderChatList(); showPage('page-chat'); setBottomNavActive('chat'); }
+  else if (tab === 'profile') { openProfileOrder(); }
 }
 
 function showToast(msg, duration=2500) {
@@ -918,10 +1015,10 @@ function closeModal(id) { document.getElementById(id).classList.remove('active')
 function renderNavbar() {
   const nr = document.getElementById('nav-right');
   if (currentUser) {
+    const showDashBtn = currentUser.role !== 'customer';
     nr.innerHTML = `
       <span class="role-badge ${roleBadgeClass(currentUser.role)}">${roleLabel(currentUser.role)}</span>
-      <button class="nav-btn" onclick="openChatPage()" style="position:relative;">💬<span id="nav-chat-badge" style="display:none;position:absolute;top:-4px;right:-4px;width:8px;height:8px;background:var(--accent2);border-radius:50%;"></span></button>
-      <button class="nav-btn" onclick="showPage('page-dashboard')">Dashboard</button>
+      ${showDashBtn ? `<button class="nav-btn" onclick="showPage('page-dashboard')">Dashboard</button>` : ''}
       <div class="nav-avatar" title="${currentUser.username}">${currentUser.avatar || currentUser.username[0].toUpperCase()}</div>
     `;
   } else {
@@ -930,6 +1027,9 @@ function renderNavbar() {
       <button class="nav-btn primary" onclick="showPage('page-register')">Daftar</button>
     `;
   }
+  // Show bottom nav if logged in
+  const botNav = document.getElementById('bottom-nav');
+  if (botNav) botNav.style.display = currentUser ? 'flex' : 'none';
 }
 
 // =================== HERO STATS ===================
@@ -1039,7 +1139,11 @@ function showDetail(id) {
         <div class="seller-stat"><div class="sv">⚡ 1j 25m</div><div class="sl">Waktu Respon</div></div>
       </div>
     </div>
-    <p style="font-size:13px;color:var(--muted);">Min. Beli: 1 · Pengiriman: Instan</p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Min. Beli: 1 · Pengiriman: Instan</p>
+    <div style="display:flex;gap:10px;margin-bottom:8px;">
+      <button class="btn-chat" onclick="handleChat()" style="flex-shrink:0;">💬</button>
+      <button class="btn-buy" onclick="handleBuy()" style="flex:1;">🛒 Beli Sekarang</button>
+    </div>
   `;
 
   // Tab: Deskripsi
@@ -1176,12 +1280,6 @@ function handleBuy() {
   const p = getProdukById(currentProdukId);
   if (!p || p.stok === 0) { showToast('❌ Stok habis!'); return; }
 
-  const userOrders = getPesanan().filter(o => o.buyer_id === currentUser.id);
-  const limit = canOrder(currentUser.role);
-  if (limit !== Infinity && userOrders.length >= limit) {
-    showToast(`⚠️ Limit order kamu ${limit}x. Upgrade role untuk lebih banyak!`); return;
-  }
-
   // Go to checkout page
   currentQty = 1;
   selectedPayment = 'transfer';
@@ -1246,7 +1344,7 @@ function confirmBeli() {
   const pesanan = getPesanan();
   const newOrder = {
     id: genId(), produk_id: p.id, buyer_id: currentUser.id,
-    seller_id: p.seller_id, harga: p.harga * qty, qty: qty, status: 'selesai',
+    seller_id: p.seller_id, harga: p.harga * qty, qty: qty, status: 'menunggu-bayar',
     created_at: Date.now(), kode: genKode()
   };
   pesanan.push(newOrder);
@@ -1299,7 +1397,7 @@ function submitReview() {
   reviews.push({
     id: genId(), produk_id: currentProdukId, user_id: currentUser.id,
     username: currentUser.username, rating: currentRating, teks,
-    created_at: Date.now()
+    created_at: Date.now(), order_id: currentOrderId || null
   });
   DB.set('dm_reviews', reviews);
   closeModal('modal-review');
@@ -1312,6 +1410,13 @@ function renderDashboard() {
   if (!currentUser) { showPage('page-login'); return; }
   const u = currentUser;
 
+  // Customer tidak bisa akses dashboard
+  if (u.role === 'customer') {
+    showToast('⛔ Customer tidak memiliki akses dashboard!');
+    showPage('page-home');
+    return;
+  }
+
   document.getElementById('dash-title').textContent = 'Dashboard ' + roleLabel(u.role);
   document.getElementById('dash-subtitle').textContent = 'Halo, ' + u.username + '! 👋';
   document.getElementById('dash-avatar').textContent = u.avatar || u.username[0].toUpperCase();
@@ -1321,10 +1426,13 @@ function renderDashboard() {
   let tabs = [];
   tabs.push({id:'produk', label:'🍪 Produk Saya'});
   tabs.push({id:'pesanan', label:'📦 Pesanan'});
-  if (canManageUsers(u.role)) tabs.push({id:'users', label:'👥 Kelola User'});
-  if (canManageUsers(u.role)) tabs.push({id:'approval', label:'⏳ Approval'});
-  if (['owner','coowner'].includes(u.role)) tabs.push({id:'monitor-chat', label:'💬 Monitor Chat'});
-  if (['owner','coowner'].includes(u.role)) tabs.push({id:'laporan', label:'📈 Laporan'});
+  tabs.push({id:'monitor-chat', label:'💬 Chat'});
+  // Kelola User, Approval, Monitor Chat, Laporan hanya untuk owner & coowner
+  if (['owner','coowner'].includes(u.role)) {
+    tabs.push({id:'users', label:'👥 Kelola User'});
+    tabs.push({id:'approval', label:'⏳ Approval'});
+    tabs.push({id:'laporan', label:'📈 Laporan'});
+  }
   tabs.push({id:'akun', label:'⚙️ Akun'});
 
   document.getElementById('dash-tabs').innerHTML = tabs.map((t,i) =>
@@ -1347,6 +1455,40 @@ function switchDashTab(id, btn) {
   btn.classList.add('active');
   const sec = document.getElementById('dsec-' + id);
   if (sec) { sec.classList.add('active'); renderDashSection(id); }
+}
+
+function switchPesananTab(status, btn) {
+  document.querySelectorAll('#dash-pesanan-tabs .order-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const listEl = document.getElementById('dash-pesanan-list');
+  if (listEl && window._renderPesananList) {
+    listEl.innerHTML = window._renderPesananList(status);
+  }
+}
+
+function updateStatusPesanan(orderId, newStatus) {
+  const pesanan = getPesanan();
+  const idx = pesanan.findIndex(o => o.id === orderId);
+  if (idx < 0) return;
+
+  const o = pesanan[idx];
+  const u = currentUser;
+
+  // Validasi: hanya seller pemilik produk atau owner/coowner
+  const isSellerOrOwner = ['owner','coowner'].includes(u.role) || o.seller_id === u.id;
+  if (!isSellerOrOwner) { showToast('⛔ Kamu tidak punya akses!'); return; }
+
+  pesanan[idx].status = newStatus;
+  DB.set('dm_pesanan', pesanan);
+
+  const statusMsg = {
+    'menunggu-kirim': '✅ Pembayaran dikonfirmasi!',
+    'dikirim': '🚚 Pesanan ditandai terkirim!',
+    'selesai': '✅ Pesanan selesai!'
+  }[newStatus] || 'Status diperbarui!';
+
+  showToast(statusMsg);
+  renderDashSection('pesanan');
 }
 
 function renderDashSection(id) {
@@ -1412,35 +1554,88 @@ function renderDashSection(id) {
   }
 
   if (id === 'pesanan') {
-    const pesanan = u.role === 'customer' 
-      ? getPesanan().filter(o => o.buyer_id === u.id)
-      : getPesanan().filter(o => o.seller_id === u.id || ['owner','coowner'].includes(u.role));
-    const limit = canOrder(u.role);
+    // Semua role seller lihat pesanan sesuai toko mereka, owner/coowner lihat semua
+    const semuaPesanan = ['owner','coowner'].includes(u.role)
+      ? getPesanan()
+      : getPesanan().filter(o => o.seller_id === u.id);
+
+    const statusTabs = [
+      {key:'semua', label:'Semua'},
+      {key:'menunggu-bayar', label:'⏳ Menunggu Bayar'},
+      {key:'menunggu-kirim', label:'📦 Menunggu Dikirim'},
+      {key:'dikirim', label:'🚚 Dikirim'},
+      {key:'selesai', label:'✅ Selesai'},
+    ];
+
+    function renderPesananList(filterStatus) {
+      const filtered = filterStatus === 'semua' ? semuaPesanan : semuaPesanan.filter(o => o.status === filterStatus);
+      if (filtered.length === 0) return '<div class="empty"><div class="eicon">📦</div><p>Tidak ada pesanan</p></div>';
+      return filtered.slice(0,30).map(o => {
+        const p = getProdukById(o.produk_id);
+        const buyer = getUser(o.buyer_id);
+        const seller = getUser(o.seller_id);
+        const badgeClass = {
+          'menunggu-bayar':'badge-pending',
+          'menunggu-kirim':'badge-active',
+          'dikirim':'badge-approved',
+          'selesai':'badge-approved',
+          'dibatalkan':'badge-rejected'
+        }[o.status] || 'badge-pending';
+        const statusLabel = {
+          'menunggu-bayar':'⏳ Menunggu Bayar',
+          'menunggu-kirim':'📦 Menunggu Kirim',
+          'dikirim':'🚚 Dikirim',
+          'selesai':'✅ Selesai',
+          'dibatalkan':'❌ Dibatalkan'
+        }[o.status] || o.status;
+
+        // Hanya seller pemilik produk atau owner/coowner yang bisa update status
+        const isSellerOrOwner = ['owner','coowner'].includes(u.role) || o.seller_id === u.id;
+
+        let actionBtn = '';
+        if (isSellerOrOwner) {
+          if (o.status === 'menunggu-bayar') {
+            actionBtn = `<button class="action-btn btn-approve" style="margin-top:8px;width:100%;" onclick="updateStatusPesanan(${o.id},'menunggu-kirim')">✅ Konfirmasi Pembayaran</button>`;
+          } else if (o.status === 'menunggu-kirim') {
+            actionBtn = `<button class="action-btn btn-approve" style="margin-top:8px;width:100%;background:rgba(0,212,170,0.2);color:var(--green);border-color:rgba(0,212,170,0.4);" onclick="updateStatusPesanan(${o.id},'dikirim')">🚚 Tandai Terkirim</button>`;
+          } else if (o.status === 'dikirim') {
+            actionBtn = `<button class="action-btn btn-approve" style="margin-top:8px;width:100%;background:rgba(108,99,255,0.2);color:var(--accent);border-color:rgba(108,99,255,0.4);" onclick="updateStatusPesanan(${o.id},'selesai')">✅ Selesaikan Pesanan</button>`;
+          }
+        }
+
+        return `
+        <div class="card">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="font-size:28px;">${p?.emoji || '📦'}</div>
+            <div style="flex:1;">
+              <div style="font-weight:600;font-size:13px;">${p?.nama || 'Produk dihapus'}</div>
+              <div style="font-size:11px;color:var(--muted);">Pembeli: ${buyer?.username || '-'}</div>
+              ${['owner','coowner'].includes(u.role) ? `<div style="font-size:11px;color:var(--muted);">Toko: ${seller?.username || '-'}</div>` : ''}
+              <div style="font-size:11px;color:var(--muted);">${new Date(o.created_at).toLocaleDateString('id-ID')}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:700;font-size:13px;color:var(--accent);">${formatRp(o.harga)}</div>
+              <span class="list-badge ${badgeClass}" style="font-size:9px;">${statusLabel}</span>
+            </div>
+          </div>
+          ${actionBtn}
+        </div>`;
+      }).join('');
+    }
+
     el.innerHTML = `
       <div style="font-size:12px;color:var(--muted);margin:14px 0 10px;">
-        ${u.role !== 'customer' ? `Limit order: ${pesanan.filter(o=>o.buyer_id===u.id).length}/${limit === Infinity ? '∞' : limit}` : `${pesanan.length} pesanan`}
+        ${semuaPesanan.length} pesanan masuk
       </div>
-      ${pesanan.length === 0 ? '<div class="empty"><div class="eicon">📦</div><p>Belum ada pesanan</p></div>' :
-        pesanan.slice(0,20).map(o => {
-          const p = getProdukById(o.produk_id);
-          const buyer = getUser(o.buyer_id);
-          return `
-          <div class="card">
-            <div style="display:flex;align-items:center;gap:10px;">
-              <div style="font-size:28px;">${p?.emoji || '📦'}</div>
-              <div style="flex:1;">
-                <div style="font-weight:600;font-size:13px;">${p?.nama || 'Produk dihapus'}</div>
-                <div style="font-size:11px;color:var(--muted);">Pembeli: ${buyer?.username}</div>
-                <div style="font-size:11px;color:var(--muted);">${new Date(o.created_at).toLocaleDateString('id-ID')}</div>
-              </div>
-              <div style="text-align:right;">
-                <div style="font-weight:700;font-size:13px;color:var(--accent);">${formatRp(o.harga)}</div>
-                <span class="list-badge badge-approved">${o.status}</span>
-              </div>
-            </div>
-          </div>`;}).join('')
-      }
+      <div class="order-tabs" id="dash-pesanan-tabs">
+        ${statusTabs.map((s,i) => `
+          <div class="order-tab ${i===0?'active':''}" onclick="switchPesananTab('${s.key}',this)">${s.label}</div>
+        `).join('')}
+      </div>
+      <div id="dash-pesanan-list">${renderPesananList('semua')}</div>
     `;
+
+    window._renderPesananList = renderPesananList;
   }
 
   if (id === 'users' && canManageUsers(u.role)) {
@@ -1490,15 +1685,60 @@ function renderDashSection(id) {
     `;
   }
 
-  if (id === 'monitor-chat' && ['owner','coowner'].includes(u.role)) {
-    const chats = getChats();
+  if (id === 'monitor-chat') {
+    const allChats = getChats();
+
+    // Seller hanya lihat chat yang melibatkan mereka
+    // Owner/coowner lihat semua chat
+    const visibleChats = ['owner','coowner'].includes(u.role)
+      ? allChats
+      : allChats.filter(c => c.uid1 === u.id || c.uid2 === u.id);
+
+    function renderChatCard(chat) {
+      const u1 = getUser(chat.uid1), u2 = getUser(chat.uid2);
+      const lastMsg = chat.messages?.length ? chat.messages[chat.messages.length-1] : null;
+      const produk = chat.produk_id ? getProdukById(chat.produk_id) : null;
+
+      // Tentukan siapa partner chat dari sudut pandang user yg login
+      const isUid1 = chat.uid1 === u.id;
+      const partnerId = isUid1 ? chat.uid2 : chat.uid1;
+      const partner = isUid1 ? u2 : u1;
+
+      // Owner/coowner: tampilkan kedua pihak
+      // Seller biasa: tampilkan buyer
+      const nameDisplay = ['owner','coowner'].includes(u.role)
+        ? `${u1?.username||'?'} ↔ ${u2?.username||'?'}`
+        : `${partner?.username||'?'}`;
+
+      function roleTag(user) {
+        if (!user) return '';
+        const labels = {owner:'👑 Owner', coowner:'💎 Co-Owner', admin:'🛡️ Admin', preadmin:'🔰 Pre-Admin', customer:'👤 Buyer'};
+        const colors = {owner:'#ffd700', coowner:'#c0c0c0', admin:'#6c63ff', preadmin:'#00d4aa', customer:'#ff6584'};
+        return `<span style="font-size:9px;padding:1px 5px;border-radius:6px;background:${colors[user.role]}22;color:${colors[user.role]};border:1px solid ${colors[user.role]}44;font-weight:700;">${labels[user.role]||user.role}</span>`;
+      }
+
+      const nameWithTags = ['owner','coowner'].includes(u.role)
+        ? `<span style="font-weight:700;font-size:13px;">${u1?.username||'?'}</span> ${roleTag(u1)} <span style="color:var(--muted);">↔</span> <span style="font-weight:700;font-size:13px;">${u2?.username||'?'}</span> ${roleTag(u2)}`
+        : `<span style="font-weight:700;font-size:13px;">${partner?.username||'?'}</span> ${roleTag(partner)}`;
+
+      return `<div class="card" style="cursor:pointer;margin-bottom:8px;" onclick="openChatRoom(${partnerId}, ${chat.produk_id||'null'})">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${partner?.avatar||'👤'}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:2px;">${nameWithTags}</div>
+            ${produk ? `<div style="font-size:11px;color:var(--accent);margin-bottom:2px;">${produk.emoji} ${produk.nama}</div>` : ''}
+            <div style="font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${lastMsg ? lastMsg.text.substring(0,50) : 'Belum ada pesan'}</div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);flex-shrink:0;">${chat.messages?.length||0} pesan</div>
+        </div>
+      </div>`;
+    }
+
     el.innerHTML = `
-      <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <span style="font-size:13px;color:var(--muted);">${chats.length} percakapan</span>
-      </div>
-      ${chats.length === 0 
+      <div style="margin-top:14px;margin-bottom:10px;font-size:13px;color:var(--muted);">${visibleChats.length} percakapan</div>
+      ${visibleChats.length === 0
         ? '<div class="empty"><div class="eicon">💬</div><p>Belum ada percakapan</p></div>'
-        : renderDashChat()
+        : visibleChats.sort((a,b)=>(b.lastAt||0)-(a.lastAt||0)).map(renderChatCard).join('')
       }`;
   }
 
@@ -2178,6 +2418,9 @@ function openChatRoom(partnerId, produkId) {
   }
 
   renderChatMessages();
+  // Pastikan input bar selalu muncul di chat biasa
+  document.querySelector('.chat-input-bar').style.display = 'flex';
+  document.getElementById('chat-msg-input').value = '';
   showPage('page-chatroom');
   setTimeout(() => {
     const body = document.getElementById('chat-messages');
@@ -2190,10 +2433,6 @@ function renderChatMessages() {
   const key = getChatKey(currentUser.id, currentChatPartnerId);
   const chat = chats.find(c => getChatKey(c.uid1, c.uid2) === key);
   const messages = chat?.messages || [];
-
-  // Check if owner/coowner is monitoring
-  const isMonitor = ['owner','coowner'].includes(currentUser.role) &&
-    currentUser.id !== currentChatPartnerId;
 
   const produk = currentChatProdukId ? getProdukById(currentChatProdukId) : null;
   let html = '';
@@ -2221,9 +2460,14 @@ function renderChatMessages() {
         lastDate = dateStr;
       }
       const isMine = m.from === currentUser.id;
+      const sender = getUser(m.from);
+      const roleLabels = {owner:'👑 Owner', coowner:'💎 Co-Owner', admin:'🛡️ Admin', preadmin:'🔰 Pre-Admin', customer:'👤 Buyer'};
+      const roleColors = {owner:'#ffd700', coowner:'#c0c0c0', admin:'#6c63ff', preadmin:'#00d4aa', customer:'#ff6584'};
+      const senderRole = sender?.role || 'customer';
+      const roleTag = `<span style="font-size:9px;padding:1px 5px;border-radius:6px;background:${roleColors[senderRole]}22;color:${roleColors[senderRole]};border:1px solid ${roleColors[senderRole]}44;font-weight:700;">${roleLabels[senderRole]||senderRole}</span>`;
       html += `<div style="display:flex;flex-direction:column;align-items:${isMine?'flex-end':'flex-start'};">
         <div class="chat-bubble ${isMine?'sent':'recv'}">
-          ${!isMine && isMonitor ? `<div style="font-size:10px;opacity:0.7;margin-bottom:3px;">${getUser(m.from)?.username||'?'}</div>` : ''}
+          <div style="font-size:10px;opacity:0.85;margin-bottom:3px;display:flex;align-items:center;gap:4px;">${sender?.username||'?'} ${roleTag}</div>
           ${m.text}
           <div class="cb-time">${d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})} ${isMine ? (m.read?'✓✓':'✓') : ''}</div>
         </div>
@@ -2231,13 +2475,10 @@ function renderChatMessages() {
     });
   }
 
-  if (isMonitor) {
-    html += '<div style="text-align:center;background:rgba(255,200,0,0.1);border:1px solid rgba(255,200,0,0.2);border-radius:8px;padding:8px;font-size:11px;color:#ffc800;margin-top:8px;">👁️ Mode Monitor Owner</div>';
-  }
+
 
   document.getElementById('chat-messages').innerHTML = html;
-  // Hide input if monitor and not participant
-  document.querySelector('.chat-input-bar').style.display = isMonitor ? 'none' : 'flex';
+  document.querySelector('.chat-input-bar').style.display = 'flex';
 }
 
 function sendChatMsg() {
@@ -2292,56 +2533,191 @@ function renderDashChat() {
   }).join('');
 }
 
-function monitorChat(uid1, uid2, produkId) {
-  // Owner views chat between two users
-  const savedUser = currentUser;
-  currentChatPartnerId = uid2; // we just pick one side
-  currentChatProdukId = produkId;
+// monitor chat removed
 
-  const chats = getChats();
-  const key = getChatKey(uid1, uid2);
-  const chat = chats.find(c => getChatKey(c.uid1, c.uid2) === key);
-  const messages = chat?.messages || [];
 
-  const u1 = getUser(uid1), u2 = getUser(uid2);
-  const produk = produkId ? getProdukById(produkId) : null;
+// =================== PROFILE & ORDER PAGE ===================
+function openProfileOrder() {
+  if (!currentUser) { showPage('page-login'); return; }
+  setBottomNavActive('profile');
+  const u = currentUser;
+  const myOrders = getPesanan().filter(o => o.buyer_id === u.id);
+  const myProduk = getProduk().filter(p => p.seller_id === u.id);
+  const totalSales = getPesanan().filter(o => o.seller_id === u.id).reduce((s,o)=>s+o.harga,0);
 
-  document.getElementById('chatroom-av').textContent = '👁️';
-  document.getElementById('chatroom-name').textContent = `${u1?.username||'?'} ↔ ${u2?.username||'?'}`;
-  document.getElementById('chatroom-product-badge').textContent = produk ? `${produk.emoji} ${produk.nama}` : '';
+  const isSeller = ['owner','coowner','admin','preadmin'].includes(u.role);
+  const orderTabs = [
+    {key:'menunggu-bayar', label:'Menunggu Bayar'},
+    {key:'menunggu-kirim', label:'Menunggu Kirim'},
+    {key:'dikirim', label:'Dikirim'},
+    {key:'selesai', label:'Selesai'},
+    {key:'dibatalkan', label:'Dibatalkan'},
+  ];
 
-  let html = '';
-  if (produk) {
-    html += `<div class="chat-product-ref"><div style="font-size:28px;">${produk.emoji}</div><div><div style="font-weight:600;font-size:13px;">${produk.nama}</div><div style="font-size:12px;color:var(--accent);">${formatRp(produk.harga)}</div></div></div>`;
-  }
+  const el = document.getElementById('drawer-page-content');
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+      <div style="font-size:44px;">${u.avatar || '👤'}</div>
+      <div>
+        <div style="font-family:var(--font-head);font-size:18px;font-weight:700;">${u.username}</div>
+        ${u.customTitle ? `<div class="drawer-title-badge" style="display:inline-block;margin:4px 0;">${u.customTitle}</div>` : ''}
+        <div><span class="role-badge ${roleBadgeClass(u.role)}">${roleLabel(u.role)}</span></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;">
+      <div class="stat-card"><div class="slbl">📦 Produk Saya</div><div class="sval">${myProduk.length}</div></div>
+      <div class="stat-card accent"><div class="slbl">💰 Total Jual</div><div class="sval" style="font-size:13px;">${formatRp(totalSales)}</div></div>
+    </div>
+    <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:12px;">📋 Pesanan Saya</div>
+    <div class="order-tabs" id="profile-order-tabs">
+      ${orderTabs.map((t,i) => {
+        const allOrders = getPesanan();
+        const isSell = ['owner','coowner','admin','preadmin'].includes(u.role);
+        const isOwn = ['owner','coowner'].includes(u.role);
+        const cnt = isOwn 
+          ? allOrders.filter(o=>o.status===t.key).length
+          : isSell
+            ? allOrders.filter(o=>o.seller_id===u.id && o.status===t.key).length
+            : allOrders.filter(o=>o.buyer_id===u.id && o.status===t.key).length;
+        return `<div class="order-tab ${i===0?'active':''}" onclick="switchOrderTab('${t.key}',this)">${t.label}${cnt>0?` <span style="background:var(--accent2);color:#fff;padding:1px 6px;border-radius:10px;font-size:10px;">${cnt}</span>`:''}</div>`;
+      }).join('')}
+    </div>
+    <div id="profile-order-content"></div>
+    <button class="btn-full btn-outline" style="margin-top:16px;" onclick="doLogout();closeModal('modal-drawer-page')">🚪 Keluar</button>
+  `;
+  renderOrderTab('menunggu-bayar');
+  openModal('modal-drawer-page');
+}
 
-  if (messages.length === 0) {
-    html += '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">Tidak ada pesan</div>';
+function switchOrderTab(status, btn) {
+  document.querySelectorAll('.order-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderOrderTab(status);
+}
+
+function renderOrderTab(status) {
+  const u = currentUser;
+  const isSeller = ['owner','coowner','admin','preadmin'].includes(u.role);
+  const isOwner = ['owner','coowner'].includes(u.role);
+
+  // Buyer lihat pesanan sendiri, seller lihat pesanan ke dia, owner lihat semua
+  let orders;
+  if (isOwner) {
+    orders = getPesanan().filter(o => o.status === status);
+  } else if (isSeller) {
+    orders = getPesanan().filter(o => o.seller_id === u.id && o.status === status);
   } else {
-    let lastDate = '';
-    messages.forEach(m => {
-      const d = new Date(m.at);
-      const dateStr = d.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long'});
-      if (dateStr !== lastDate) { html += `<div class="chat-date-divider">${dateStr}</div>`; lastDate = dateStr; }
-      const sender = getUser(m.from);
-      const isSender1 = m.from === uid1;
-      html += `<div style="display:flex;flex-direction:column;align-items:${isSender1?'flex-start':'flex-end'};">
-        <div class="chat-bubble ${isSender1?'recv':'sent'}">
-          <div style="font-size:10px;opacity:0.7;margin-bottom:3px;">${sender?.username||'?'}</div>
-          ${m.text}
-          <div class="cb-time">${d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</div>
-        </div>
-      </div>`;
-    });
+    orders = getPesanan().filter(o => o.buyer_id === u.id && o.status === status);
   }
 
-  html += '<div style="text-align:center;background:rgba(255,200,0,0.1);border:1px solid rgba(255,200,0,0.2);border-radius:8px;padding:8px;font-size:11px;color:#ffc800;margin-top:8px;">👁️ Mode Monitor — Kamu hanya bisa melihat chat ini</div>';
+  const el = document.getElementById('profile-order-content');
+  if (!el) return;
 
-  document.getElementById('chat-messages').innerHTML = html;
-  document.querySelector('.chat-input-bar').style.display = 'none';
+  const statusLabel = {
+    'menunggu-bayar':'⏳ Menunggu Pembayaran',
+    'menunggu-kirim':'📦 Menunggu Dikirim',
+    'dikirim':'🚚 Sedang Dikirim',
+    'selesai':'✅ Selesai',
+    'dibatalkan':'❌ Dibatalkan'
+  };
 
-  document.getElementById('page-chatroom').querySelector('.back-btn').setAttribute('onclick', "showPage('page-dashboard');renderDashboard()");
-  showPage('page-chatroom');
+  if (orders.length === 0) {
+    el.innerHTML = '<div class="empty" style="padding:30px 0;"><div class="eicon">📭</div><p>Tidak ada pesanan</p></div>';
+    return;
+  }
+
+  el.innerHTML = orders.map(o => {
+    const p = getProdukById(o.produk_id);
+    const buyer = getUser(o.buyer_id);
+    const seller = getUser(o.seller_id);
+    const reviews = getReviews();
+    const alreadyReviewed = reviews.some(r => r.produk_id === o.produk_id && r.user_id === o.buyer_id && r.order_id === o.id);
+    const isMine = o.buyer_id === u.id;
+
+    return `
+    <div class="card" style="margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="font-size:32px;">${p?.emoji || '📦'}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p?.nama || 'Produk dihapus'}</div>
+          ${isSeller || isOwner ? `<div style="font-size:11px;color:var(--muted);">Pembeli: ${buyer?.username||'?'}</div>` : `<div style="font-size:11px;color:var(--muted);">Seller: ${seller?.username||'?'}</div>`}
+          <div style="font-size:11px;color:var(--muted);">${new Date(o.created_at).toLocaleDateString('id-ID')} · ${o.qty||1}x</div>
+          <div style="font-size:13px;font-weight:700;color:var(--accent);">${formatRp(o.harga)}</div>
+        </div>
+        <span class="order-status-badge status-${o.status}" style="flex-shrink:0;">${statusLabel[o.status]||o.status}</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Kode: <strong style="color:var(--text);letter-spacing:1px;">${o.kode}</strong></div>
+
+      ${/* BUYER: di menunggu-bayar bisa bayar atau batal */''}
+      ${isMine && status === 'menunggu-bayar' ? `
+        <div style="display:flex;gap:8px;">
+          <button class="btn-full btn-accent" style="margin-top:0;padding:10px;font-size:13px;" onclick="buyerKonfirmasiBayar(${o.id})">💳 Bayar Sekarang</button>
+          <button class="btn-full btn-outline" style="margin-top:0;padding:10px;font-size:13px;" onclick="updateOrderStatus(${o.id},'dibatalkan')">❌ Batal</button>
+        </div>` : ''}
+
+      ${/* SELLER/ADMIN/OWNER: di menunggu-kirim bisa tandai kirim */''}
+      ${(isSeller || isOwner) && status === 'menunggu-kirim' ? `
+        <button style="width:100%;padding:10px;border-radius:10px;background:rgba(0,212,170,0.15);border:1px solid rgba(0,212,170,0.3);color:var(--green);font-size:13px;font-weight:600;cursor:pointer;" onclick="updateOrderStatus(${o.id},'dikirim')">🚚 Tandai Sudah Dikirim</button>` : ''}
+
+      ${/* SELLER/ADMIN/OWNER: di dikirim bisa tandai selesai */''}
+      ${(isSeller || isOwner) && status === 'dikirim' ? `
+        <button style="width:100%;padding:10px;border-radius:10px;background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;" onclick="updateOrderStatus(${o.id},'selesai')">✅ Tandai Selesai</button>` : ''}
+
+      ${/* BUYER: di dikirim bisa konfirmasi terima */''}
+      ${isMine && status === 'dikirim' ? `
+        <button class="btn-full btn-accent" style="margin-top:0;padding:10px;font-size:13px;" onclick="updateOrderStatus(${o.id},'selesai')">✅ Pesanan Diterima</button>` : ''}
+
+      ${/* BUYER: di selesai bisa rating */''}
+      ${isMine && status === 'selesai' && !alreadyReviewed && p ? `
+        <button style="width:100%;padding:10px;border-radius:10px;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);color:var(--gold);font-size:13px;font-weight:600;cursor:pointer;" onclick="closeModal('modal-drawer-page');openReviewModalFromOrder(${p.id},${o.id})">⭐ Beri Rating & Ulasan</button>` : ''}
+      ${isMine && status === 'selesai' && alreadyReviewed ? `
+        <div style="text-align:center;font-size:12px;color:var(--green);padding:6px;">✅ Sudah memberikan ulasan</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function buyerKonfirmasiBayar(orderId) {
+  // Simulasi pembayaran - langsung masuk menunggu-kirim
+  const pesanan = getPesanan();
+  const idx = pesanan.findIndex(o => o.id === orderId);
+  if (idx >= 0) {
+    pesanan[idx].status = 'menunggu-kirim';
+    pesanan[idx].paid_at = Date.now();
+    DB.set('dm_pesanan', pesanan);
+  }
+  showToast('✅ Pembayaran dikonfirmasi! Menunggu seller mengirim.');
+  openProfileOrder();
+}
+
+function updateOrderStatus(orderId, newStatus) {
+  const pesanan = getPesanan();
+  const idx = pesanan.findIndex(o => o.id === orderId);
+  if (idx >= 0) {
+    pesanan[idx].status = newStatus;
+    DB.set('dm_pesanan', pesanan);
+  }
+  const statusMsg = {
+    'menunggu-kirim':'✅ Pembayaran dikonfirmasi!',
+    'dikirim':'📦 Pesanan ditandai dikirim!',
+    'selesai':'🎉 Pesanan selesai!',
+    'dibatalkan':'❌ Pesanan dibatalkan'
+  };
+  showToast(statusMsg[newStatus] || 'Status diperbarui');
+  openProfileOrder();
+}
+
+function openReviewModalFromOrder(produkId, orderId) {
+  currentProdukId = produkId;
+  currentOrderId = orderId;
+  currentRating = 0;
+  document.getElementById('review-text').value = '';
+  setRating(0);
+  openModal('modal-review');
+}
+
+
+function handleDrawerOverlayClick(e) {
+  if (e.target === e.currentTarget) closeModal('modal-drawer-page');
 }
 
 // =================== CHECKOUT ===================
@@ -2509,7 +2885,7 @@ function finalizeOrder(kode, total) {
   const pesanan = getPesanan();
   pesanan.push({
     id: genId(), produk_id: p.id, buyer_id: currentUser.id,
-    seller_id: p.seller_id, harga: total, qty, status: 'selesai',
+    seller_id: p.seller_id, harga: total, qty, status: 'menunggu-bayar',
     created_at: Date.now(), kode, payment: selectedPayment
   });
   DB.set('dm_pesanan', pesanan);
