@@ -7,6 +7,21 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Mulish:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- ═══ SUPABASE SDK ═══ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://telnfgpqyeruqiarbgue.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_i2NkK7O5bFT3QG2dd6griQ_9ac-9gd8';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ═══ PASSWORD HASHING (SHA-256) ═══
+async function hashPassword(password) {
+  const msgBuffer = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+</script>
 <style>
 :root {
   --bg: #0a0a0f;
@@ -894,44 +909,84 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 <div class="toast" id="toast"></div>
 
 <script>
-// =================== DATABASE (localStorage) ===================
-const DB = {
-  get: (k,d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
-  set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
+// =================== SUPABASE DATABASE ===================
+// Semua data tersimpan di Supabase cloud
+
+// Cache lokal untuk performa
+let _cache = {
+  users: null, produk: null, pesanan: null, reviews: null, chats: null
 };
 
-// Init default data
-function initData() {
-  if (!DB.get('dm_init')) {
-    DB.set('dm_users', [
-      {id:1, username:'owner', email:'owner@digimart.com', password:'owner123', role:'owner', status:'active', joined: Date.now()-86400000*30, avatar:'👑'},
-      {id:2, username:'coowner', email:'co@digimart.com', password:'co123', role:'coowner', status:'active', joined: Date.now()-86400000*20, avatar:'💎'},
-      {id:3, username:'seller1', email:'seller1@gmail.com', password:'seller123', role:'admin', status:'active', joined: Date.now()-86400000*10, avatar:'🛡️'},
-      {id:4, username:'newseller', email:'new@gmail.com', password:'new123', role:'preadmin', status:'pending', joined: Date.now()-86400000*2, avatar:'🔰'},
-      {id:5, username:'buyer1', email:'buyer@gmail.com', password:'buyer123', role:'customer', status:'active', joined: Date.now()-86400000*5, avatar:'👤'},
-    ]);
-    DB.set('dm_produk', [
-      {id:1, nama:'Robux 100', kategori:'game', harga:11400, stok:9400, deskripsi:'Top up Robux resmi untuk akun Roblox kamu. Aman dan instan.', panduan:'1. Login ke roblox.com\n2. Masuk menu Robux\n3. Masukkan kode yang diberikan\n4. Klik Redeem', seller_id:3, terjual:345700, emoji:'🎮'},
-      {id:2, nama:'Mobile Legends Diamond 86', kategori:'game', harga:15000, stok:5000, deskripsi:'Diamond Mobile Legends untuk top up cepat dan aman.', panduan:'1. Buka game ML\n2. Masuk ke top up\n3. Masukkan ID + Server\n4. Pilih nominal dan bayar', seller_id:3, terjual:12500, emoji:'💎'},
-      {id:3, nama:'Netflix Premium 1 Bulan', kategori:'voucher', harga:55000, stok:100, deskripsi:'Akun Netflix Premium sharing 1 bulan, bisa nonton semua konten.', panduan:'1. Terima email berisi akun\n2. Login di netflix.com\n3. Pilih profile yang sudah disediakan\n4. Nikmati!', seller_id:3, terjual:890, emoji:'🎬'},
-      {id:4, nama:'Jasa Desain Logo', kategori:'jasa', harga:75000, stok:20, deskripsi:'Desain logo profesional, revisi 3x, file AI+PNG+PDF.', panduan:'1. Hubungi seller via chat\n2. Kirim brief dan referensi\n3. Tunggu 1-3 hari kerja\n4. Revisi jika diperlukan', seller_id:3, terjual:234, emoji:'🎨'},
-      {id:5, nama:'Spotify Premium 1 Bulan', kategori:'voucher', harga:19000, stok:500, deskripsi:'Spotify Premium individual, tidak ada iklan, bisa offline.', panduan:'1. Buka Spotify\n2. Masuk Settings > Subscription\n3. Masukkan kode voucher\n4. Premium aktif!', seller_id:3, terjual:4500, emoji:'🎵'},
-      {id:6, nama:'Free Fire Diamond 70', kategori:'game', harga:12000, stok:8000, deskripsi:'Top up Diamond Free Fire murah, aman, dan cepat.', panduan:'1. Buka game FF\n2. Klik top up\n3. Masukkan ID player\n4. Pilih nominal dan konfirmasi', seller_id:3, terjual:28000, emoji:'🔥'},
-    ]);
-    DB.set('dm_pesanan', [
-      {id:1, produk_id:1, buyer_id:5, seller_id:3, harga:11400, status:'selesai', qty:1, created_at: Date.now()-86400000*3, kode:'TRX-001'},
-      {id:2, produk_id:3, buyer_id:5, seller_id:3, harga:55000, status:'selesai', qty:1, created_at: Date.now()-86400000*2, kode:'TRX-002'},
-    ]);
-    DB.set('dm_reviews', [
-      {id:1, produk_id:1, user_id:5, username:'buyer1', rating:5, teks:'Cepet banget, ga sampe 5 menit udah masuk. Recommended!', created_at: Date.now()-86400000*2},
-      {id:2, produk_id:1, user_id:5, username:'buyer1', rating:4, teks:'Oke sih, tapi agak lama konfirmasinya.', created_at: Date.now()-86400000*1},
-    ]);
-    DB.set('dm_init', true);
+async function fetchUsers() {
+  const { data } = await db.from('dm_users').select('*');
+  _cache.users = (data || []).map(u => ({...u, customTitle: u.custom_title}));
+  return _cache.users;
+}
+async function fetchProduk() {
+  const { data } = await db.from('dm_produk').select('*').neq('status','nonaktif');
+  _cache.produk = data || [];
+  return _cache.produk;
+}
+async function fetchPesanan() {
+  const { data } = await db.from('dm_pesanan').select('*').order('created_at', {ascending:false});
+  _cache.pesanan = data || [];
+  return _cache.pesanan;
+}
+async function fetchReviews() {
+  const { data } = await db.from('dm_reviews').select('*').order('created_at', {ascending:false});
+  _cache.reviews = data || [];
+  return _cache.reviews;
+}
+async function fetchChats() {
+  const { data } = await db.from('dm_chats').select('*').order('last_at', {ascending:false});
+  _cache.chats = data || [];
+  return _cache.chats;
+}
+
+// Sync helpers - get from cache or fetch
+function getUsers() { return _cache.users || []; }
+function getProduk() { return _cache.produk || []; }
+function getPesanan() { return _cache.pesanan || []; }
+function getReviews() { return _cache.reviews || []; }
+function getChats() { return _cache.chats || []; }
+
+// Session di localStorage (hanya session, data di cloud)
+const SESSION = {
+  get: () => { try { return JSON.parse(localStorage.getItem('dm_session')); } catch { return null; } },
+  set: (v) => localStorage.setItem('dm_session', JSON.stringify(v)),
+  clear: () => localStorage.removeItem('dm_session'),
+};
+
+async function initData() {
+  showLoading(true);
+  await Promise.all([fetchUsers(), fetchProduk(), fetchPesanan(), fetchReviews(), fetchChats()]);
+  showLoading(false);
+}
+
+function showLoading(show) {
+  let el = document.getElementById('global-loading');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'global-loading';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(10,10,15,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;';
+    el.innerHTML = '<div style="width:40px;height:40px;border:3px solid #6c63ff;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div><div style="color:#fff;font-size:14px;">Memuat data...</div>';
+    document.head.insertAdjacentHTML('beforeend','<style>@keyframes spin{to{transform:rotate(360deg)}}</style>');
+    document.body.appendChild(el);
   }
+  el.style.display = show ? 'flex' : 'none';
+}
+
+// Placeholder agar kode lama tidak crash sebelum diganti
+function DB_STUB() {}
+
+// Init default data - TIDAK DIGUNAKAN LAGI (data ada di Supabase)
+function initData_OLD() {
+  // Data sekarang di Supabase, bukan localStorage
+  // Lihat digimart-schema.sql untuk seed data
 }
 
 // =================== STATE ===================
-let currentUser = DB.get('dm_session', null);
+let currentUser = SESSION.get();
 let currentProdukId = null;
 let currentRating = 0;
 let currentOrderId = null;
@@ -941,14 +996,8 @@ let filterKat = 'semua';
 // =================== HELPERS ===================
 function formatRp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
 function formatNum(n) { return n >= 1000000 ? (n/1000000).toFixed(1)+'jt' : n >= 1000 ? (n/1000).toFixed(1)+'rb' : n; }
-function genId() { return Date.now() + Math.floor(Math.random()*1000); }
+
 function genKode() { return 'TRX-' + Math.random().toString(36).substr(2,8).toUpperCase(); }
-function getUsers() { return DB.get('dm_users', []); }
-function getProduk() { return DB.get('dm_produk', []); }
-function getPesanan() { return DB.get('dm_pesanan', []); }
-function getReviews() { return DB.get('dm_reviews', []); }
-function getUser(id) { return getUsers().find(u => u.id === id); }
-function getProdukById(id) { return getProduk().find(p => p.id === id); }
 
 function roleLabel(role) {
   const map = {owner:'👑 Owner',coowner:'💎 Co-Owner',admin:'🛡️ Admin',preadmin:'🔰 Pre-Admin',customer:'👤 Customer'};
@@ -1218,23 +1267,39 @@ function switchTab(id, btn) {
 }
 
 // =================== AUTH ===================
-function doLogin() {
+async function doLogin() {
   const username = document.getElementById('l-user').value.trim();
   const password = document.getElementById('l-pass').value;
-  const users = getUsers();
-  const user = users.find(u => u.username === username && u.password === password);
   const errEl = document.getElementById('login-err');
-  if (!user) { errEl.textContent = '❌ Username atau password salah'; errEl.style.display='block'; return; }
-  if (user.status === 'pending') { errEl.textContent = '⏳ Akun kamu belum disetujui admin'; errEl.style.display='block'; return; }
-  if (user.status === 'rejected') { errEl.textContent = '❌ Akun kamu ditolak'; errEl.style.display='block'; return; }
   errEl.style.display = 'none';
+  showLoading(true);
+  const hashed = await hashPassword(password);
+  // Coba hash dulu, fallback plain text untuk akun lama
+  let { data, error } = await db.from('dm_users')
+    .select('*').eq('username', username).eq('password', hashed).single();
+  if (error || !data) {
+    const res2 = await db.from('dm_users')
+      .select('*').eq('username', username).eq('password', password).single();
+    if (!res2.error && res2.data) {
+      data = res2.data; error = null;
+      // Auto-upgrade password ke hashed
+      await db.from('dm_users').update({ password: hashed }).eq('id', data.id);
+    }
+  }
+  showLoading(false);
+  if (error || !data) { errEl.textContent = '❌ Username atau password salah'; errEl.style.display='block'; return; }
+  if (data.status === 'pending') { errEl.textContent = '⏳ Akun kamu belum disetujui admin'; errEl.style.display='block'; return; }
+  if (data.status === 'rejected') { errEl.textContent = '❌ Akun kamu ditolak'; errEl.style.display='block'; return; }
+  const user = {...data, customTitle: data.custom_title};
   currentUser = user;
-  DB.set('dm_session', user);
+  SESSION.set(user);
+  // Refresh cache
+  await fetchUsers();
   showToast('✅ Selamat datang, ' + user.username + '!');
   showPage('page-home');
 }
 
-function doRegister() {
+async function doRegister() {
   const username = document.getElementById('r-user').value.trim();
   const email = document.getElementById('r-email').value.trim();
   const password = document.getElementById('r-pass').value;
@@ -1243,25 +1308,33 @@ function doRegister() {
 
   if (username.length < 4) { errEl.textContent = '❌ Username minimal 4 karakter'; errEl.style.display='block'; return; }
   if (password.length < 6) { errEl.textContent = '❌ Password minimal 6 karakter'; errEl.style.display='block'; return; }
-  const users = getUsers();
-  if (users.find(u => u.username === username)) { errEl.textContent = '❌ Username sudah digunakan'; errEl.style.display='block'; return; }
 
   errEl.style.display = 'none';
+  showLoading(true);
+  const { data: existing } = await db.from('dm_users').select('id').eq('username', username).single();
+  if (existing) { showLoading(false); errEl.textContent = '❌ Username sudah digunakan'; errEl.style.display='block'; return; }
+
+  const hashedPass = await hashPassword(password);
   const newUser = {
-    id: genId(), username, email, password, role: tipe,
+    username, email, password: hashedPass, role: tipe,
     status: tipe === 'preadmin' ? 'pending' : 'active',
     joined: Date.now(),
     avatar: tipe === 'preadmin' ? '🔰' : '👤'
   };
-  users.push(newUser);
-  DB.set('dm_users', users);
+  const { data, error } = await db.from('dm_users').insert(newUser).select().single();
+  showLoading(false);
+
+  if (error) { errEl.textContent = '❌ Gagal membuat akun: ' + error.message; errEl.style.display='block'; return; }
+
+  await fetchUsers();
+  const user = {...data, customTitle: data.custom_title};
 
   if (tipe === 'preadmin') {
     showToast('✅ Akun dibuat! Menunggu persetujuan admin.');
     showPage('page-login');
   } else {
-    currentUser = newUser;
-    DB.set('dm_session', newUser);
+    currentUser = user;
+    SESSION.set(user);
     showToast('✅ Akun berhasil dibuat!');
     showPage('page-home');
   }
@@ -1269,7 +1342,7 @@ function doRegister() {
 
 function doLogout() {
   currentUser = null;
-  DB.set('dm_session', null);
+  SESSION.clear();
   showToast('👋 Berhasil keluar');
   showPage('page-home');
 }
@@ -1335,27 +1408,26 @@ function changeQty(delta) {
   renderModalBeli();
 }
 
-function confirmBeli() {
+async function confirmBeli() {
   const p = getProdukById(currentProdukId);
   if (!p) return;
   const qty = currentQty || 1;
   if (qty > p.stok) { showToast('❌ Stok tidak mencukupi!'); return; }
 
-  const pesanan = getPesanan();
-  const newOrder = {
-    id: genId(), produk_id: p.id, buyer_id: currentUser.id,
-    seller_id: p.seller_id, harga: p.harga * qty, qty: qty, status: 'menunggu-bayar',
-    created_at: Date.now(), kode: genKode()
-  };
-  pesanan.push(newOrder);
-  DB.set('dm_pesanan', pesanan);
-
-  // Update terjual & stok
-  const produk = getProduk();
-  const idx = produk.findIndex(x => x.id === p.id);
-  if (idx >= 0) { produk[idx].terjual += qty; produk[idx].stok = Math.max(0, produk[idx].stok - qty); }
-  DB.set('dm_produk', produk);
-
+  showLoading(true);
+  const kode = genKode();
+  const { error: orderErr } = await db.from('dm_pesanan').insert({
+    produk_id: p.id, buyer_id: currentUser.id, seller_id: p.seller_id,
+    harga: p.harga * qty, qty, status: 'menunggu-bayar',
+    created_at: Date.now(), kode
+  });
+  if (!orderErr) {
+    await db.from('dm_produk').update({
+      terjual: p.terjual + qty, stok: Math.max(0, p.stok - qty)
+    }).eq('id', p.id);
+    await Promise.all([fetchPesanan(), fetchProduk()]);
+  }
+  showLoading(false);
   closeModal('modal-beli');
   currentQty = 1;
   showToast('✅ ' + qty + 'x ' + p.nama + ' berhasil dibeli!');
@@ -1388,18 +1460,19 @@ function setRating(n) {
   });
 }
 
-function submitReview() {
+async function submitReview() {
   if (!currentRating) { showToast('⚠️ Pilih rating dulu!'); return; }
   const teks = document.getElementById('review-text').value.trim();
   if (!teks) { showToast('⚠️ Tulis ulasan dulu!'); return; }
 
-  const reviews = getReviews();
-  reviews.push({
-    id: genId(), produk_id: currentProdukId, user_id: currentUser.id,
+  showLoading(true);
+  await db.from('dm_reviews').insert({
+    produk_id: currentProdukId, user_id: currentUser.id,
     username: currentUser.username, rating: currentRating, teks,
     created_at: Date.now(), order_id: currentOrderId || null
   });
-  DB.set('dm_reviews', reviews);
+  await fetchReviews();
+  showLoading(false);
   closeModal('modal-review');
   showToast('✅ Ulasan berhasil dikirim!');
   showDetail(currentProdukId);
@@ -1466,20 +1539,19 @@ function switchPesananTab(status, btn) {
   }
 }
 
-function updateStatusPesanan(orderId, newStatus) {
+async function updateStatusPesanan(orderId, newStatus) {
   const pesanan = getPesanan();
-  const idx = pesanan.findIndex(o => o.id === orderId);
-  if (idx < 0) return;
+  const o = pesanan.find(o => o.id === orderId);
+  if (!o) return;
 
-  const o = pesanan[idx];
   const u = currentUser;
-
-  // Validasi: hanya seller pemilik produk atau owner/coowner
-  const isSellerOrOwner = ['owner','coowner'].includes(u.role) || o.seller_id === u.id;
+  const isSellerOrOwner = ['owner','coowner'].includes(u.role) || o.seller_id == u.id;
   if (!isSellerOrOwner) { showToast('⛔ Kamu tidak punya akses!'); return; }
 
-  pesanan[idx].status = newStatus;
-  DB.set('dm_pesanan', pesanan);
+  showLoading(true);
+  await db.from('dm_pesanan').update({status: newStatus}).eq('id', orderId);
+  await fetchPesanan();
+  showLoading(false);
 
   const statusMsg = {
     'menunggu-kirim': '✅ Pembayaran dikonfirmasi!',
@@ -1497,7 +1569,7 @@ function renderDashSection(id) {
   const u = currentUser;
 
   if (id === 'produk') {
-    const myProduk = getProduk().filter(p => p.seller_id === u.id);
+    const myProduk = getProduk().filter(p => p.seller_id == u.id);
     const limit = canAddProduk(u.role);
     const canSell = limit > 0;
     el.innerHTML = `
@@ -1557,7 +1629,7 @@ function renderDashSection(id) {
     // Semua role seller lihat pesanan sesuai toko mereka, owner/coowner lihat semua
     const semuaPesanan = ['owner','coowner'].includes(u.role)
       ? getPesanan()
-      : getPesanan().filter(o => o.seller_id === u.id);
+      : getPesanan().filter(o => o.seller_id == u.id);
 
     const statusTabs = [
       {key:'semua', label:'Semua'},
@@ -1590,7 +1662,7 @@ function renderDashSection(id) {
         }[o.status] || o.status;
 
         // Hanya seller pemilik produk atau owner/coowner yang bisa update status
-        const isSellerOrOwner = ['owner','coowner'].includes(u.role) || o.seller_id === u.id;
+        const isSellerOrOwner = ['owner','coowner'].includes(u.role) || o.seller_id == u.id;
 
         let actionBtn = '';
         if (isSellerOrOwner) {
@@ -1738,7 +1810,7 @@ function renderDashSection(id) {
       <div style="margin-top:14px;margin-bottom:10px;font-size:13px;color:var(--muted);">${visibleChats.length} percakapan</div>
       ${visibleChats.length === 0
         ? '<div class="empty"><div class="eicon">💬</div><p>Belum ada percakapan</p></div>'
-        : visibleChats.sort((a,b)=>(b.lastAt||0)-(a.lastAt||0)).map(renderChatCard).join('')
+        : visibleChats.sort((a,b)=>(b.last_at||0)-(a.last_at||0)).map(renderChatCard).join('')
       }`;
   }
 
@@ -1811,7 +1883,7 @@ function editProduk(id) {
   document.getElementById('fp-panduan').value = p.panduan || '';
 }
 
-function saveProduk() {
+async function saveProduk() {
   const id = document.getElementById('fp-id').value;
   const nama = document.getElementById('fp-nama').value.trim();
   const harga = parseInt(document.getElementById('fp-harga').value);
@@ -1823,28 +1895,30 @@ function saveProduk() {
 
   if (!nama || !harga || !stok) { showToast('⚠️ Lengkapi data produk!'); return; }
 
-  const produk = getProduk();
+  showLoading(true);
   if (id) {
-    const idx = produk.findIndex(p => p.id == id);
-    if (idx >= 0) Object.assign(produk[idx], {nama, harga, stok, emoji, kategori, deskripsi, panduan});
+    await db.from('dm_produk').update({nama, harga, stok, emoji, kategori, deskripsi, panduan}).eq('id', id);
     showToast('✅ Produk diperbarui!');
   } else {
-    const myProduk = produk.filter(p => p.seller_id === currentUser.id);
+    const myProduk = getProduk().filter(p => p.seller_id == currentUser.id);
     const limit = canAddProduk(currentUser.role);
-    if (myProduk.length >= limit) { showToast('⚠️ Limit produk tercapai!'); return; }
-    produk.push({id:genId(), nama, harga, stok, emoji, kategori, deskripsi, panduan, seller_id: currentUser.id, terjual:0});
+    if (myProduk.length >= limit) { showLoading(false); showToast('⚠️ Limit produk tercapai!'); return; }
+    await db.from('dm_produk').insert({nama, harga, stok, emoji, kategori, deskripsi, panduan, seller_id: currentUser.id, terjual:0});
     showToast('✅ Produk ditambahkan!');
   }
-  DB.set('dm_produk', produk);
+  await fetchProduk();
+  showLoading(false);
   document.getElementById('form-produk-wrap').style.display = 'none';
   renderDashSection('produk');
   renderProdukGrid();
 }
 
-function hapusProduk(id) {
+async function hapusProduk(id) {
   if (!confirm('Hapus produk ini?')) return;
-  const p = getProduk().filter(x => x.id !== id);
-  DB.set('dm_produk', p);
+  showLoading(true);
+  await db.from('dm_produk').update({status:'nonaktif'}).eq('id', id);
+  await fetchProduk();
+  showLoading(false);
   showToast('🗑️ Produk dihapus');
   renderDashSection('produk');
   renderProdukGrid();
@@ -1853,55 +1927,64 @@ function hapusProduk(id) {
 // =================== USER ACTIONS ===================
 const roleOrder = ['customer','preadmin','admin','coowner','owner'];
 
-function promoteUser(id) {
-  const users = getUsers();
-  const idx = users.findIndex(u => u.id === id);
-  if (idx < 0) return;
-  const curIdx = roleOrder.indexOf(users[idx].role);
+async function promoteUser(id) {
+  const user = getUsers().find(u => u.id === id);
+  if (!user) return;
+  const curIdx = roleOrder.indexOf(user.role);
   const maxRole = currentUser.role === 'owner' ? 'coowner' : 'admin';
   const maxIdx = roleOrder.indexOf(maxRole);
   if (curIdx < maxIdx) {
-    users[idx].role = roleOrder[curIdx + 1];
-    users[idx].avatar = {owner:'👑',coowner:'💎',admin:'🛡️',preadmin:'🔰',customer:'👤'}[users[idx].role];
-    DB.set('dm_users', users);
-    showToast('✅ Role ' + users[idx].username + ' dinaikkan!');
+    const newRole = roleOrder[curIdx + 1];
+    const newAvatar = {owner:'👑',coowner:'💎',admin:'🛡️',preadmin:'🔰',customer:'👤'}[newRole];
+    showLoading(true);
+    await db.from('dm_users').update({role: newRole, avatar: newAvatar}).eq('id', id);
+    await fetchUsers();
+    showLoading(false);
+    showToast('✅ Role ' + user.username + ' dinaikkan!');
     renderDashSection('users');
   } else showToast('⚠️ Tidak bisa dinaikkan lebih tinggi');
 }
 
-function demoteUser(id) {
-  const users = getUsers();
-  const idx = users.findIndex(u => u.id === id);
-  if (idx < 0) return;
-  const curIdx = roleOrder.indexOf(users[idx].role);
+async function demoteUser(id) {
+  const user = getUsers().find(u => u.id === id);
+  if (!user) return;
+  const curIdx = roleOrder.indexOf(user.role);
   if (curIdx > 0) {
-    users[idx].role = roleOrder[curIdx - 1];
-    users[idx].avatar = {owner:'👑',coowner:'💎',admin:'🛡️',preadmin:'🔰',customer:'👤'}[users[idx].role];
-    DB.set('dm_users', users);
-    showToast('⚠️ Role ' + users[idx].username + ' diturunkan');
+    const newRole = roleOrder[curIdx - 1];
+    const newAvatar = {owner:'👑',coowner:'💎',admin:'🛡️',preadmin:'🔰',customer:'👤'}[newRole];
+    showLoading(true);
+    await db.from('dm_users').update({role: newRole, avatar: newAvatar}).eq('id', id);
+    await fetchUsers();
+    showLoading(false);
+    showToast('⚠️ Role ' + user.username + ' diturunkan');
     renderDashSection('users');
   }
 }
 
-function approveUser(id) {
-  const users = getUsers();
-  const idx = users.findIndex(u => u.id === id);
-  if (idx >= 0) { users[idx].status = 'active'; DB.set('dm_users', users); }
+async function approveUser(id) {
+  showLoading(true);
+  await db.from('dm_users').update({status:'active'}).eq('id', id);
+  await fetchUsers();
+  showLoading(false);
   showToast('✅ Seller disetujui!');
   renderDashSection('approval');
 }
 
-function rejectUser(id) {
-  const users = getUsers();
-  const idx = users.findIndex(u => u.id === id);
-  if (idx >= 0) { users[idx].status = 'rejected'; DB.set('dm_users', users); }
+async function rejectUser(id) {
+  showLoading(true);
+  await db.from('dm_users').update({status:'rejected'}).eq('id', id);
+  await fetchUsers();
+  showLoading(false);
   showToast('❌ Seller ditolak');
   renderDashSection('approval');
 }
 
-function deleteUser(id) {
+async function deleteUser(id) {
   if (!confirm('Hapus user ini secara permanen?')) return;
-  DB.set('dm_users', getUsers().filter(u => u.id !== id));
+  showLoading(true);
+  await db.from('dm_users').delete().eq('id', id);
+  await fetchUsers();
+  showLoading(false);
   showToast('🗑️ User dihapus');
   renderDashSection('users');
 }
@@ -1967,10 +2050,10 @@ function openDrawerPage(page) {
 
   if (page === 'profil') {
     if (!u) { showPage('page-login'); return; }
-    const myProduk = getProduk().filter(p => p.seller_id === u.id);
-    const myPesanan = getPesanan().filter(o => o.buyer_id === u.id);
-    const myReviews = getReviews().filter(r => r.user_id === u.id);
-    const totalSales = getPesanan().filter(o => o.seller_id === u.id).reduce((s,o) => s+o.harga, 0);
+    const myProduk = getProduk().filter(p => p.seller_id == u.id);
+    const myPesanan = getPesanan().filter(o => o.buyer_id == u.id);
+    const myReviews = getReviews().filter(r => r.user_id == u.id);
+    const totalSales = getPesanan().filter(o => o.seller_id == u.id).reduce((s,o) => s+o.harga, 0);
     el.innerHTML = `
       <div style="text-align:center;margin-bottom:20px;">
         <div style="font-size:56px;margin-bottom:10px;">${u.avatar}</div>
@@ -2286,57 +2369,62 @@ function clearPresets() {
   document.querySelectorAll('.title-preset').forEach(x => x.classList.remove('selected'));
   selectedPresetTitle = '';
 }
-function giftTitle() {
+async function giftTitle() {
   const userId = parseInt(document.getElementById('gt-user').value);
   const customInput = document.getElementById('gt-custom').value.trim();
   const title = customInput || selectedPresetTitle;
   if (!userId) { showToast('⚠️ Pilih user dulu!'); return; }
   if (!title) { showToast('⚠️ Pilih atau tulis title dulu!'); return; }
-  const users = getUsers();
-  const idx = users.findIndex(x => x.id === userId);
-  if (idx >= 0) { users[idx].customTitle = title; DB.set('dm_users', users); }
+  showLoading(true);
+  await db.from('dm_users').update({custom_title: title}).eq('id', userId);
+  await fetchUsers();
+  showLoading(false);
   showToast('🎁 Title berhasil diberikan!');
   openDrawerPage('gift-title');
 }
-function removeTitle() {
+async function removeTitle() {
   const userId = parseInt(document.getElementById('gt-user').value);
   if (!userId) { showToast('⚠️ Pilih user dulu!'); return; }
-  const users = getUsers();
-  const idx = users.findIndex(x => x.id === userId);
-  if (idx >= 0) { delete users[idx].customTitle; DB.set('dm_users', users); }
+  showLoading(true);
+  await db.from('dm_users').update({custom_title: null}).eq('id', userId);
+  await fetchUsers();
+  showLoading(false);
   showToast('🗑️ Title dihapus!');
   openDrawerPage('gift-title');
 }
 
 // =================== USER ROLE / APPROVAL ===================
-function setUserRole(id, role, fromDrawer=false) {
-  const users = getUsers();
-  const idx = users.findIndex(u => u.id === id);
-  if (idx >= 0) {
-    users[idx].role = role;
-    users[idx].avatar = {owner:'👑',coowner:'💎',admin:'🛡️',preadmin:'🔰',customer:'👤'}[role];
-    DB.set('dm_users', users);
-    if (fromDrawer) { showToast('✅ Role berhasil diubah!'); openDrawerPage('kelola-user'); }
-    else { showToast('✅ Role diubah!'); renderDashSection('users'); }
-  }
+async function setUserRole(id, role, fromDrawer=false) {
+  const newAvatar = {owner:'👑',coowner:'💎',admin:'🛡️',preadmin:'🔰',customer:'👤'}[role];
+  showLoading(true);
+  await db.from('dm_users').update({role, avatar: newAvatar}).eq('id', id);
+  await fetchUsers();
+  showLoading(false);
+  if (fromDrawer) { showToast('✅ Role berhasil diubah!'); openDrawerPage('kelola-user'); }
+  else { showToast('✅ Role diubah!'); renderDashSection('users'); }
 }
-function deleteUserDrawer(id) {
+async function deleteUserDrawer(id) {
   if (!confirm('Hapus user ini secara permanen?')) return;
-  DB.set('dm_users', getUsers().filter(u => u.id !== id));
+  showLoading(true);
+  await db.from('dm_users').delete().eq('id', id);
+  await fetchUsers();
+  showLoading(false);
   showToast('🗑️ User dihapus');
   openDrawerPage('kelola-user');
 }
-function approveUserDrawer(id) {
-  const users = getUsers();
-  const idx = users.findIndex(u => u.id === id);
-  if (idx >= 0) { users[idx].status = 'active'; DB.set('dm_users', users); }
+async function approveUserDrawer(id) {
+  showLoading(true);
+  await db.from('dm_users').update({status:'active'}).eq('id', id);
+  await fetchUsers();
+  showLoading(false);
   showToast('✅ Seller disetujui!');
   openDrawerPage('kelola-user');
 }
-function rejectUserDrawer(id) {
-  const users = getUsers();
-  const idx = users.findIndex(u => u.id === id);
-  if (idx >= 0) { users[idx].status = 'rejected'; DB.set('dm_users', users); }
+async function rejectUserDrawer(id) {
+  showLoading(true);
+  await db.from('dm_users').update({status:'rejected'}).eq('id', id);
+  await fetchUsers();
+  showLoading(false);
   showToast('❌ Seller ditolak');
   openDrawerPage('kelola-user');
 }
@@ -2345,8 +2433,8 @@ function rejectUserDrawer(id) {
 // =================== CHAT SYSTEM ===================
 let currentChatPartnerId = null;
 let currentChatProdukId = null;
+let currentChatId = null;
 
-function getChats() { return DB.get('dm_chats', []); }
 function getChatKey(uid1, uid2) { return [Math.min(uid1,uid2), Math.max(uid1,uid2)].join('_'); }
 
 function openChatPage() {
@@ -2357,7 +2445,7 @@ function openChatPage() {
 
 function renderChatList() {
   const chats = getChats();
-  const myChats = chats.filter(c => c.uid1 === currentUser.id || c.uid2 === currentUser.id);
+  const myChats = chats.filter(c => c.uid1 == currentUser.id || c.uid2 == currentUser.id);
   const el = document.getElementById('chat-list-content');
   document.getElementById('chat-list-count').textContent = myChats.length + ' percakapan';
 
@@ -2367,7 +2455,7 @@ function renderChatList() {
   }
 
   el.innerHTML = myChats.sort((a,b) => (b.lastAt||0) - (a.lastAt||0)).map(chat => {
-    const partnerId = chat.uid1 === currentUser.id ? chat.uid2 : chat.uid1;
+    const partnerId = chat.uid1 == currentUser.id ? chat.uid2 : chat.uid1;
     const partner = getUser(partnerId);
     const lastMsg = chat.messages && chat.messages.length ? chat.messages[chat.messages.length-1] : null;
     const unread = chat.messages ? chat.messages.filter(m => m.from !== currentUser.id && !m.read).length : 0;
@@ -2396,29 +2484,39 @@ function formatChatTime(ts) {
   return d.toLocaleDateString('id-ID',{day:'numeric',month:'short'});
 }
 
-function openChatRoom(partnerId, produkId) {
+async function openChatRoom(partnerId, produkId) {
   if (!currentUser) { showPage('page-login'); return; }
   currentChatPartnerId = partnerId;
   currentChatProdukId = produkId || null;
 
   const partner = getUser(partnerId);
-  document.getElementById('chatroom-av').textContent = partner?.avatar || partner?.username[0].toUpperCase() || '?';
+  document.getElementById('chatroom-av').textContent = partner?.avatar || (partner?.username || '?')[0].toUpperCase();
   document.getElementById('chatroom-name').textContent = partner?.username || 'Unknown';
 
   const produk = produkId ? getProdukById(produkId) : null;
   document.getElementById('chatroom-product-badge').textContent = produk ? `${produk.emoji} ${produk.nama}` : '';
 
-  // Mark messages as read
-  const chats = getChats();
-  const key = getChatKey(currentUser.id, partnerId);
-  const chatIdx = chats.findIndex(c => getChatKey(c.uid1, c.uid2) === key);
-  if (chatIdx >= 0) {
-    chats[chatIdx].messages = chats[chatIdx].messages.map(m => ({...m, read: true}));
-    DB.set('dm_chats', chats);
+  // Get or create chat in Supabase
+  const uid1 = Math.min(currentUser.id, partnerId);
+  const uid2 = Math.max(currentUser.id, partnerId);
+  let { data: chat } = await db.from('dm_chats').select('*')
+    .eq('uid1', uid1).eq('uid2', uid2).maybeSingle();
+
+  if (!chat) {
+    const { data: newChat } = await db.from('dm_chats').insert({
+      uid1, uid2, produk_id: produkId || null, messages: [], last_at: Date.now()
+    }).select().single();
+    chat = newChat;
+  } else {
+    // Mark messages as read
+    const msgs = (chat.messages || []).map(m => ({...m, read: true}));
+    await db.from('dm_chats').update({messages: msgs}).eq('id', chat.id);
+    chat.messages = msgs;
   }
+  currentChatId = chat?.id || null;
+  await fetchChats();
 
   renderChatMessages();
-  // Pastikan input bar selalu muncul di chat biasa
   document.querySelector('.chat-input-bar').style.display = 'flex';
   document.getElementById('chat-msg-input').value = '';
   showPage('page-chatroom');
@@ -2430,8 +2528,11 @@ function openChatRoom(partnerId, produkId) {
 
 function renderChatMessages() {
   const chats = getChats();
-  const key = getChatKey(currentUser.id, currentChatPartnerId);
-  const chat = chats.find(c => getChatKey(c.uid1, c.uid2) === key);
+  const chat = currentChatId ? chats.find(c => c.id === currentChatId) : chats.find(c => {
+    const uid1 = Math.min(currentUser.id, currentChatPartnerId);
+    const uid2 = Math.max(currentUser.id, currentChatPartnerId);
+    return c.uid1 === uid1 && c.uid2 === uid2;
+  });
   const messages = chat?.messages || [];
 
   const produk = currentChatProdukId ? getProdukById(currentChatProdukId) : null;
@@ -2481,29 +2582,20 @@ function renderChatMessages() {
   document.querySelector('.chat-input-bar').style.display = 'flex';
 }
 
-function sendChatMsg() {
+async function sendChatMsg() {
   const input = document.getElementById('chat-msg-input');
   const text = input.value.trim();
-  if (!text) return;
+  if (!text || !currentChatId) return;
 
   const chats = getChats();
-  const key = getChatKey(currentUser.id, currentChatPartnerId);
-  let chatIdx = chats.findIndex(c => getChatKey(c.uid1, c.uid2) === key);
+  const chat = chats.find(c => c.id === currentChatId);
+  const messages = [...(chat?.messages || []), {
+    id: Date.now(), from: currentUser.id, text, at: Date.now(), read: false
+  }];
 
-  const msg = { id: genId(), from: currentUser.id, text, at: Date.now(), read: false };
-
-  if (chatIdx < 0) {
-    chats.push({
-      uid1: currentUser.id, uid2: currentChatPartnerId,
-      produk_id: currentChatProdukId, messages: [msg], lastAt: Date.now()
-    });
-  } else {
-    chats[chatIdx].messages.push(msg);
-    chats[chatIdx].lastAt = Date.now();
-  }
-
-  DB.set('dm_chats', chats);
   input.value = '';
+  await db.from('dm_chats').update({messages, last_at: Date.now()}).eq('id', currentChatId);
+  await fetchChats();
   renderChatMessages();
   setTimeout(() => {
     const body = document.getElementById('chat-messages');
@@ -2515,7 +2607,7 @@ function sendChatMsg() {
 function renderDashChat() {
   const chats = getChats();
   if (chats.length === 0) return '<div class="empty"><div class="eicon">💬</div><p>Belum ada chat</p></div>';
-  return chats.sort((a,b)=>(b.lastAt||0)-(a.lastAt||0)).map(chat => {
+  return chats.sort((a,b)=>(b.last_at||0)-(a.last_at||0)).map(chat => {
     const u1 = getUser(chat.uid1), u2 = getUser(chat.uid2);
     const lastMsg = chat.messages && chat.messages.length ? chat.messages[chat.messages.length-1] : null;
     const produk = chat.produk_id ? getProdukById(chat.produk_id) : null;
@@ -2541,9 +2633,9 @@ function openProfileOrder() {
   if (!currentUser) { showPage('page-login'); return; }
   setBottomNavActive('profile');
   const u = currentUser;
-  const myOrders = getPesanan().filter(o => o.buyer_id === u.id);
-  const myProduk = getProduk().filter(p => p.seller_id === u.id);
-  const totalSales = getPesanan().filter(o => o.seller_id === u.id).reduce((s,o)=>s+o.harga,0);
+  const myOrders = getPesanan().filter(o => o.buyer_id == u.id);
+  const myProduk = getProduk().filter(p => p.seller_id == u.id);
+  const totalSales = getPesanan().filter(o => o.seller_id == u.id).reduce((s,o)=>s+o.harga,0);
 
   const isSeller = ['owner','coowner','admin','preadmin'].includes(u.role);
   const orderTabs = [
@@ -2605,9 +2697,9 @@ function renderOrderTab(status) {
   if (isOwner) {
     orders = getPesanan().filter(o => o.status === status);
   } else if (isSeller) {
-    orders = getPesanan().filter(o => o.seller_id === u.id && o.status === status);
+    orders = getPesanan().filter(o => o.seller_id == u.id && o.status === status);
   } else {
-    orders = getPesanan().filter(o => o.buyer_id === u.id && o.status === status);
+    orders = getPesanan().filter(o => o.buyer_id == u.id && o.status === status);
   }
 
   const el = document.getElementById('profile-order-content');
@@ -2632,7 +2724,7 @@ function renderOrderTab(status) {
     const seller = getUser(o.seller_id);
     const reviews = getReviews();
     const alreadyReviewed = reviews.some(r => r.produk_id === o.produk_id && r.user_id === o.buyer_id && r.order_id === o.id);
-    const isMine = o.buyer_id === u.id;
+    const isMine = o.buyer_id == u.id;
 
     return `
     <div class="card" style="margin-bottom:10px;">
@@ -2676,26 +2768,20 @@ function renderOrderTab(status) {
   }).join('');
 }
 
-function buyerKonfirmasiBayar(orderId) {
-  // Simulasi pembayaran - langsung masuk menunggu-kirim
-  const pesanan = getPesanan();
-  const idx = pesanan.findIndex(o => o.id === orderId);
-  if (idx >= 0) {
-    pesanan[idx].status = 'menunggu-kirim';
-    pesanan[idx].paid_at = Date.now();
-    DB.set('dm_pesanan', pesanan);
-  }
+async function buyerKonfirmasiBayar(orderId) {
+  showLoading(true);
+  await db.from('dm_pesanan').update({status:'menunggu-kirim', paid_at: Date.now()}).eq('id', orderId);
+  await fetchPesanan();
+  showLoading(false);
   showToast('✅ Pembayaran dikonfirmasi! Menunggu seller mengirim.');
   openProfileOrder();
 }
 
-function updateOrderStatus(orderId, newStatus) {
-  const pesanan = getPesanan();
-  const idx = pesanan.findIndex(o => o.id === orderId);
-  if (idx >= 0) {
-    pesanan[idx].status = newStatus;
-    DB.set('dm_pesanan', pesanan);
-  }
+async function updateOrderStatus(orderId, newStatus) {
+  showLoading(true);
+  await db.from('dm_pesanan').update({status: newStatus}).eq('id', orderId);
+  await fetchPesanan();
+  showLoading(false);
   const statusMsg = {
     'menunggu-kirim':'✅ Pembayaran dikonfirmasi!',
     'dikirim':'📦 Pesanan ditandai dikirim!',
@@ -2876,33 +2962,37 @@ function renderCheckoutConfirm() {
     </div>`;
 }
 
-function finalizeOrder(kode, total) {
+async function finalizeOrder(kode, total) {
   const p = getProdukById(currentProdukId);
   if (!p) return;
   const qty = checkoutQty;
   if (qty > p.stok) { showToast('❌ Stok tidak mencukupi!'); return; }
 
-  const pesanan = getPesanan();
-  pesanan.push({
-    id: genId(), produk_id: p.id, buyer_id: currentUser.id,
+  showLoading(true);
+  await db.from('dm_pesanan').insert({
+    produk_id: p.id, buyer_id: currentUser.id,
     seller_id: p.seller_id, harga: total, qty, status: 'menunggu-bayar',
     created_at: Date.now(), kode, payment: selectedPayment
   });
-  DB.set('dm_pesanan', pesanan);
-
-  const produk = getProduk();
-  const idx = produk.findIndex(x => x.id === p.id);
-  if (idx >= 0) { produk[idx].terjual += qty; produk[idx].stok = Math.max(0, produk[idx].stok - qty); }
-  DB.set('dm_produk', produk);
-
-  showToast('🎉 Pembelian berhasil! Cek Dashboard > Pesanan');
+  await db.from('dm_produk').update({
+    terjual: p.terjual + qty, stok: Math.max(0, p.stok - qty)
+  }).eq('id', p.id);
+  await Promise.all([fetchPesanan(), fetchProduk()]);
+  showLoading(false);
+  showToast('🎉 Pembelian berhasil! Cek Profil > Pesanan');
   checkoutQty = 1;
 }
 
-initData();
-renderNavbar();
-renderProdukGrid();
-renderHeroStats();
+// =================== STARTUP ===================
+async function startup() {
+  showLoading(true);
+  await initData();
+  renderNavbar();
+  renderProdukGrid();
+  renderHeroStats();
+}
+
+startup();
 </script>
 </body>
 </html>
