@@ -1008,10 +1008,23 @@ function getReviews() { return _cache.reviews || []; }
 function getChats() { return _cache.chats || []; }
 
 // Session di localStorage (hanya session, data di cloud)
+// Bug 5 Fix: fallback in-memory kalau localStorage tidak tersedia (incognito/private mode)
+let _sessionMemory = null;
 const SESSION = {
-  get: () => { try { return JSON.parse(localStorage.getItem('dm_session')); } catch { return null; } },
-  set: (v) => localStorage.setItem('dm_session', JSON.stringify(v)),
-  clear: () => localStorage.removeItem('dm_session'),
+  get: () => {
+    try { return JSON.parse(localStorage.getItem('dm_session')); }
+    catch { return _sessionMemory; }
+  },
+  set: (v) => {
+    _sessionMemory = v;
+    try { localStorage.setItem('dm_session', JSON.stringify(v)); }
+    catch { /* incognito: simpan hanya di memory */ }
+  },
+  clear: () => {
+    _sessionMemory = null;
+    try { localStorage.removeItem('dm_session'); }
+    catch { /* incognito */ }
+  },
 };
 
 async function initData() {
@@ -1125,7 +1138,7 @@ function renderNavbar() {
     nr.innerHTML = `
       <span class="role-badge ${roleBadgeClass(currentUser.role)}">${roleLabel(currentUser.role)}</span>
       ${showDashBtn ? `<button class="nav-btn" onclick="showPage('page-dashboard')">Dashboard</button>` : ''}
-      <div class="nav-avatar" title="${currentUser.username}">${currentUser.avatar || currentUser.username[0].toUpperCase()}</div>
+      <div class="nav-avatar" id="nav-avatar-btn" title="${currentUser.username}" onclick="openProfileOrder()" style="cursor:pointer;overflow:hidden;">${currentUser.avatar && currentUser.avatar.startsWith('data:') ? `<img src="${currentUser.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : (currentUser.avatar || currentUser.username[0].toUpperCase())}</div>
     `;
   } else {
     nr.innerHTML = `
@@ -1409,6 +1422,38 @@ function doLogout() {
   showPage('page-home');
 }
 
+// =================== FOTO PROFIL ===================
+async function uploadFotoProfil(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('⚠️ Foto maksimal 2MB!'); return; }
+
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const base64 = e.target.result;
+    showLoading(true);
+
+    const { error } = await db.from('dm_users').update({ avatar: base64 }).eq('id', currentUser.id);
+    if (error) { showLoading(false); showToast('❌ Gagal simpan foto!'); return; }
+
+    currentUser.avatar = base64;
+    SESSION.set(currentUser);
+    await fetchUsers();
+    showLoading(false);
+
+    // Update navbar
+    const dashAv = document.getElementById('dash-avatar');
+    if (dashAv) dashAv.innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+
+    // Update avatar di profil page
+    const avDisplay = document.getElementById('profile-avatar-display');
+    if (avDisplay) avDisplay.innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;">`;
+
+    showToast('✅ Foto profil berhasil diperbarui!');
+  };
+  reader.readAsDataURL(file);
+}
+
 // =================== BUY ===================
 function handleBuy() {
   if (!currentUser) { showToast('⚠️ Login dulu untuk membeli!'); showPage('page-login'); return; }
@@ -1579,7 +1624,14 @@ function renderDashboard() {
 
   document.getElementById('dash-title').textContent = 'Dashboard ' + roleLabel(u.role);
   document.getElementById('dash-subtitle').textContent = 'Halo, ' + u.username + '! 👋';
-  document.getElementById('dash-avatar').textContent = u.avatar || u.username[0].toUpperCase();
+  const _dashAv = document.getElementById('dash-avatar');
+  if (_dashAv) {
+    if (u.avatar && u.avatar.startsWith('data:')) {
+      _dashAv.innerHTML = \`<img src=\"\${u.avatar}\"  style=\"width:100%;height:100%;object-fit:cover;border-radius:50%;\">\`;
+    } else {
+      _dashAv.textContent = u.avatar || u.username[0].toUpperCase();
+    }
+  }
   document.getElementById('dash-role-badge').innerHTML = `<span class="role-badge ${roleBadgeClass(u.role)}">${roleLabel(u.role)}</span>`;
 
   // Build tabs based on role
@@ -1635,15 +1687,40 @@ async function updateStatusPesanan(orderId, newStatus) {
   const isSellerOrOwner = ['owner','coowner'].includes(u.role) || o.seller_id == u.id;
   if (!isSellerOrOwner) { showToast('⛔ Kamu tidak punya akses!'); return; }
 
+  // Bug 2 Fix: validasi urutan status yang diperbolehkan
+  const allowedTransitions = {
+    'menunggu-konfirmasi': ['menunggu-kirim', 'dibatalkan'],
+    'menunggu-bayar':      ['menunggu-kirim', 'dibatalkan'],
+    'menunggu-kirim':      ['dikirim', 'dibatalkan'],
+    'dikirim':             ['selesai'],
+  };
+  const allowed = allowedTransitions[o.status] || [];
+  if (!allowed.includes(newStatus)) {
+    showToast('⛔ Transisi status tidak valid!'); return;
+  }
+
   showLoading(true);
   await db.from('dm_pesanan').update({status: newStatus}).eq('id', orderId);
-  await fetchPesanan();
+
+  // Bug 4 Fix: kembalikan stok kalau pesanan dibatalkan/ditolak
+  if (newStatus === 'dibatalkan') {
+    const p = getProdukById(o.produk_id);
+    if (p) {
+      await db.from('dm_produk').update({
+        stok: p.stok + (o.qty || 1),
+        terjual: Math.max(0, p.terjual - (o.qty || 1))
+      }).eq('id', p.id);
+    }
+  }
+
+  await Promise.all([fetchPesanan(), fetchProduk()]);
   showLoading(false);
 
   const statusMsg = {
     'menunggu-kirim': '✅ Pembayaran dikonfirmasi!',
     'dikirim': '🚚 Pesanan ditandai terkirim!',
-    'selesai': '✅ Pesanan selesai!'
+    'selesai': '✅ Pesanan selesai!',
+    'dibatalkan': '❌ Pesanan dibatalkan, stok dikembalikan.'
   }[newStatus] || 'Status diperbarui!';
 
   showToast(statusMsg);
@@ -2781,7 +2858,7 @@ function openProfileOrder() {
 
   const isSeller = ['owner','coowner','admin','preadmin'].includes(u.role);
   const orderTabs = [
-    {key:'menunggu-bayar', label:'Menunggu Bayar'},
+    {key:'menunggu-bayar', label:'Menunggu Bayar', extraStatus: ['menunggu-konfirmasi']},
     {key:'menunggu-kirim', label:'Menunggu Kirim'},
     {key:'dikirim', label:'Dikirim'},
     {key:'selesai', label:'Selesai'},
@@ -2791,11 +2868,18 @@ function openProfileOrder() {
   const el = document.getElementById('drawer-page-content');
   el.innerHTML = `
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
-      <div style="font-size:44px;">${u.avatar || '👤'}</div>
+      <div style="position:relative;flex-shrink:0;">
+        <div id="profile-avatar-display" style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;overflow:hidden;border:2px solid var(--border);cursor:pointer;" onclick="document.getElementById('foto-profil-input').click()" title="Ganti foto profil">
+          ${u.avatar && u.avatar.startsWith('data:') ? `<img src="${u.avatar}" style="width:100%;height:100%;object-fit:cover;">` : `<span style="font-size:28px;">${u.avatar || '👤'}</span>`}
+        </div>
+        <div style="position:absolute;bottom:0;right:0;width:22px;height:22px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;border:2px solid var(--bg);" onclick="document.getElementById('foto-profil-input').click()">📷</div>
+        <input type="file" id="foto-profil-input" accept="image/*" style="display:none;" onchange="uploadFotoProfil(this)">
+      </div>
       <div>
         <div style="font-family:var(--font-head);font-size:18px;font-weight:700;">${u.username}</div>
         ${u.customTitle ? `<div class="drawer-title-badge" style="display:inline-block;margin:4px 0;">${u.customTitle}</div>` : ''}
         <div><span class="role-badge ${roleBadgeClass(u.role)}">${roleLabel(u.role)}</span></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">📷 Tap foto untuk ganti</div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;">
@@ -2808,11 +2892,12 @@ function openProfileOrder() {
         const allOrders = getPesanan();
         const isSell = ['owner','coowner','admin','preadmin'].includes(u.role);
         const isOwn = ['owner','coowner'].includes(u.role);
+        const allStatuses = [t.key, ...(t.extraStatus || [])];
         const cnt = isOwn 
-          ? allOrders.filter(o=>o.status===t.key).length
+          ? allOrders.filter(o=>allStatuses.includes(o.status)).length
           : isSell
-            ? allOrders.filter(o=>o.seller_id===u.id && o.status===t.key).length
-            : allOrders.filter(o=>o.buyer_id===u.id && o.status===t.key).length;
+            ? allOrders.filter(o=>o.seller_id===u.id && allStatuses.includes(o.status)).length
+            : allOrders.filter(o=>o.buyer_id===u.id && allStatuses.includes(o.status)).length;
         return `<div class="order-tab ${i===0?'active':''}" onclick="switchOrderTab('${t.key}',this)">${t.label}${cnt>0?` <span style="background:var(--accent2);color:#fff;padding:1px 6px;border-radius:10px;font-size:10px;">${cnt}</span>`:''}</div>`;
       }).join('')}
     </div>
@@ -2834,14 +2919,19 @@ function renderOrderTab(status) {
   const isSeller = ['owner','coowner','admin','preadmin'].includes(u.role);
   const isOwner = ['owner','coowner'].includes(u.role);
 
+  // Bug 3 Fix: menunggu-konfirmasi masuk ke tab menunggu-bayar
+  const statusFilter = status === 'menunggu-bayar'
+    ? ['menunggu-bayar', 'menunggu-konfirmasi']
+    : [status];
+
   // Buyer lihat pesanan sendiri, seller lihat pesanan ke dia, owner lihat semua
   let orders;
   if (isOwner) {
-    orders = getPesanan().filter(o => o.status === status);
+    orders = getPesanan().filter(o => statusFilter.includes(o.status));
   } else if (isSeller) {
-    orders = getPesanan().filter(o => o.seller_id == u.id && o.status === status);
+    orders = getPesanan().filter(o => o.seller_id == u.id && statusFilter.includes(o.status));
   } else {
-    orders = getPesanan().filter(o => o.buyer_id == u.id && o.status === status);
+    orders = getPesanan().filter(o => o.buyer_id == u.id && statusFilter.includes(o.status));
   }
 
   const el = document.getElementById('profile-order-content');
@@ -2920,15 +3010,30 @@ async function buyerKonfirmasiBayar(orderId) {
 }
 
 async function updateOrderStatus(orderId, newStatus) {
+  const o = getPesanan().find(o => o.id === orderId);
+  if (!o) return;
+
   showLoading(true);
   await db.from('dm_pesanan').update({status: newStatus}).eq('id', orderId);
-  await fetchPesanan();
+
+  // Bug 4 Fix: kembalikan stok kalau dibatalkan
+  if (newStatus === 'dibatalkan') {
+    const p = getProdukById(o.produk_id);
+    if (p) {
+      await db.from('dm_produk').update({
+        stok: p.stok + (o.qty || 1),
+        terjual: Math.max(0, p.terjual - (o.qty || 1))
+      }).eq('id', p.id);
+    }
+  }
+
+  await Promise.all([fetchPesanan(), fetchProduk()]);
   showLoading(false);
   const statusMsg = {
     'menunggu-kirim':'✅ Pembayaran dikonfirmasi!',
     'dikirim':'📦 Pesanan ditandai dikirim!',
     'selesai':'🎉 Pesanan selesai!',
-    'dibatalkan':'❌ Pesanan dibatalkan'
+    'dibatalkan':'❌ Pesanan dibatalkan, stok dikembalikan.'
   };
   showToast(statusMsg[newStatus] || 'Status diperbarui');
   openProfileOrder();
