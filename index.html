@@ -22,6 +22,23 @@ async function hashPassword(password) {
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
+
+// ===== AVATAR HELPER =====
+function renderAvatar(avatar, fallback, size='100%') {
+  if (avatar && avatar.startsWith('data:')) {
+    return `<img src="${avatar}" style="width:${size};height:${size};object-fit:cover;border-radius:inherit;">`;
+  }
+  return avatar || fallback || '👤';
+}
+function setAvatarEl(el, avatar, fallback) {
+  if (!el) return;
+  if (avatar && avatar.startsWith('data:')) {
+    el.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`;
+  } else {
+    el.textContent = avatar || fallback || '👤';
+  }
+}
+
 </script>
 <style>
 :root {
@@ -1245,7 +1262,7 @@ function showDetail(id) {
   document.getElementById('tab-info-penjual').innerHTML = `
     <div class="seller-card">
       <div class="seller-top">
-        <div class="seller-avatar">${seller?.avatar || seller?.username[0].toUpperCase() || '?'}</div>
+        <div class="seller-avatar">${renderAvatar(seller?.avatar, seller?.username?.[0]?.toUpperCase() || '?')}</div>
         <div>
           <div class="seller-name">${seller?.username || 'Unknown'}</div>
           <div style="margin:3px 0;"><span class="role-badge ${roleBadgeClass(seller?.role)}">${roleLabel(seller?.role)}</span></div>
@@ -1905,7 +1922,7 @@ function renderDashSection(id) {
       <div class="card">
         ${users.map(usr => `
           <div class="user-item">
-            <div class="user-av">${usr.avatar || usr.username[0].toUpperCase()}</div>
+            <div class="user-av">${renderAvatar(usr.avatar, usr.username[0].toUpperCase())}</div>
             <div class="user-info">
               <div class="user-name">${usr.username}</div>
               <div class="user-role"><span class="role-badge ${roleBadgeClass(usr.role)}">${roleLabel(usr.role)}</span></div>
@@ -1930,7 +1947,7 @@ function renderDashSection(id) {
         pending.map(usr => `
           <div class="card">
             <div class="user-item" style="border:none;padding:0;">
-              <div class="user-av">${usr.avatar}</div>
+              <div class="user-av">${renderAvatar(usr.avatar, usr.username?.[0]?.toUpperCase() || '?')}</div>
               <div class="user-info">
                 <div class="user-name">${usr.username}</div>
                 <div style="font-size:11px;color:var(--muted);">${usr.email}</div>
@@ -2220,7 +2237,7 @@ function closeDrawer() {
 function renderDrawer() {
   const u = currentUser;
   if (u) {
-    document.getElementById('drawer-avatar').textContent = u.avatar || u.username[0].toUpperCase();
+    setAvatarEl(document.getElementById('drawer-avatar'), u.avatar, u.username[0].toUpperCase());
     document.getElementById('drawer-username').textContent = u.username;
     document.getElementById('drawer-role-wrap').innerHTML = `<span class="role-badge ${roleBadgeClass(u.role)}" style="font-size:10px;">${roleLabel(u.role)}</span>`;
     // Title dekoratif
@@ -2240,7 +2257,7 @@ function renderDrawer() {
     document.getElementById('drawer-auth-icon').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>';
     document.getElementById('drawer-auth-label').textContent = 'Keluar';
   } else {
-    document.getElementById('drawer-avatar').textContent = '👤';
+    setAvatarEl(document.getElementById('drawer-avatar'), null, '👤');
     document.getElementById('drawer-username').textContent = 'Tamu';
     document.getElementById('drawer-role-wrap').innerHTML = '';
     document.getElementById('drawer-title-wrap').innerHTML = '';
@@ -2364,7 +2381,7 @@ function openDrawerPage(page) {
         users.map(usr => `
           <div class="card" style="margin-bottom:8px;">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-              <div class="user-av">${usr.avatar}</div>
+              <div class="user-av">${renderAvatar(usr.avatar, usr.username?.[0]?.toUpperCase() || '?')}</div>
               <div style="flex:1;">
                 <div style="font-weight:700;font-size:13px;">${usr.username}</div>
                 <div style="font-size:11px;color:var(--muted);">${usr.email}</div>
@@ -2554,7 +2571,7 @@ function openDrawerPage(page) {
             const seller = users.find(x => x.id == sid);
             return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">
               <span style="font-size:16px;">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]}</span>
-              <span style="font-size:16px;">${seller?.avatar||'👤'}</span>
+              <span style="font-size:16px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;border-radius:50%;">${renderAvatar(seller?.avatar, '👤')}</span>
               <div style="flex:1;">
                 <div style="font-weight:600;font-size:13px;">${seller?.username||'Unknown'}</div>
                 <div><span class="role-badge ${roleBadgeClass(seller?.role)}" style="font-size:9px;">${roleLabel(seller?.role)}</span></div>
@@ -2682,7 +2699,7 @@ function renderChatList() {
     return `
       <div class="chat-list-item" onclick="openChatRoom(${partnerId}, ${chat.produk_id || 'null'})">
         <div class="chat-av">
-          ${partner?.avatar || partner?.username[0].toUpperCase() || '?'}
+          ${renderAvatar(partner?.avatar, partner?.username?.[0]?.toUpperCase() || '?')}
           ${unread > 0 ? '<div class="chat-unread-dot"></div>' : ''}
         </div>
         <div class="chat-list-info">
@@ -2709,7 +2726,7 @@ async function openChatRoom(partnerId, produkId) {
   currentChatProdukId = produkId || null;
 
   const partner = getUser(partnerId);
-  document.getElementById('chatroom-av').textContent = partner?.avatar || (partner?.username || '?')[0].toUpperCase();
+  setAvatarEl(document.getElementById('chatroom-av'), partner?.avatar, (partner?.username || '?')[0].toUpperCase());
   document.getElementById('chatroom-name').textContent = partner?.username || 'Unknown';
 
   const produk = produkId ? getProdukById(produkId) : null;
