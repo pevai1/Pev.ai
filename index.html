@@ -1627,7 +1627,7 @@ function renderDashboard() {
   const _dashAv = document.getElementById('dash-avatar');
   if (_dashAv) {
     if (u.avatar && u.avatar.startsWith('data:')) {
-      _dashAv.innerHTML = \`<img src=\"\${u.avatar}\"  style=\"width:100%;height:100%;object-fit:cover;border-radius:50%;\">\`;
+      _dashAv.innerHTML = `<img src="${u.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
     } else {
       _dashAv.textContent = u.avatar || u.username[0].toUpperCase();
     }
