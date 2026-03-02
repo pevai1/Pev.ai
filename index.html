@@ -82,37 +82,57 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 
 /* ===== HERO ===== */
 .hero{
-  background:linear-gradient(160deg,#0d0d1a 0%,#12102a 50%,#0a0f1a 100%);
-  padding:50px 20px 40px;
-  text-align:center;
+  background:#0d0d1a;
+  padding:0;
   position:relative;
   overflow:hidden;
 }
-.hero::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 50% 0%,rgba(108,99,255,0.15) 0%,transparent 70%);
+.hero-top{
+  background:linear-gradient(135deg,#1a0a2e,#0d1a2e);
+  padding:32px 20px 24px;
+  position:relative;
+  overflow:hidden;
+  text-align:left;
+}
+.hero-top::after{
+  content:'';position:absolute;bottom:-1px;left:0;right:0;
+  height:28px;background:#0d0d1a;border-radius:28px 28px 0 0;
 }
 .hero-tag{display:inline-flex;align-items:center;gap:6px;
-  background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);
-  color:var(--accent);padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:16px;}
+  background:linear-gradient(135deg,var(--accent),#ff6584);
+  color:white;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;margin-bottom:14px;}
 .hero h1{
   font-family:var(--font-head);
   font-size:22px;
   font-weight:800;
-  margin-bottom:10px;
-  line-height:1.4;
+  margin-bottom:8px;
+  line-height:1.3;
   color:#ffffff;
   position:relative;
   z-index:1;
-  letter-spacing:-0.3px;
 }
-.hero h1 .h1-white{ color:#ffffff; }
-.hero h1 .h1-purple{ color:var(--accent); }
-.hero p{font-size:14px;color:var(--muted);max-width:320px;margin:0 auto 24px;}
-.hero-stats{display:flex;justify-content:center;gap:24px;}
-.hero-stat{text-align:center;}
+.hero h1 em{
+  font-style:normal;
+  background:linear-gradient(135deg,var(--accent),#ff6584);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hero p{font-size:13px;color:var(--muted);margin:0 0 0;max-width:none;}
+.hero-stats{display:flex;border-top:1px solid rgba(255,255,255,0.08);margin-top:18px;}
+.hero-stat{flex:1;text-align:center;padding:14px 0;border-right:1px solid rgba(255,255,255,0.08);}
+.hero-stat:last-child{border-right:none;}
 .hero-stat .num{font-family:var(--font-head);font-size:20px;font-weight:800;color:var(--accent);}
-.hero-stat .lbl{font-size:11px;color:var(--muted);}
+.hero-stat .lbl{font-size:10px;color:var(--muted);}
+.hero-bottom{padding:16px 20px 8px;}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.hero-grid-card{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:14px;padding:13px;
+  display:flex;align-items:center;gap:10px;
+}
+.hero-grid-card .hgc-icon{font-size:24px;}
+.hero-grid-card .hgc-title{font-size:12px;font-weight:700;margin-bottom:2px;}
+.hero-grid-card .hgc-sub{font-size:10px;color:var(--muted);}
 
 /* ===== SEARCH ===== */
 .search-wrap{padding:16px 20px;background:var(--surface);border-bottom:1px solid var(--border);}
@@ -526,15 +546,23 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
     </div>
   </nav>
   <div class="hero">
-    <div class="hero-tag">⚡ Marketplace Digital #1</div>
-    <h1>
-      <span class="h1-white">Jual &amp; Beli Produk Digital </span><span class="h1-purple">dengan Aman</span>
-    </h1>
-    <p>Game, voucher, jasa desain, dan masih banyak lagi</p>
-    <div class="hero-stats">
-      <div class="hero-stat"><div class="num" id="stat-produk">0</div><div class="lbl">Produk</div></div>
-      <div class="hero-stat"><div class="num" id="stat-seller">0</div><div class="lbl">Seller</div></div>
-      <div class="hero-stat"><div class="num" id="stat-transaksi">0</div><div class="lbl">Transaksi</div></div>
+    <div class="hero-top">
+      <div class="hero-tag">🔥 DigiMart Store</div>
+      <h1>Belanja Digital &amp; Voucher<br><em>Digital Terpercaya</em></h1>
+      <p>Ribuan produk digital tersedia untukmu</p>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="num" id="stat-produk">0</div><div class="lbl">Produk</div></div>
+        <div class="hero-stat"><div class="num" id="stat-seller">0</div><div class="lbl">Seller</div></div>
+        <div class="hero-stat"><div class="num" id="stat-transaksi">0</div><div class="lbl">Transaksi</div></div>
+      </div>
+    </div>
+    <div class="hero-bottom">
+      <div class="hero-grid">
+        <div class="hero-grid-card"><div class="hgc-icon">🎮</div><div><div class="hgc-title">Game</div><div class="hgc-sub">Top up instan</div></div></div>
+        <div class="hero-grid-card"><div class="hgc-icon">🎬</div><div><div class="hgc-title">Streaming</div><div class="hgc-sub">Harga hemat</div></div></div>
+        <div class="hero-grid-card"><div class="hgc-icon">🎫</div><div><div class="hgc-title">Voucher</div><div class="hgc-sub">Semua jenis</div></div></div>
+        <div class="hero-grid-card"><div class="hgc-icon">🛠️</div><div><div class="hgc-title">Jasa Digital</div><div class="hgc-sub">Terpercaya</div></div></div>
+      </div>
     </div>
   </div>
   <div class="search-wrap">
