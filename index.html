@@ -836,17 +836,17 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 <div class="modal-overlay" id="modal-review" onclick="if(event.target===this)closeModal('modal-review')">
   <div class="modal">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <h3 style="margin:0;">Tulis Ulasan</h3>
+      <h3 style="margin:0;" id="modal-review-title">⭐ Beri Ulasan</h3>
       <button onclick="closeModal('modal-review')" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;">✕</button>
     </div>
     <div id="modal-review-content">
       <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Berikan rating untuk produk ini:</p>
       <div class="stars-input" id="stars-input">
-        <span onclick="setRating(1)">⭐</span>
-        <span onclick="setRating(2)">⭐</span>
-        <span onclick="setRating(3)">⭐</span>
-        <span onclick="setRating(4)">⭐</span>
-        <span onclick="setRating(5)">⭐</span>
+        <span class="star-btn" onclick="setRating(1)">☆</span>
+        <span class="star-btn" onclick="setRating(2)">☆</span>
+        <span class="star-btn" onclick="setRating(3)">☆</span>
+        <span class="star-btn" onclick="setRating(4)">☆</span>
+        <span class="star-btn" onclick="setRating(5)">☆</span>
       </div>
       <div class="form-group" style="margin-top:10px;">
         <textarea class="form-input form-textarea" id="review-text" placeholder="Ceritakan pengalaman kamu..."></textarea>
@@ -857,7 +857,7 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
       <div id="review-warning" style="display:none;background:rgba(255,101,132,0.1);border:1px solid rgba(255,101,132,0.3);border-radius:8px;padding:10px;font-size:12px;color:#ff6584;margin-bottom:8px;">
         ⚠️ Kamu hanya bisa review produk yang sudah kamu beli dan selesai
       </div>
-      <button class="btn-full btn-accent" style="margin-top:0;" onclick="submitReview()">Kirim Ulasan</button>
+      <button class="btn-full btn-accent" style="margin-top:0;" id="review-submit-btn" onclick="submitReview()">Kirim Ulasan</button>
     </div>
   </div>
 </div>
@@ -1083,6 +1083,7 @@ let currentUser = SESSION.get();
 let currentProdukId = null;
 let currentRating = 0;
 let currentOrderId = null;
+let currentEditReviewId = null;
 let currentQty = 1;
 let filterKat = 'semua';
 
@@ -1339,6 +1340,9 @@ function showDetail(id) {
 function renderUlasan(produkId, reviews, avgRating) {
   const dist = [5,4,3,2,1].map(s => reviews.filter(r => r.rating === s).length);
   const total = reviews.length;
+  const EDIT_WINDOW = 24 * 60 * 60 * 1000; // 24 jam dalam ms
+  const produk = getProdukById(produkId);
+
   document.getElementById('tab-ulasan').innerHTML = `
     ${total > 0 ? `
     <div class="rating-summary">
@@ -1363,7 +1367,12 @@ function renderUlasan(produkId, reviews, avgRating) {
       ✍️ Tulis Ulasan
     </button>` : ''}
     ${reviews.length === 0 ? '<div class="empty"><div class="eicon">💬</div><p>Belum ada ulasan</p></div>' :
-      reviews.map(r => `
+      reviews.map(r => {
+        const isMine = currentUser && r.user_id == currentUser.id;
+        const canEdit = isMine && (Date.now() - r.created_at) < EDIT_WINDOW;
+        const isSeller = produk && currentUser && produk.seller_id == currentUser.id;
+        const sisaJam = isMine ? Math.max(0, Math.ceil((EDIT_WINDOW - (Date.now() - r.created_at)) / 3600000)) : 0;
+        return `
         <div class="review-item">
           <div class="review-header">
             <div class="review-user">👤 ${r.username}</div>
@@ -1371,9 +1380,75 @@ function renderUlasan(produkId, reviews, avgRating) {
           </div>
           <div class="review-stars">${'⭐'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
           <div class="review-text">${r.teks}</div>
-        </div>`).join('')
+          ${r.seller_reply ? `
+            <div style="margin-top:8px;padding:8px 10px;background:rgba(108,99,255,0.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;">
+              <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:3px;">💬 Balasan Seller</div>
+              <div style="font-size:12px;color:rgba(240,240,255,0.85);">${r.seller_reply}</div>
+            </div>` : ''}
+          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+            ${canEdit ? `<button onclick="openEditReview(${r.id},${r.rating},'${r.teks.replace(/'/g,"\'")}')" style="font-size:11px;padding:4px 10px;border-radius:8px;background:rgba(255,200,0,0.1);border:1px solid rgba(255,200,0,0.3);color:#ffc800;cursor:pointer;">✏️ Edit (${sisaJam}j lagi)</button>` : ''}
+            ${isMine && !canEdit && (Date.now() - r.created_at) >= EDIT_WINDOW ? `<span style="font-size:10px;color:var(--muted);">⏰ Edit sudah tidak tersedia</span>` : ''}
+            ${isSeller && !r.seller_reply ? `<button onclick="openReplyReview(${r.id})" style="font-size:11px;padding:4px 10px;border-radius:8px;background:rgba(108,99,255,0.1);border:1px solid rgba(108,99,255,0.3);color:var(--accent);cursor:pointer;">💬 Balas</button>` : ''}
+            ${isSeller && r.seller_reply ? `<button onclick="openReplyReview(${r.id},'${r.seller_reply.replace(/'/g,"\'")}')" style="font-size:11px;padding:4px 10px;border-radius:8px;background:rgba(108,99,255,0.05);border:1px solid rgba(108,99,255,0.2);color:var(--muted);cursor:pointer;">✏️ Edit Balasan</button>` : ''}
+          </div>
+        </div>`;
+      }).join('')
     }
   `;
+}
+
+// Edit review oleh buyer (dalam 24 jam)
+function openEditReview(reviewId, currentRatingVal, currentTeks) {
+  currentEditReviewId = reviewId;
+  currentRating = currentRatingVal;
+  document.getElementById('review-text').value = currentTeks;
+  // Update tampilan bintang
+  document.querySelectorAll('.star-btn').forEach((s,i) => {
+    s.textContent = i < currentRatingVal ? '⭐' : '☆';
+  });
+  document.getElementById('modal-review-title').textContent = '✏️ Edit Ulasan';
+  document.getElementById('review-submit-btn').textContent = 'Simpan Perubahan';
+  document.getElementById('review-submit-btn').onclick = submitEditReview;
+  openModal('modal-review');
+}
+
+async function submitEditReview() {
+  if (!currentRating) { showToast('⚠️ Pilih rating dulu!'); return; }
+  const teks = document.getElementById('review-text').value.trim();
+  if (!teks) { showToast('⚠️ Tulis ulasan dulu!'); return; }
+  if (!currentEditReviewId) return;
+
+  const review = getReviews().find(r => r.id === currentEditReviewId);
+  if (!review) return;
+  if ((Date.now() - review.created_at) >= 24 * 60 * 60 * 1000) {
+    showToast('⏰ Waktu edit sudah habis (maks 24 jam)!'); return;
+  }
+
+  showLoading(true);
+  await db.from('dm_reviews').update({ rating: currentRating, teks, edited: true }).eq('id', currentEditReviewId);
+  await fetchReviews();
+  showLoading(false);
+  closeModal('modal-review');
+  showToast('✅ Ulasan berhasil diperbarui!');
+  showDetail(currentProdukId);
+  currentEditReviewId = null;
+}
+
+// Balas ulasan oleh seller
+function openReplyReview(reviewId, existingReply = '') {
+  const reply = prompt(existingReply ? 'Edit balasan kamu:' : 'Tulis balasan untuk ulasan ini:', existingReply);
+  if (reply === null) return;
+  if (!reply.trim()) { showToast('⚠️ Balasan tidak boleh kosong!'); return; }
+  submitReplyReview(reviewId, reply.trim());
+}
+
+async function submitReplyReview(reviewId, reply) {
+  showLoading(true);
+  await db.from('dm_reviews').update({ seller_reply: reply }).eq('id', reviewId);
+  await fetchReviews();
+  showLoading(false);
+  showToast('✅ Balasan berhasil dikirim!');
+  showDetail(currentProdukId);
 }
 
 function switchTab(id, btn) {
@@ -1643,8 +1718,13 @@ function openReviewModal(produkId) {
   if (!currentUser) { showToast('⚠️ Login dulu!'); return; }
   currentProdukId = produkId;
   currentRating = 0;
+  currentEditReviewId = null;
   document.getElementById('review-text').value = '';
   setRating(0);
+  const titleEl = document.getElementById('modal-review-title');
+  if (titleEl) titleEl.textContent = '⭐ Beri Ulasan';
+  const btnEl = document.getElementById('review-submit-btn');
+  if (btnEl) { btnEl.textContent = 'Kirim Ulasan'; btnEl.onclick = submitReview; }
   openModal('modal-review');
 }
 
@@ -1652,6 +1732,7 @@ function setRating(n) {
   currentRating = n;
   document.querySelectorAll('.stars-input span').forEach((s,i) => {
     s.classList.toggle('active', i < n);
+    s.textContent = i < n ? '⭐' : '☆';
   });
 }
 
@@ -2239,18 +2320,18 @@ async function promoteUser(id) {
   const user = getUsers().find(u => u.id === id);
   if (!user) return;
   const curIdx = roleOrder.indexOf(user.role);
+  // Owner bisa promote sampai coowner, coowner hanya sampai admin
   const maxRole = currentUser.role === 'owner' ? 'coowner' : 'admin';
   const maxIdx = roleOrder.indexOf(maxRole);
-  if (curIdx < maxIdx) {
-    const newRole = roleOrder[curIdx + 1];
-    const newAvatar = {owner:'👑',coowner:'💎',admin:'🛡️',preadmin:'🔰',customer:'👤'}[newRole];
-    showLoading(true);
-    await db.from('dm_users').update({role: newRole, avatar: newAvatar}).eq('id', id);
-    await fetchUsers();
-    showLoading(false);
-    showToast('✅ Role ' + user.username + ' dinaikkan!');
-    renderDashSection('users');
-  } else showToast('⚠️ Tidak bisa dinaikkan lebih tinggi');
+  if (curIdx >= maxIdx) { showToast('⚠️ Tidak bisa dinaikkan lebih tinggi'); return; }
+  const newRole = roleOrder[curIdx + 1];
+  const newAvatar = {owner:'👑',coowner:'💎',admin:'🛡️',preadmin:'🔰',customer:'👤'}[newRole];
+  showLoading(true);
+  await db.from('dm_users').update({role: newRole, avatar: newAvatar}).eq('id', id);
+  await fetchUsers();
+  showLoading(false);
+  showToast('✅ ' + user.username + ' sekarang ' + newRole + '!');
+  renderDashSection('users');
 }
 
 async function demoteUser(id) {
@@ -3222,6 +3303,11 @@ function openReviewModalFromOrder(produkId, orderId) {
   currentProdukId = produkId;
   currentOrderId = orderId;
   currentRating = 0;
+  currentEditReviewId = null;
+  const titleEl = document.getElementById('modal-review-title');
+  if (titleEl) titleEl.textContent = '⭐ Beri Ulasan';
+  const btnEl = document.getElementById('review-submit-btn');
+  if (btnEl) { btnEl.textContent = 'Kirim Ulasan'; btnEl.onclick = submitReview; }
   document.getElementById('review-text').value = '';
   setRating(0);
   openModal('modal-review');
