@@ -728,6 +728,9 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
   </div>
   <div class="chat-room-body" id="chat-messages"></div>
   <div class="chat-input-bar">
+    <label style="cursor:pointer;padding:0 8px;font-size:20px;color:var(--muted);flex-shrink:0;" title="Kirim gambar">
+      📷<input type="file" id="chat-img-input" accept="image/*" style="display:none;" onchange="sendChatImg(this)">
+    </label>
     <input type="text" id="chat-msg-input" placeholder="Ketik pesan..." onkeydown="if(event.key==='Enter')sendChatMsg()">
     <button class="chat-send-btn" onclick="sendChatMsg()">➤</button>
   </div>
@@ -919,6 +922,9 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
     <div class="drawer-item" onclick="openDrawerPage('statistik')">
       <span class="di-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg></span><span class="di-label">Statistik Lengkap</span>
     </div>
+    <div class="drawer-item" onclick="openDrawerPage('pengaturan')">
+      <span class="di-icon">⚙️</span><span class="di-label">Pengaturan Platform</span>
+    </div>
   </div>
 
   <div style="flex:1;"></div>
@@ -1095,11 +1101,29 @@ function roleBadgeClass(role) {
   return map[role] || 'role-customer';
 }
 function canManageUsers(role) { return ['owner','coowner'].includes(role); }
+// Limit produk bisa diubah Owner dari dashboard
+const _produkLimits = {
+  admin: parseInt(localStorage.getItem('dm_limit_admin') || '10'),
+  preadmin: parseInt(localStorage.getItem('dm_limit_preadmin') || '3'),
+};
+
 function canAddProduk(role) {
   if (role === 'owner' || role === 'coowner') return Infinity;
-  if (role === 'admin') return 10;
-  if (role === 'preadmin') return 3;
+  if (role === 'admin') return _produkLimits.admin;
+  if (role === 'preadmin') return _produkLimits.preadmin;
   return 0;
+}
+
+function saveProdukLimits() {
+  const adminLimit = parseInt(document.getElementById('limit-admin').value) || 10;
+  const preadminLimit = parseInt(document.getElementById('limit-preadmin').value) || 3;
+  _produkLimits.admin = adminLimit;
+  _produkLimits.preadmin = preadminLimit;
+  try {
+    localStorage.setItem('dm_limit_admin', adminLimit);
+    localStorage.setItem('dm_limit_preadmin', preadminLimit);
+  } catch(e) {}
+  showToast('✅ Limit produk berhasil disimpan!');
 }
 function canOrder(role) {
   if (role === 'owner' || role === 'coowner' || role === 'customer') return Infinity;
@@ -1109,6 +1133,7 @@ function canOrder(role) {
 
 // =================== NAVIGATION ===================
 function showPage(id) {
+  if (id !== 'page-chatroom') stopChatPolling();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
@@ -1359,14 +1384,32 @@ function switchTab(id, btn) {
 }
 
 // =================== AUTH ===================
+// ===== LOGIN ATTEMPT TRACKER =====
+const _loginAttempts = {};
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 5 * 60 * 1000; // 5 menit
+const SESSION_EXPIRE_MS = 24 * 60 * 60 * 1000; // 24 jam
+
 async function doLogin() {
   const username = document.getElementById('l-user').value.trim();
   const password = document.getElementById('l-pass').value;
   const errEl = document.getElementById('login-err');
   errEl.style.display = 'none';
+
+  // Cek lockout
+  const attempt = _loginAttempts[username];
+  if (attempt && attempt.count >= MAX_ATTEMPTS) {
+    const remaining = Math.ceil((attempt.lockedUntil - Date.now()) / 60000);
+    if (Date.now() < attempt.lockedUntil) {
+      errEl.textContent = `🔒 Akun terkunci. Coba lagi dalam ${remaining} menit.`;
+      errEl.style.display = 'block'; return;
+    } else {
+      delete _loginAttempts[username]; // Reset setelah lockout selesai
+    }
+  }
+
   showLoading(true);
   const hashed = await hashPassword(password);
-  // Coba hash dulu, fallback plain text untuk akun lama
   let { data, error } = await db.from('dm_users')
     .select('*').eq('username', username).eq('password', hashed).single();
   if (error || !data) {
@@ -1374,21 +1417,49 @@ async function doLogin() {
       .select('*').eq('username', username).eq('password', password).single();
     if (!res2.error && res2.data) {
       data = res2.data; error = null;
-      // Auto-upgrade password ke hashed
       await db.from('dm_users').update({ password: hashed }).eq('id', data.id);
     }
   }
   showLoading(false);
-  if (error || !data) { errEl.textContent = '❌ Username atau password salah'; errEl.style.display='block'; return; }
+
+  if (error || !data) {
+    // Catat attempt gagal
+    if (!_loginAttempts[username]) _loginAttempts[username] = { count: 0, lockedUntil: 0 };
+    _loginAttempts[username].count++;
+    const remaining = MAX_ATTEMPTS - _loginAttempts[username].count;
+    if (_loginAttempts[username].count >= MAX_ATTEMPTS) {
+      _loginAttempts[username].lockedUntil = Date.now() + LOCKOUT_MS;
+      errEl.textContent = '🔒 Terlalu banyak percobaan. Akun terkunci 5 menit.';
+    } else {
+      errEl.textContent = `❌ Username atau password salah. Sisa percobaan: ${remaining}`;
+    }
+    errEl.style.display = 'block'; return;
+  }
+
   if (data.status === 'pending') { errEl.textContent = '⏳ Akun kamu belum disetujui admin'; errEl.style.display='block'; return; }
   if (data.status === 'rejected') { errEl.textContent = '❌ Akun kamu ditolak'; errEl.style.display='block'; return; }
-  const user = {...data, customTitle: data.custom_title};
+  if (data.status === 'suspended') { errEl.textContent = '🚫 Akun kamu disuspend. Hubungi owner.'; errEl.style.display='block'; return; }
+
+  // Reset attempt counter setelah login sukses
+  delete _loginAttempts[username];
+
+  const user = {...data, customTitle: data.custom_title, loginAt: Date.now()};
   currentUser = user;
   SESSION.set(user);
-  // Refresh cache
   await fetchUsers();
   showToast('✅ Selamat datang, ' + user.username + '!');
   showPage('page-home');
+}
+
+// Cek session expire setiap kali app aktif
+function checkSessionExpire() {
+  const s = SESSION.get();
+  if (s && s.loginAt && (Date.now() - s.loginAt) > SESSION_EXPIRE_MS) {
+    SESSION.clear();
+    currentUser = null;
+    renderNavbar();
+    showToast('⏰ Sesi kamu telah berakhir, silakan login kembali.');
+  }
 }
 
 async function doRegister() {
@@ -1925,12 +1996,16 @@ function renderDashSection(id) {
             <div class="user-av">${renderAvatar(usr.avatar, usr.username[0].toUpperCase())}</div>
             <div class="user-info">
               <div class="user-name">${usr.username}</div>
-              <div class="user-role"><span class="role-badge ${roleBadgeClass(usr.role)}">${roleLabel(usr.role)}</span></div>
+              <div class="user-role"><span class="role-badge ${roleBadgeClass(usr.role)}">${roleLabel(usr.role)}</span>${usr.status === 'suspended' ? '<span style="background:rgba(255,101,132,0.2);color:#ff6584;border:1px solid rgba(255,101,132,0.4);border-radius:8px;font-size:9px;padding:1px 6px;margin-left:4px;">🚫 Suspended</span>' : ''}</div>
             </div>
             <div class="action-btns">
               ${usr.role !== 'owner' && (u.role === 'owner' || usr.role !== 'coowner') ? `
                 <button class="action-btn btn-promote" onclick="promoteUser(${usr.id})" title="Naikan role">▲</button>
                 <button class="action-btn btn-demote" onclick="demoteUser(${usr.id})" title="Turunkan role">▼</button>
+                ${usr.status === 'suspended'
+                  ? `<button class="action-btn btn-approve" onclick="unsuspendUser(${usr.id})" title="Cabut suspend" style="font-size:10px;">✅</button>`
+                  : `<button class="action-btn btn-reject" onclick="suspendUser(${usr.id})" title="Suspend user" style="font-size:10px;">🚫</button>`
+                }
               ` : ''}
               ${u.role === 'owner' && usr.role !== 'owner' ? `<button class="action-btn btn-delete" onclick="deleteUser(${usr.id})">🗑️</button>` : ''}
             </div>
@@ -2192,6 +2267,24 @@ async function demoteUser(id) {
     showToast('⚠️ Role ' + user.username + ' diturunkan');
     renderDashSection('users');
   }
+}
+
+async function suspendUser(id) {
+  showLoading(true);
+  await db.from('dm_users').update({status:'suspended'}).eq('id', id);
+  await fetchUsers();
+  showLoading(false);
+  showToast('🚫 User disuspend!');
+  openDrawerPage('kelola-user');
+}
+
+async function unsuspendUser(id) {
+  showLoading(true);
+  await db.from('dm_users').update({status:'active'}).eq('id', id);
+  await fetchUsers();
+  showLoading(false);
+  showToast('✅ Suspend dicabut!');
+  openDrawerPage('kelola-user');
 }
 
 async function approveUser(id) {
@@ -2458,6 +2551,28 @@ function openDrawerPage(page) {
     `;
   }
 
+  else if (page === 'pengaturan') {
+    if (!['owner','coowner'].includes(u.role)) { showToast('⛔ Akses ditolak!'); return; }
+    el.innerHTML = `
+      <h3 style="margin-bottom:16px;">⚙️ Pengaturan Platform</h3>
+      <div class="card">
+        <h3 style="margin-bottom:12px;">📦 Limit Produk per Role</h3>
+        <div class="form-group">
+          <label class="form-label">Admin (maks produk)</label>
+          <input class="form-input" id="limit-admin" type="number" min="1" max="9999" value="${_produkLimits.admin}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pre-Admin / Seller Baru (maks produk)</label>
+          <input class="form-input" id="limit-preadmin" type="number" min="1" max="9999" value="${_produkLimits.preadmin}">
+        </div>
+        <button class="btn-full btn-accent" onclick="saveProdukLimits()" style="margin-top:8px;">💾 Simpan Pengaturan</button>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;">Owner & Co-Owner tidak terbatas.</div>
+      </div>
+    `;
+    openModal('modal-drawer-page');
+    return;
+  }
+
   else if (page === 'statistik') {
     if (!u || !['owner','coowner'].includes(u.role)) { showToast('⛔ Akses ditolak!'); return; }
     const users = getUsers();
@@ -2720,6 +2835,25 @@ function formatChatTime(ts) {
   return d.toLocaleDateString('id-ID',{day:'numeric',month:'short'});
 }
 
+// Chat polling interval
+let _chatPollInterval = null;
+
+function startChatPolling() {
+  stopChatPolling();
+  _chatPollInterval = setInterval(async () => {
+    if (document.getElementById('page-chatroom')?.classList.contains('active')) {
+      await fetchChats();
+      renderChatMessages();
+    } else {
+      stopChatPolling();
+    }
+  }, 3000); // refresh setiap 3 detik
+}
+
+function stopChatPolling() {
+  if (_chatPollInterval) { clearInterval(_chatPollInterval); _chatPollInterval = null; }
+}
+
 async function openChatRoom(partnerId, produkId) {
   if (!currentUser) { showPage('page-login'); return; }
   currentChatPartnerId = partnerId;
@@ -2756,6 +2890,7 @@ async function openChatRoom(partnerId, produkId) {
   document.querySelector('.chat-input-bar').style.display = 'flex';
   document.getElementById('chat-msg-input').value = '';
   showPage('page-chatroom');
+  startChatPolling();
   setTimeout(() => {
     const body = document.getElementById('chat-messages');
     if (body) body.scrollTop = body.scrollHeight;
@@ -2837,6 +2972,33 @@ async function sendChatMsg() {
     const body = document.getElementById('chat-messages');
     if (body) body.scrollTop = body.scrollHeight;
   }, 50);
+}
+
+async function sendChatImg(input) {
+  const file = input.files[0];
+  if (!file || !currentChatId) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('⚠️ Gambar maksimal 2MB!'); return; }
+
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const base64 = e.target.result;
+    const chats = getChats();
+    const chat = chats.find(c => c.id === currentChatId);
+    const messages = [...(chat?.messages || []), {
+      id: Date.now(), from: currentUser.id,
+      text: `<img src="${base64}" style="max-width:200px;max-height:200px;border-radius:8px;display:block;margin-top:4px;" onclick="this.style.maxWidth=this.style.maxWidth==='100%'?'200px':'100%'">`,
+      at: Date.now(), read: false, isImg: true
+    }];
+    await db.from('dm_chats').update({messages, last_at: Date.now()}).eq('id', currentChatId);
+    await fetchChats();
+    renderChatMessages();
+    input.value = '';
+    setTimeout(() => {
+      const body = document.getElementById('chat-messages');
+      if (body) body.scrollTop = body.scrollHeight;
+    }, 50);
+  };
+  reader.readAsDataURL(file);
 }
 
 // Dashboard chat section for owner to monitor all chats
@@ -3359,11 +3521,14 @@ function closeBuktiModal() {
 
 // =================== STARTUP ===================
 async function startup() {
+  checkSessionExpire();
   showLoading(true);
   await initData();
   renderNavbar();
   renderProdukGrid();
   renderHeroStats();
+  // Cek session expire setiap 5 menit
+  setInterval(checkSessionExpire, 5 * 60 * 1000);
 }
 
 startup();
