@@ -16,27 +16,21 @@ const SUPABASE_KEY = 'sb_publishable_i2NkK7O5bFT3QG2dd6griQ_9ac-9gd8';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ═══ PASSWORD HASHING (SHA-256) ═══
-function hashPassword(password) {
-  // Simple hash yang compatible semua browser termasuk file://
-  var hash = 0;
-  var str = password + 'digimart_salt_2024';
-  for (var i = 0; i < str.length; i++) {
-    var char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  var h = Math.abs(hash).toString(16).padStart(8, '0');
-  // Buat lebih panjang seperti SHA-256
-  var result = '';
-  for (var j = 0; j < 4; j++) {
-    var h2 = 0;
-    for (var k = 0; k < str.length; k++) {
-      h2 = ((h2 << 7) - h2) + str.charCodeAt((k + j * 7) % str.length);
-      h2 = h2 & h2;
+async function hashPassword(password) {
+  try {
+    const msgBuffer = new TextEncoder().encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch(e) {
+    // Fallback simple hash untuk file:// protocol
+    let hash = 0;
+    for (let i = 0; i < password.length; i++) {
+      hash = ((hash << 5) - hash) + password.charCodeAt(i);
+      hash |= 0;
     }
-    result += Math.abs(h2).toString(16).padStart(8, '0');
+    return Math.abs(hash).toString(16).padStart(8, '0') + password.length.toString(16);
   }
-  return Promise.resolve(h + result);
 }
 
 // ===== AVATAR HELPER =====
@@ -871,78 +865,84 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
     </div>
     <div style="padding:4px 0 12px;">
 
-      <!-- Step 1: Info -->
+      <!-- Step 1: Data Diri -->
       <div class="seller-verify-step active" id="svstep-1">
-        <div style="background:rgba(108,99,255,0.08);border:1px solid rgba(108,99,255,0.2);border-radius:10px;padding:14px;margin-bottom:14px;">
-          <div style="font-weight:700;font-size:14px;margin-bottom:6px;">📋 Syarat Verifikasi Seller</div>
-          <div style="font-size:12px;color:rgba(240,240,255,0.8);line-height:1.7;">
-            ✅ Foto <b>KTP</b> yang jelas<br>
-            ✅ <b>Selfie</b> pegang KTP + kertas bertuliskan <b>"DigiMart"</b><br>
-            ✅ Akun login via Google/Facebook<br>
-            ✅ Proses review 1x24 jam oleh admin
-          </div>
+        <h3 style="margin-bottom:4px;">👤 Data Diri</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:16px;">Langkah 1 dari 4</p>
+        <div class="form-group">
+          <label class="form-label">Nama Lengkap (sesuai KTP)</label>
+          <input class="form-input" id="sv-nama" type="text" placeholder="Nama sesuai KTP" oninput="sv.nama=this.value">
         </div>
-        <button class="btn-full btn-accent" onclick="svNextStep(2)">Lanjut →</button>
+        <div class="form-group">
+          <label class="form-label">No. HP / WhatsApp</label>
+          <input class="form-input" id="sv-nohp" type="tel" placeholder="08xxxxxxxxxx" oninput="sv.noHp=this.value">
+        </div>
+        <button class="btn-full btn-accent" style="margin-top:8px;" onclick="svNextStep(1)">Lanjut →</button>
       </div>
 
-      <!-- Step 2: Upload KTP -->
+      <!-- Step 2: Foto KTP -->
       <div class="seller-verify-step" id="svstep-2">
-        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">📷 Upload Foto KTP</div>
-        <div class="upload-box" onclick="document.getElementById('sv-ktp-input').click()" id="sv-ktp-box">
-          <div class="ub-icon">🪪</div>
-          <div class="ub-label">Tap untuk upload foto KTP</div>
+        <h3 style="margin-bottom:4px;">📄 Foto KTP</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:16px;">Langkah 2 dari 4 — Pastikan tulisan jelas terbaca</p>
+        <div class="upload-box" onclick="svTriggerUpload('ktp','sv-ktp-box')" id="sv-ktp-box">
+          <div style="font-size:32px;margin-bottom:8px;">📄</div>
+          <div style="font-size:13px;font-weight:600;">Tap untuk upload foto KTP</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">Format: JPG/PNG, maks 5MB</div>
         </div>
-        <input type="file" id="sv-ktp-input" accept="image/*" style="display:none;" onchange="svPreview('ktp',this)">
-        <div style="display:flex;gap:8px;margin-top:10px;">
-          <button class="btn-full btn-outline" style="margin:0;" onclick="svNextStep(1)">← Kembali</button>
-          <button class="btn-full btn-accent" style="margin:0;" onclick="svNextStep(3)" id="sv-ktp-next" disabled>Lanjut →</button>
+        
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button class="btn-full btn-outline" style="margin:0;" onclick="svGoStep(1)">← Kembali</button>
+          <button class="btn-full btn-accent" style="margin:0;" onclick="svNextStep(2)">Lanjut →</button>
         </div>
       </div>
 
-      <!-- Step 3: Upload Selfie -->
+      <!-- Step 3: Foto Selfie -->
       <div class="seller-verify-step" id="svstep-3">
-        <div style="font-weight:700;font-size:14px;margin-bottom:4px;">🤳 Upload Selfie</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Pegang KTP + kertas bertuliskan <b style="color:var(--accent);">"DigiMart"</b></div>
-        <div class="upload-box" onclick="document.getElementById('sv-selfie-input').click()" id="sv-selfie-box">
-          <div class="ub-icon">🤳</div>
-          <div class="ub-label">Tap untuk upload selfie</div>
+        <h3 style="margin-bottom:4px;">🤳 Foto Selfie + KTP</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:16px;">Langkah 3 dari 4 — Selfie sambil pegang KTP</p>
+        <div class="upload-box" onclick="svTriggerUpload('selfie','sv-selfie-box')" id="sv-selfie-box">
+          <div style="font-size:32px;margin-bottom:8px;">🤳</div>
+          <div style="font-size:13px;font-weight:600;">Tap untuk upload selfie + KTP</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">Pastikan wajah & KTP terlihat jelas</div>
         </div>
-        <input type="file" id="sv-selfie-input" accept="image/*" style="display:none;" onchange="svPreview('selfie',this)">
-        <div style="display:flex;gap:8px;margin-top:10px;">
-          <button class="btn-full btn-outline" style="margin:0;" onclick="svNextStep(2)">← Kembali</button>
-          <button class="btn-full btn-accent" style="margin:0;" onclick="svNextStep(4)" id="sv-selfie-next" disabled>Lanjut →</button>
+        
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button class="btn-full btn-outline" style="margin:0;" onclick="svGoStep(2)">← Kembali</button>
+          <button class="btn-full btn-accent" style="margin:0;" onclick="svNextStep(3)">Lanjut →</button>
         </div>
       </div>
 
-      <!-- Step 4: Konfirmasi & Kirim -->
+      <!-- Step 4: Foto Kertas -->
       <div class="seller-verify-step" id="svstep-4">
-        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">✅ Konfirmasi & Kirim</div>
-        <div style="display:flex;gap:10px;margin-bottom:14px;">
-          <div style="flex:1;text-align:center;">
-            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Foto KTP</div>
-            <img id="sv-ktp-preview-small" style="width:100%;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--border);">
-          </div>
-          <div style="flex:1;text-align:center;">
-            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Selfie + KTP</div>
-            <img id="sv-selfie-preview-small" style="width:100%;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--border);">
+        <h3 style="margin-bottom:4px;">📝 Foto Kertas DigiMart</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:16px;">Langkah 4 dari 4</p>
+        <div style="background:rgba(108,99,255,0.08);border:1px solid rgba(108,99,255,0.3);border-radius:10px;padding:12px;margin-bottom:12px;">
+          <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 Cara foto kertas:</div>
+          <div style="font-size:12px;color:var(--text);line-height:1.8;">
+            1. Ambil selembar kertas putih<br>
+            2. Tulis: <strong>"DigiMart - [username] - [tanggal]"</strong><br>
+            3. Letakkan KTP di samping kertas<br>
+            4. Foto keduanya dalam 1 gambar
           </div>
         </div>
-        <div style="background:rgba(255,200,0,0.08);border:1px solid rgba(255,200,0,0.2);border-radius:8px;padding:10px;font-size:12px;color:rgba(240,240,255,0.8);margin-bottom:14px;">
-          ⏳ Request akan direview oleh Owner/Co-Owner dalam 1x24 jam
+        <div class="upload-box" onclick="svTriggerUpload('kertas','sv-kertas-box')" id="sv-kertas-box">
+          <div style="font-size:32px;margin-bottom:8px;">📝</div>
+          <div style="font-size:13px;font-weight:600;">Tap untuk upload foto kertas + KTP</div>
         </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn-full btn-outline" style="margin:0;" onclick="svNextStep(3)">← Kembali</button>
-          <button class="btn-full btn-accent" style="margin:0;" onclick="svSubmitRequest()" id="sv-submit-btn">📤 Kirim Request</button>
+        
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button class="btn-full btn-outline" style="margin:0;" onclick="svGoStep(3)">← Kembali</button>
+          <button class="btn-full btn-accent" style="margin:0;" id="sv-submit-btn" onclick="svSubmitRequest()">📤 Kirim Request</button>
         </div>
       </div>
 
       <!-- Step 5: Sukses -->
       <div class="seller-verify-step" id="svstep-5">
-        <div style="text-align:center;padding:20px 0;">
-          <div style="font-size:48px;margin-bottom:12px;">🎉</div>
-          <div style="font-weight:700;font-size:16px;margin-bottom:8px;">Request Terkirim!</div>
-          <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Request kamu sedang direview oleh admin. Kamu akan dinotifikasi setelah diproses.</div>
-          <button class="btn-full btn-accent" onclick="closeModal('modal-become-seller')">Tutup</button>
+        <div style="text-align:center;padding:30px 0;">
+          <div style="font-size:64px;margin-bottom:16px;">🎉</div>
+          <div style="font-family:var(--font-head);font-size:20px;font-weight:800;margin-bottom:8px;">Request Terkirim!</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Tim kami akan review dalam 1x24 jam</div>
+          <button class="btn-full btn-accent" onclick="closeModal('modal-seller-verify')">Kembali</button>
         </div>
       </div>
 
@@ -1544,8 +1544,7 @@ function renderUlasan(produkId, reviews, avgRating) {
 // ============================================================
 // FITUR DAFTAR JADI SELLER
 // ============================================================
-let svKtpBase64 = null;
-let svSelfieBase64 = null;
+let sv = { nama:'', noHp:'', ktp:null, selfie:null, kertas:null };
 
 function openBecomeSeller() {
   closeDrawer();
@@ -1602,38 +1601,147 @@ function svPreview(type, input) {
   reader.readAsDataURL(file);
 }
 
-async function svSubmitRequest() {
-  if (!svKtpBase64 || !svSelfieBase64) { showToast('⚠️ Upload semua foto dulu!'); return; }
-  
-  const btn = document.getElementById('sv-submit-btn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Mengirim...';
+
+// ===== SELLER VERIFY NEW SYSTEM =====
+function svGoStep(n) {
+  document.querySelectorAll('.seller-verify-step').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById('svstep-' + n);
+  if (el) el.classList.add('active');
+}
+
+function svNextStep(step) {
+  document.querySelectorAll('.seller-verify-step').forEach(el => el.classList.remove('active'));
+  document.getElementById('svstep-' + step).classList.add('active');
+}
+
+function svUploadFoto(input, field, boxId) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('❌ Ukuran file maks 5MB!'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    sv[field] = e.target.result;
+    const box = document.getElementById(boxId);
+    if (box) {
+      box.innerHTML = `<img src="${e.target.result}" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;"><div style="font-size:11px;color:#00c864;margin-top:6px;">✅ Foto berhasil diupload</div>`;
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function svTriggerUpload(field, boxId) {
+  // Buat input file fresh setiap kali - fix mobile browser issue
+  const old = document.getElementById('sv-file-input-global');
+  if (old) old.remove();
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.id = 'sv-file-input-global';
+  input.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;';
+  input.onchange = function() { svUploadFoto(this, field, boxId); };
+  document.body.appendChild(input);
+  input.click();
+}
+
+async function approveSellerReq(reqId) {
+  const requests = getSellerRequests();
+  const req = requests.find(r => r.id === reqId);
+  if (!req) { showToast('❌ Request tidak ditemukan'); return; }
+
+  if (!confirm('Approve ' + req.username + ' jadi Seller?')) return;
   showLoading(true);
-  
+
+  // Update status request
+  await db.from('dm_seller_requests').update({
+    status: 'approved',
+    reviewed_at: Date.now(),
+    reviewed_by: currentUser.username
+  }).eq('id', reqId);
+
+  // Naikan role user jadi preadmin (seller)
+  await db.from('dm_users').update({
+    role: 'preadmin',
+    avatar: '🔰',
+    status: 'active'
+  }).eq('id', req.user_id);
+
+  await Promise.all([fetchUsers(), fetchSellerRequests()]);
+  showLoading(false);
+  showToast('✅ ' + req.username + ' berhasil jadi Seller!');
+  renderVerifikasiSeller();
+}
+
+async function rejectSellerReq(reqId) {
+  const requests = getSellerRequests();
+  const req = requests.find(r => r.id === reqId);
+  if (!req) return;
+
+  const reason = prompt('Alasan penolakan (opsional):') || '';
+  showLoading(true);
+
+  await db.from('dm_seller_requests').update({
+    status: 'rejected',
+    reviewed_at: Date.now(),
+    reviewed_by: currentUser.username,
+    reject_reason: reason
+  }).eq('id', reqId);
+
+  await fetchSellerRequests();
+  showLoading(false);
+  showToast('❌ Request ' + req.username + ' ditolak.');
+  renderVerifikasiSeller();
+}
+
+async function svSubmitRequest() {
+  if (!sv.nama.trim()) { showToast('⚠️ Isi nama lengkap dulu!'); return; }
+  if (!sv.noHp.trim()) { showToast('⚠️ Isi No. HP/WA dulu!'); return; }
+  if (!sv.ktp) { showToast('⚠️ Upload foto KTP dulu!'); return; }
+  if (!sv.selfie) { showToast('⚠️ Upload foto selfie dulu!'); return; }
+  if (!sv.kertas) { showToast('⚠️ Upload foto kertas DigiMart dulu!'); return; }
+
+  const btn = document.getElementById('sv-submit-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Mengirim...'; }
+  showLoading(true);
+
   try {
-    // Simpan foto langsung sebagai base64 ke database (tanpa perlu Storage)
-    const { error: e3 } = await db.from('dm_seller_requests').insert({
+    // Cek apakah sudah pernah apply
+    const { data: existing } = await db.from('dm_seller_requests').select('id').eq('user_id', currentUser.id).eq('status', 'pending');
+    if (existing && existing.length > 0) {
+      showToast('⚠️ Kamu sudah punya request yang sedang diproses!');
+      showLoading(false);
+      if (btn) { btn.disabled = false; btn.textContent = '📤 Kirim Request'; }
+      return;
+    }
+
+    const { error } = await db.from('dm_seller_requests').insert({
       user_id: currentUser.id,
       username: currentUser.username,
       email: currentUser.email || '',
-      oauth_provider: currentUser.oauth_provider || 'demo',
-      ktp_url: svKtpBase64,
-      selfie_url: svSelfieBase64,
+      nama_lengkap: sv.nama,
+      no_hp: sv.noHp,
+      foto_ktp: sv.ktp,
+      foto_selfie: sv.selfie,
+      foto_kertas: sv.kertas,
       status: 'pending',
-      created_at: Date.now()
+      created_at: Date.now(),
+      reviewed_at: null,
+      reviewed_by: null,
+      reject_reason: null
     });
-    
-    if (e3) throw new Error('Gagal kirim request: ' + e3.message);
-    
-    await fetchSellerRequests();
+
     showLoading(false);
-    svNextStep(5);
-    
-  } catch(err) {
+    if (error) { showToast('❌ Gagal kirim: ' + error.message); if (btn) { btn.disabled=false; btn.textContent='📤 Kirim Request'; } return; }
+
+    sv = { nama:'', noHp:'', ktp:null, selfie:null, kertas:null };
+    showToast('✅ Request terkirim! Tunggu persetujuan owner.');
+    // Tampil sukses
+    document.querySelectorAll('.seller-verify-step').forEach(el => el.classList.remove('active'));
+    const s5 = document.getElementById('svstep-5');
+    if (s5) s5.classList.add('active');
+  } catch(e) {
     showLoading(false);
-    btn.disabled = false;
-    btn.textContent = '📤 Kirim Request';
-    showToast('❌ ' + err.message);
+    showToast('❌ Error: ' + e.message);
+    if (btn) { btn.disabled=false; btn.textContent='📤 Kirim Request'; }
   }
 }
 
@@ -1653,92 +1761,88 @@ async function fetchSellerRequests() {
 function getSellerRequests() { return _sellerRequests; }
 
 // Render panel verifikasi seller di drawer admin
-async async function renderVerifikasiSeller() {
-  const panel = document.getElementById('drawer-page-content');
+async function renderVerifikasiSeller() {
+  // Pakai overlay yang dibuat openDrawerPage, bukan modal-drawer-page
+  const overlay = document.getElementById('drawer-page-overlay');
+  const panel = overlay ? overlay.querySelector('#drawer-page-content') : document.getElementById('drawer-page-content');
   if (!panel) return;
-  
+
+  panel.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">⏳ Memuat data...</div>';
+
   await fetchSellerRequests();
   const requests = getSellerRequests();
   const pending = requests.filter(r => r.status === 'pending');
   const done = requests.filter(r => r.status !== 'pending');
-  
+
+  function fotoBox(label, src) {
+    if (!src) return `<div style="font-size:11px;color:var(--muted);">${label}: tidak ada</div>`;
+    return `<div style="margin-bottom:8px;">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">${label}</div>
+      <img src="${src}" onclick="this.style.width=this.style.width==='100%'?'60px':'100%'" 
+        style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:all 0.3s;">
+      <div style="font-size:9px;color:var(--muted);">tap untuk perbesar</div>
+    </div>`;
+  }
+
+  function cardPending(r) {
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div>
+          <div style="font-weight:700;font-size:14px;">👤 ${r.username}</div>
+          <div style="font-size:11px;color:var(--muted);">${r.nama_lengkap || '-'} · WA: ${r.no_hp || '-'}</div>
+          <div style="font-size:10px;color:var(--muted);">${r.email} · ${new Date(r.created_at).toLocaleDateString('id-ID')}</div>
+        </div>
+        <div style="background:rgba(255,200,0,0.15);color:#ffc800;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">⏳ PENDING</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        ${fotoBox('📄 KTP', r.foto_ktp)}
+        ${fotoBox('🤳 Selfie', r.foto_selfie)}
+        ${fotoBox('📝 Kertas', r.foto_kertas)}
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="approveSellerReq(${r.id})" style="flex:1;padding:10px;background:rgba(0,200,100,0.15);border:1px solid rgba(0,200,100,0.4);color:#00c864;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px;">✅ Approve</button>
+        <button onclick="rejectSellerReq(${r.id})" style="flex:1;padding:10px;background:rgba(255,101,132,0.15);border:1px solid rgba(255,101,132,0.4);color:#ff6584;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px;">❌ Reject</button>
+      </div>
+    </div>`;
+  }
+
+  function cardDone(r) {
+    const isApproved = r.status === 'approved';
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;opacity:0.8;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:600;font-size:13px;">👤 ${r.username}</div>
+          <div style="font-size:11px;color:var(--muted);">${r.nama_lengkap || '-'} · ${new Date(r.created_at).toLocaleDateString('id-ID')}</div>
+          ${r.reject_reason ? `<div style="font-size:11px;color:#ff6584;">Alasan: ${r.reject_reason}</div>` : ''}
+        </div>
+        <div style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${isApproved?'rgba(0,200,100,0.15)':'rgba(255,101,132,0.15)'};color:${isApproved?'#00c864':'#ff6584'};">
+          ${isApproved ? '✅ Approved' : '❌ Rejected'}
+        </div>
+      </div>
+    </div>`;
+  }
+
   panel.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
       <button onclick="closeDrawerPage()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;">← Kembali</button>
       <div style="font-weight:700;font-size:16px;">🏪 Verifikasi Seller</div>
+      <button onclick="renderVerifikasiSeller()" style="margin-left:auto;background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:6px 10px;border-radius:8px;cursor:pointer;font-size:12px;">🔄 Refresh</button>
     </div>
-    
+
     <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;">PENDING (${pending.length})</div>
-    ${pending.length === 0 ? '<div class="empty"><div class="eicon">✅</div><p>Tidak ada request pending</p></div>' :
-      pending.map(r => `
-      <div class="verify-request-item">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <div style="font-weight:700;font-size:13px;">👤 ${r.username}</div>
-          <div style="font-size:10px;color:var(--muted);">${new Date(r.created_at).toLocaleDateString('id-ID')}</div>
-        </div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">${r.email} · via ${r.oauth_provider}</div>
-        <div class="verify-img-row">
-          <div style="text-align:center;">
-            <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">KTP</div>
-            <img src="${r.ktp_url}" onclick="window.open('${r.ktp_url}','_blank')" title="Klik untuk perbesar">
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">Selfie</div>
-            <img src="${r.selfie_url}" onclick="window.open('${r.selfie_url}','_blank')" title="Klik untuk perbesar">
-          </div>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:8px;">
-          <button onclick="approveSellerRequest(${r.id}, ${r.user_id})" 
-            style="flex:1;padding:8px;border-radius:8px;background:rgba(0,200,100,0.15);border:1px solid rgba(0,200,100,0.3);color:#00c864;cursor:pointer;font-size:12px;font-weight:700;">
-            ✅ Approve
-          </button>
-          <button onclick="rejectSellerRequest(${r.id})"
-            style="flex:1;padding:8px;border-radius:8px;background:rgba(255,101,132,0.15);border:1px solid rgba(255,101,132,0.3);color:#ff6584;cursor:pointer;font-size:12px;font-weight:700;">
-            ❌ Reject
-          </button>
-        </div>
-      </div>`).join('')
-    }
-    
+    ${pending.length === 0 
+      ? '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">✅ Tidak ada request pending</div>'
+      : pending.map(r => cardPending(r)).join('')}
+
     ${done.length > 0 ? `
     <div style="font-size:11px;font-weight:700;color:var(--muted);margin:16px 0 8px;">RIWAYAT (${done.length})</div>
-    ${done.slice(0,10).map(r => `
-    <div class="verify-request-item" style="opacity:0.7;">
-      <div style="display:flex;justify-content:space-between;">
-        <div style="font-size:13px;font-weight:600;">👤 ${r.username}</div>
-        <div style="font-size:11px;color:${r.status==='approved'?'#00c864':'#ff6584'};">
-          ${r.status==='approved'?'✅ Approved':'❌ Rejected'}
-        </div>
-      </div>
-    </div>`).join('')}` : ''}
+    ${done.map(r => cardDone(r)).join('')}` : ''}
   `;
 }
 
-async function approveSellerRequest(requestId, userId) {
-  if (!confirm('Approve user ini jadi Seller?')) return;
-  showLoading(true);
-  
-  // Update role user jadi preadmin
-  await db.from('dm_users').update({ role: 'preadmin', status: 'active', avatar: '🔰' }).eq('id', userId);
-  // Update status request
-  await db.from('dm_seller_requests').update({ status: 'approved', reviewed_by: currentUser.id, reviewed_at: Date.now() }).eq('id', requestId);
-  
-  await fetchUsers();
-  await fetchSellerRequests();
-  showLoading(false);
-  showToast('✅ User berhasil jadi Seller!');
-  renderVerifikasiSeller();
-}
+// approveSellerRequest replaced by new system
 
-async function rejectSellerRequest(requestId) {
-  if (!confirm('Reject request ini?')) return;
-  showLoading(true);
-  await db.from('dm_seller_requests').update({ status: 'rejected', reviewed_by: currentUser.id, reviewed_at: Date.now() }).eq('id', requestId);
-  await fetchSellerRequests();
-  showLoading(false);
-  showToast('❌ Request ditolak');
-  renderVerifikasiSeller();
-}
+// rejectSellerRequest replaced by new system
 
 // ============================================================
 // Filter ulasan berdasarkan bintang
@@ -2927,6 +3031,10 @@ function renderDrawer() {
     if (u.customTitle) {
       titleWrap.innerHTML = `<span class="drawer-title-badge">${u.customTitle}</span>`;
     } else titleWrap.innerHTML = '';
+    // Reset semua menu dulu
+    document.getElementById('drawer-seller-menu').style.display = 'none';
+    document.getElementById('drawer-owner-menu').style.display = 'none';
+    document.getElementById('drawer-owner-divider').style.display = 'none';
     // Seller menu
     if (['owner','coowner','admin','preadmin'].includes(u.role)) {
       document.getElementById('drawer-seller-menu').style.display = 'block';
