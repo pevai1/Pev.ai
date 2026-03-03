@@ -1548,36 +1548,43 @@ let sv = { nama:'', noHp:'', ktp:null, selfie:null, kertas:null };
 
 function openBecomeSeller() {
   closeDrawer();
-  // Cek apakah user login via OAuth
   if (!currentUser) { showPage('page-login'); return; }
-  
-  // Sementara semua akun bisa akses untuk testing
-  // const isOAuth = currentUser.oauth_provider && 
-  //   (currentUser.oauth_provider === 'Google' || currentUser.oauth_provider === 'Facebook');
-  // if (!isOAuth) { ... }
-  
-  // Cek apakah sudah pernah request
-  const existing = getSellerRequests().find(r => r.user_id == currentUser.id && r.status === 'pending');
-  if (existing) {
-    showToast('⏳ Request kamu sedang dalam proses review!');
-    return;
+  if (['owner','coowner','admin','preadmin'].includes(currentUser.role)) {
+    showToast('⚠️ Kamu sudah jadi seller!'); return;
   }
-  
-  // Reset form
-  svKtpBase64 = null;
-  svSelfieBase64 = null;
-  svNextStep(1);
-  document.getElementById('sv-ktp-box').innerHTML = '<div class="ub-icon">🪪</div><div class="ub-label">Tap untuk upload foto KTP</div>';
-  document.getElementById('sv-selfie-box').innerHTML = '<div class="ub-icon">🤳</div><div class="ub-label">Tap untuk upload selfie</div>';
-  document.getElementById('sv-ktp-next').disabled = true;
-  document.getElementById('sv-selfie-next').disabled = true;
-  
+  const existing = getSellerRequests().find(r => r.user_id == currentUser.id && r.status === 'pending');
+  if (existing) { showToast('⏳ Request kamu sedang dalam proses review!'); return; }
+
+  sv = { nama:'', noHp:'', ktp:null, selfie:null, kertas:null };
+  const svNama = document.getElementById('sv-nama');
+  const svNohp = document.getElementById('sv-nohp');
+  if (svNama) svNama.value = '';
+  if (svNohp) svNohp.value = '';
+
+  const ktpBox = document.getElementById('sv-ktp-box');
+  if (ktpBox) ktpBox.innerHTML = '<div style="font-size:32px;margin-bottom:8px;">📄</div><div style="font-size:13px;font-weight:600;">Tap untuk upload foto KTP</div>';
+  const selfieBox = document.getElementById('sv-selfie-box');
+  if (selfieBox) selfieBox.innerHTML = '<div style="font-size:32px;margin-bottom:8px;">🤳</div><div style="font-size:13px;font-weight:600;">Tap untuk upload selfie + KTP</div>';
+  const kertasBox = document.getElementById('sv-kertas-box');
+  if (kertasBox) kertasBox.innerHTML = '<div style="font-size:32px;margin-bottom:8px;">📝</div><div style="font-size:13px;font-weight:600;">Tap untuk upload foto kertas + KTP</div>';
+
+  svGoStep(1);
   openModal('modal-become-seller');
 }
 
-function svNextStep(step) {
-  document.querySelectorAll('.seller-verify-step').forEach(el => el.classList.remove('active'));
-  document.getElementById('svstep-' + step).classList.add('active');
+function svNextStep(current) {
+  // Baca langsung dari input field biar ga masalah scope
+  if (current === 1) {
+    const nama = (document.getElementById('sv-nama').value || '').trim();
+    const noHp = (document.getElementById('sv-nohp').value || '').trim();
+    if (!nama) { showToast('⚠️ Isi nama lengkap dulu!'); return; }
+    if (!noHp) { showToast('⚠️ Isi No. HP dulu!'); return; }
+    sv.nama = nama;
+    sv.noHp = noHp;
+  }
+  if (current === 2 && !sv.ktp) { showToast('⚠️ Upload foto KTP dulu!'); return; }
+  if (current === 3 && !sv.selfie) { showToast('⚠️ Upload foto selfie dulu!'); return; }
+  svGoStep(current + 1);
 }
 
 function svPreview(type, input) {
@@ -1609,24 +1616,41 @@ function svGoStep(n) {
   if (el) el.classList.add('active');
 }
 
-function svNextStep(step) {
-  document.querySelectorAll('.seller-verify-step').forEach(el => el.classList.remove('active'));
-  document.getElementById('svstep-' + step).classList.add('active');
-}
+// svNextStep legacy removed
 
 function svUploadFoto(input, field, boxId) {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { showToast('❌ Ukuran file maks 5MB!'); return; }
+  if (file.size > 10 * 1024 * 1024) { showToast('❌ Ukuran file maks 10MB!'); return; }
   const reader = new FileReader();
   reader.onload = function(e) {
-    sv[field] = e.target.result;
-    const box = document.getElementById(boxId);
-    if (box) {
-      box.innerHTML = `<img src="${e.target.result}" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;"><div style="font-size:11px;color:#00c864;margin-top:6px;">✅ Foto berhasil diupload</div>`;
-    }
+    svCompressImage(e.target.result, function(compressed) {
+      sv[field] = compressed;
+      const box = document.getElementById(boxId);
+      if (box) {
+        box.innerHTML = `<img src="${compressed}" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;"><div style="font-size:11px;color:#00c864;margin-top:6px;">✅ Foto berhasil diupload</div>`;
+      }
+    });
   };
   reader.readAsDataURL(file);
+}
+
+
+// Compress image sebelum disimpan - max 400px, quality 0.6
+function svCompressImage(dataUrl, callback) {
+  const img = new Image();
+  img.onload = function() {
+    const canvas = document.createElement('canvas');
+    const MAX = 400;
+    let w = img.width, h = img.height;
+    if (w > h) { if (w > MAX) { h = h * MAX / w; w = MAX; } }
+    else { if (h > MAX) { w = w * MAX / h; h = MAX; } }
+    canvas.width = w;
+    canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    callback(canvas.toDataURL('image/jpeg', 0.6));
+  };
+  img.src = dataUrl;
 }
 
 function svTriggerUpload(field, boxId) {
@@ -1703,17 +1727,25 @@ async function svSubmitRequest() {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Mengirim...'; }
   showLoading(true);
 
+  // Timeout 30 detik
+  const timeout = setTimeout(() => {
+    showLoading(false);
+    if (btn) { btn.disabled = false; btn.textContent = '📤 Kirim Request'; }
+    showToast('❌ Timeout! Coba lagi.');
+  }, 30000);
+
   try {
-    // Cek apakah sudah pernah apply
-    const { data: existing } = await db.from('dm_seller_requests').select('id').eq('user_id', currentUser.id).eq('status', 'pending');
+    const { data: existing } = await db.from('dm_seller_requests')
+      .select('id').eq('user_id', currentUser.id).eq('status', 'pending');
     if (existing && existing.length > 0) {
+      clearTimeout(timeout);
       showToast('⚠️ Kamu sudah punya request yang sedang diproses!');
       showLoading(false);
       if (btn) { btn.disabled = false; btn.textContent = '📤 Kirim Request'; }
       return;
     }
 
-    const { error } = await db.from('dm_seller_requests').insert({
+    const payload = {
       user_id: currentUser.id,
       username: currentUser.username,
       email: currentUser.email || '',
@@ -1727,26 +1759,40 @@ async function svSubmitRequest() {
       reviewed_at: null,
       reviewed_by: null,
       reject_reason: null
+    };
+
+    console.log('Sending payload, sizes:', {
+      ktp: sv.ktp ? sv.ktp.length : 0,
+      selfie: sv.selfie ? sv.selfie.length : 0,
+      kertas: sv.kertas ? sv.kertas.length : 0
     });
 
+    const { error } = await db.from('dm_seller_requests').insert(payload);
+
+    clearTimeout(timeout);
     showLoading(false);
-    if (error) { showToast('❌ Gagal kirim: ' + error.message); if (btn) { btn.disabled=false; btn.textContent='📤 Kirim Request'; } return; }
+    if (error) {
+      console.error('Insert error:', error);
+      showToast('❌ Gagal kirim: ' + error.message);
+      if (btn) { btn.disabled = false; btn.textContent = '📤 Kirim Request'; }
+      return;
+    }
 
     sv = { nama:'', noHp:'', ktp:null, selfie:null, kertas:null };
     showToast('✅ Request terkirim! Tunggu persetujuan owner.');
-    // Tampil sukses
     document.querySelectorAll('.seller-verify-step').forEach(el => el.classList.remove('active'));
     const s5 = document.getElementById('svstep-5');
     if (s5) s5.classList.add('active');
   } catch(e) {
+    clearTimeout(timeout);
     showLoading(false);
+    console.error('svSubmitRequest error:', e);
     showToast('❌ Error: ' + e.message);
-    if (btn) { btn.disabled=false; btn.textContent='📤 Kirim Request'; }
+    if (btn) { btn.disabled = false; btn.textContent = '📤 Kirim Request'; }
   }
 }
 
-// Cache seller requests
-let _sellerRequests = [];
+
 async function fetchSellerRequests() {
   try {
     const { data, error } = await db.from('dm_seller_requests').select('*').order('created_at', {ascending: false});
