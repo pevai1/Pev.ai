@@ -780,9 +780,6 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
         <div class="pm-info"><div class="pm-name">QRIS</div><div class="pm-desc">GoPay · OVO · Dana · ShopeePay</div></div>
         <div class="pm-check"></div>
       </div>
-      <div class="payment-method" id="pm-voucher" onclick="selectPayment('voucher')">
-        <div class="pm-icon">💵</div>
-        <div class="pm-info"><div class="pm-name">Bayar via Voucher</div><div class="pm-desc">Masukkan kode voucher DigiMart</div></div>
         <div class="pm-check"></div>
       </div>
       <div id="payment-detail-wrap" style="margin-top:16px;"></div>
@@ -1586,6 +1583,18 @@ function doLogout() {
 }
 
 // =================== FOTO PROFIL ===================
+// =================== QRIS FULLSCREEN ===================
+function showQrisFullscreen(src) {
+  document.getElementById('qris-fullscreen-img').src = src;
+  const modal = document.getElementById('modal-qris-fullscreen');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeQrisFullscreen() {
+  document.getElementById('modal-qris-fullscreen').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
 // =================== PAYMENT INFO SELLER ===================
 function previewQrisUpload(input) {
   const file = input.files[0];
@@ -3466,7 +3475,7 @@ function goCheckoutStep(step) {
 
 function selectPayment(method) {
   selectedPayment = method;
-  ['transfer','qris','voucher'].forEach(m => {
+  ['transfer','qris'].forEach(m => {
     const el = document.getElementById('pm-' + m);
     if (el) {
       el.classList.toggle('selected', m === method);
@@ -3524,7 +3533,7 @@ function renderPaymentDetail() {
     el.innerHTML = `
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
         <div style="font-weight:700;font-size:14px;margin-bottom:12px;">📱 Scan QRIS</div>
-        ${qrisImg ? `<div style="background:white;border-radius:12px;padding:8px;margin:0 auto;width:180px;height:180px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img src="${qrisImg}" style="width:100%;height:100%;object-fit:contain;"></div>` : `<div style="background:var(--surface);border:2px dashed var(--border);border-radius:12px;padding:20px;margin:0 auto;width:160px;height:160px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;"><div style="font-size:40px;">📲</div><div style="font-size:11px;color:#ff6584;">QRIS belum diatur seller</div></div>`}
+        ${qrisImg ? `<div style="background:white;border-radius:12px;padding:8px;margin:0 auto;width:180px;height:180px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img src="${qrisImg}" style="width:100%;height:100%;object-fit:contain;cursor:zoom-in;" onclick="event.stopPropagation();showQrisFullscreen(\`${qrisImg}\`)" title="Tap untuk perbesar"></div>` : `<div style="background:var(--surface);border:2px dashed var(--border);border-radius:12px;padding:20px;margin:0 auto;width:160px;height:160px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;"><div style="font-size:40px;">📲</div><div style="font-size:11px;color:#ff6584;">QRIS belum diatur seller</div></div>`}
         <div style="margin-top:12px;font-size:13px;color:var(--muted);">Scan dengan GoPay, OVO, Dana, atau ShopeePay</div>
         <div style="margin-top:4px;font-size:12px;color:var(--muted);">Seller: <strong>${sellerName}</strong></div>
         <div style="margin-top:6px;font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--accent);">${formatRp(total)}</div>
@@ -3597,7 +3606,7 @@ function renderCheckoutConfirm() {
   const biayaLayanan = Math.round(subtotal * 0.02);
   const total = subtotal + biayaLayanan;
   const kode = genKode();
-  const paymentLabels = {transfer:'Transfer Bank', qris:'QRIS', cod:'Voucher'};
+  const paymentLabels = {transfer:'Transfer Bank', qris:'QRIS'};
 
   document.getElementById('checkout-step3-content').innerHTML = `
     <div class="order-success-wrap">
@@ -3636,15 +3645,8 @@ async function finalizeOrder(kode, total) {
     showToast('⚠️ Upload bukti pembayaran dulu!'); return;
   }
   // Validasi voucher
-  if (selectedPayment === 'voucher' && !window._voucherValid) {
-    showToast('⚠️ Validasi voucher dulu!'); return;
-  }
 
-  let finalTotal = total;
-  if (selectedPayment === 'voucher' && window._voucherValid) {
-    finalTotal = Math.max(0, total - window._voucherValid.diskon);
-    // Tandai voucher sudah dipakai
-    await db.from('dm_vouchers').update({status:'used', used_by: currentUser.id}).eq('id', window._voucherValid.id);
+  let finalTotal = total;).eq('id', window._voucherValid.id);
     window._voucherValid = null;
   }
 
@@ -3705,5 +3707,15 @@ async function startup() {
 
 startup();
 </script>
+
+<!-- QRIS Fullscreen Modal -->
+<div id="modal-qris-fullscreen" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;flex-direction:column;gap:16px;" onclick="closeQrisFullscreen()">
+  <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:4px;">Tap mana saja untuk menutup</div>
+  <div style="background:white;border-radius:16px;padding:12px;max-width:90vw;max-height:80vh;">
+    <img id="qris-fullscreen-img" src="" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:8px;display:block;">
+  </div>
+  <div style="font-size:12px;color:rgba(255,255,255,0.6);">📱 Scan dengan GoPay, OVO, Dana, ShopeePay</div>
+</div>
 </body>
 </html>
+herel
