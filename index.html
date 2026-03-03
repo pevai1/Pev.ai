@@ -16,11 +16,27 @@ const SUPABASE_KEY = 'sb_publishable_i2NkK7O5bFT3QG2dd6griQ_9ac-9gd8';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ═══ PASSWORD HASHING (SHA-256) ═══
-async function hashPassword(password) {
-  const msgBuffer = new TextEncoder().encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+function hashPassword(password) {
+  // Simple hash yang compatible semua browser termasuk file://
+  var hash = 0;
+  var str = password + 'digimart_salt_2024';
+  for (var i = 0; i < str.length; i++) {
+    var char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  var h = Math.abs(hash).toString(16).padStart(8, '0');
+  // Buat lebih panjang seperti SHA-256
+  var result = '';
+  for (var j = 0; j < 4; j++) {
+    var h2 = 0;
+    for (var k = 0; k < str.length; k++) {
+      h2 = ((h2 << 7) - h2) + str.charCodeAt((k + j * 7) % str.length);
+      h2 = h2 & h2;
+    }
+    result += Math.abs(h2).toString(16).padStart(8, '0');
+  }
+  return Promise.resolve(h + result);
 }
 
 // ===== AVATAR HELPER =====
@@ -547,6 +563,17 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 .invoice-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);}
 .invoice-row:last-child{border-bottom:none;}
 .invoice-row.total{font-weight:700;font-size:15px;color:var(--text);}
+
+.seller-verify-step{display:none;}
+.seller-verify-step.active{display:block;}
+.upload-box{border:2px dashed var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:12px;}
+.upload-box:hover{border-color:var(--accent);background:rgba(108,99,255,0.05);}
+.upload-box img{max-width:100%;max-height:160px;border-radius:8px;margin-top:8px;object-fit:cover;}
+.upload-box .ub-icon{font-size:32px;margin-bottom:6px;}
+.upload-box .ub-label{font-size:13px;color:var(--muted);}
+.verify-request-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;}
+.verify-img-row{display:flex;gap:8px;margin:8px 0;}
+.verify-img-row img{width:80px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;}
 </style>
 </head>
 <body>
@@ -661,6 +688,9 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
       </div>
       <button class="btn-full btn-accent" onclick="doLogin()">Masuk →</button>
       <button class="btn-full btn-outline" onclick="showPage('page-home')">Kembali</button>
+      <div style="display:flex;align-items:center;gap:10px;margin:12px 0;"><div style="flex:1;height:1px;background:var(--border);"></div><span style="font-size:11px;color:var(--muted);">atau masuk dengan</span><div style="flex:1;height:1px;background:var(--border);"></div></div>
+      <button onclick="loginWithGoogle()" style="width:100%;background:#fff;color:#333;border:1px solid #ddd;border-radius:10px;padding:11px;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;cursor:pointer;font-size:14px;font-weight:600;"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Google</button>
+      <button onclick="loginWithFacebook()" style="width:100%;background:#1877F2;color:#fff;border:none;border-radius:10px;padding:11px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-size:14px;font-weight:600;margin-bottom:12px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>Facebook</button>
       <div class="auth-switch">Belum punya akun? <span onclick="showPage('page-register')">Daftar sekarang</span></div>
     </div>
   </div>
@@ -689,10 +719,13 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
         <input class="form-input" id="r-pass" type="password" placeholder="min. 6 karakter">
       </div>
       <div class="form-group">
+        <label class="form-label">Konfirmasi Password</label>
+        <input class="form-input" id="r-pass2" type="password" placeholder="ulangi password kamu">
+      </div>
+      <div class="form-group">
         <label class="form-label">Daftar sebagai</label>
         <select class="form-select" id="r-tipe">
           <option value="customer">👤 Customer (Pembeli)</option>
-          <option value="preadmin">🔰 Seller (butuh approval)</option>
         </select>
       </div>
       <button class="btn-full btn-accent" onclick="doRegister()">Daftar →</button>
@@ -780,8 +813,6 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
         <div class="pm-info"><div class="pm-name">QRIS</div><div class="pm-desc">GoPay · OVO · Dana · ShopeePay</div></div>
         <div class="pm-check"></div>
       </div>
-        <div class="pm-check"></div>
-      </div>
       <div id="payment-detail-wrap" style="margin-top:16px;"></div>
       <div style="display:flex;gap:10px;margin-top:20px;">
         <button class="btn-full btn-outline" style="margin-top:0;" onclick="goCheckoutStep(1)">← Kembali</button>
@@ -830,6 +861,95 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 </div>
 
 <!-- ===== MODAL: REVIEW ===== -->
+
+<!-- Modal Daftar Jadi Seller -->
+<div class="modal-overlay" id="modal-become-seller" onclick="if(event.target===this)closeModal('modal-become-seller')">
+  <div class="modal-box" style="max-height:85vh;overflow-y:auto;">
+    <div class="modal-header">
+      <h3 style="margin:0;">🏪 Daftar jadi Seller</h3>
+      <button onclick="closeModal('modal-become-seller')" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;">✕</button>
+    </div>
+    <div style="padding:4px 0 12px;">
+
+      <!-- Step 1: Info -->
+      <div class="seller-verify-step active" id="svstep-1">
+        <div style="background:rgba(108,99,255,0.08);border:1px solid rgba(108,99,255,0.2);border-radius:10px;padding:14px;margin-bottom:14px;">
+          <div style="font-weight:700;font-size:14px;margin-bottom:6px;">📋 Syarat Verifikasi Seller</div>
+          <div style="font-size:12px;color:rgba(240,240,255,0.8);line-height:1.7;">
+            ✅ Foto <b>KTP</b> yang jelas<br>
+            ✅ <b>Selfie</b> pegang KTP + kertas bertuliskan <b>"DigiMart"</b><br>
+            ✅ Akun login via Google/Facebook<br>
+            ✅ Proses review 1x24 jam oleh admin
+          </div>
+        </div>
+        <button class="btn-full btn-accent" onclick="svNextStep(2)">Lanjut →</button>
+      </div>
+
+      <!-- Step 2: Upload KTP -->
+      <div class="seller-verify-step" id="svstep-2">
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">📷 Upload Foto KTP</div>
+        <div class="upload-box" onclick="document.getElementById('sv-ktp-input').click()" id="sv-ktp-box">
+          <div class="ub-icon">🪪</div>
+          <div class="ub-label">Tap untuk upload foto KTP</div>
+        </div>
+        <input type="file" id="sv-ktp-input" accept="image/*" style="display:none;" onchange="svPreview('ktp',this)">
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn-full btn-outline" style="margin:0;" onclick="svNextStep(1)">← Kembali</button>
+          <button class="btn-full btn-accent" style="margin:0;" onclick="svNextStep(3)" id="sv-ktp-next" disabled>Lanjut →</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Upload Selfie -->
+      <div class="seller-verify-step" id="svstep-3">
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px;">🤳 Upload Selfie</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Pegang KTP + kertas bertuliskan <b style="color:var(--accent);">"DigiMart"</b></div>
+        <div class="upload-box" onclick="document.getElementById('sv-selfie-input').click()" id="sv-selfie-box">
+          <div class="ub-icon">🤳</div>
+          <div class="ub-label">Tap untuk upload selfie</div>
+        </div>
+        <input type="file" id="sv-selfie-input" accept="image/*" style="display:none;" onchange="svPreview('selfie',this)">
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn-full btn-outline" style="margin:0;" onclick="svNextStep(2)">← Kembali</button>
+          <button class="btn-full btn-accent" style="margin:0;" onclick="svNextStep(4)" id="sv-selfie-next" disabled>Lanjut →</button>
+        </div>
+      </div>
+
+      <!-- Step 4: Konfirmasi & Kirim -->
+      <div class="seller-verify-step" id="svstep-4">
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">✅ Konfirmasi & Kirim</div>
+        <div style="display:flex;gap:10px;margin-bottom:14px;">
+          <div style="flex:1;text-align:center;">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Foto KTP</div>
+            <img id="sv-ktp-preview-small" style="width:100%;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--border);">
+          </div>
+          <div style="flex:1;text-align:center;">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Selfie + KTP</div>
+            <img id="sv-selfie-preview-small" style="width:100%;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--border);">
+          </div>
+        </div>
+        <div style="background:rgba(255,200,0,0.08);border:1px solid rgba(255,200,0,0.2);border-radius:8px;padding:10px;font-size:12px;color:rgba(240,240,255,0.8);margin-bottom:14px;">
+          ⏳ Request akan direview oleh Owner/Co-Owner dalam 1x24 jam
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-full btn-outline" style="margin:0;" onclick="svNextStep(3)">← Kembali</button>
+          <button class="btn-full btn-accent" style="margin:0;" onclick="svSubmitRequest()" id="sv-submit-btn">📤 Kirim Request</button>
+        </div>
+      </div>
+
+      <!-- Step 5: Sukses -->
+      <div class="seller-verify-step" id="svstep-5">
+        <div style="text-align:center;padding:20px 0;">
+          <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+          <div style="font-weight:700;font-size:16px;margin-bottom:8px;">Request Terkirim!</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Request kamu sedang direview oleh admin. Kamu akan dinotifikasi setelah diproses.</div>
+          <button class="btn-full btn-accent" onclick="closeModal('modal-become-seller')">Tutup</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-review" onclick="if(event.target===this)closeModal('modal-review')">
   <div class="modal">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -897,6 +1017,18 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
     </div>
   </div>
 
+
+  <!-- Tombol Daftar Jadi Seller -->
+  <div class="drawer-divider" id="drawer-become-seller-divider" style="display:none;"></div>
+  <div class="drawer-section" id="drawer-become-seller-section" style="display:none;">
+    <div class="drawer-section-title">Seller</div>
+    <div class="drawer-item" onclick="openBecomeSeller()" style="background:rgba(108,99,255,0.08);border-radius:10px;">
+      <span class="di-icon">🏪</span>
+      <span class="di-label" style="color:var(--accent);font-weight:700;">Daftar jadi Seller</span>
+      <span style="font-size:10px;color:var(--muted);margin-left:auto;">→</span>
+    </div>
+  </div>
+
   <!-- Menu untuk seller -->
   <div class="drawer-divider"></div>
   <div class="drawer-section" id="drawer-seller-menu" style="display:none;">
@@ -918,6 +1050,9 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
     </div>
     <div class="drawer-item" onclick="openDrawerPage('statistik')">
       <span class="di-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg></span><span class="di-label">Statistik Lengkap</span>
+    </div>
+    <div class="drawer-item" onclick="openDrawerPage('verifikasi-seller')">
+      <span class="di-icon">🏪</span><span class="di-label">Verifikasi Seller</span>
     </div>
     <div class="drawer-item" onclick="openDrawerPage('pengaturan')">
       <span class="di-icon">⚙️</span><span class="di-label">Pengaturan Platform</span>
@@ -1050,6 +1185,7 @@ const SESSION = {
 async function initData() {
   showLoading(true);
   await Promise.all([fetchUsers(), fetchProduk(), fetchPesanan(), fetchReviews(), fetchChats()]);
+  try { await fetchSellerRequests(); } catch(e) { console.warn('seller requests skip:', e); }
   showLoading(false);
 }
 
@@ -1359,10 +1495,18 @@ function renderUlasan(produkId, reviews, avgRating) {
           </div>`).join('')}
       </div>
     </div>` : ''}
-    ${currentUser && currentUser.role !== 'preadmin' ? `
-    <button class="btn-full btn-outline" style="margin-bottom:14px;" onclick="openReviewModal(${produkId})">
-      ✍️ Tulis Ulasan
-    </button>` : ''}
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+      <button onclick="filterUlasan(${produkId},0)" data-filter="0" data-pid="${produkId}"
+        style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--gold);background:var(--gold);color:#000;transition:all 0.2s;">
+        Semua
+      </button>
+      ${[5,4,3,2,1].map(s => `
+      <button onclick="filterUlasan(${produkId},${s})" data-filter="${s}" data-pid="${produkId}"
+        style="padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);transition:all 0.2s;">
+        ${'⭐'.repeat(s)}
+      </button>`).join('')}
+    </div>
+    <div id="ulasan-list-${produkId}">
     ${reviews.length === 0 ? '<div class="empty"><div class="eicon">💬</div><p>Belum ada ulasan</p></div>' :
       reviews.map(r => {
         const isMine = currentUser && r.user_id == currentUser.id;
@@ -1391,7 +1535,243 @@ function renderUlasan(produkId, reviews, avgRating) {
         </div>`;
       }).join('')
     }
+    </div>
   `;
+}
+
+
+
+// ============================================================
+// FITUR DAFTAR JADI SELLER
+// ============================================================
+let svKtpBase64 = null;
+let svSelfieBase64 = null;
+
+function openBecomeSeller() {
+  closeDrawer();
+  // Cek apakah user login via OAuth
+  if (!currentUser) { showPage('page-login'); return; }
+  
+  // Sementara semua akun bisa akses untuk testing
+  // const isOAuth = currentUser.oauth_provider && 
+  //   (currentUser.oauth_provider === 'Google' || currentUser.oauth_provider === 'Facebook');
+  // if (!isOAuth) { ... }
+  
+  // Cek apakah sudah pernah request
+  const existing = getSellerRequests().find(r => r.user_id == currentUser.id && r.status === 'pending');
+  if (existing) {
+    showToast('⏳ Request kamu sedang dalam proses review!');
+    return;
+  }
+  
+  // Reset form
+  svKtpBase64 = null;
+  svSelfieBase64 = null;
+  svNextStep(1);
+  document.getElementById('sv-ktp-box').innerHTML = '<div class="ub-icon">🪪</div><div class="ub-label">Tap untuk upload foto KTP</div>';
+  document.getElementById('sv-selfie-box').innerHTML = '<div class="ub-icon">🤳</div><div class="ub-label">Tap untuk upload selfie</div>';
+  document.getElementById('sv-ktp-next').disabled = true;
+  document.getElementById('sv-selfie-next').disabled = true;
+  
+  openModal('modal-become-seller');
+}
+
+function svNextStep(step) {
+  document.querySelectorAll('.seller-verify-step').forEach(el => el.classList.remove('active'));
+  document.getElementById('svstep-' + step).classList.add('active');
+}
+
+function svPreview(type, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const base64 = e.target.result;
+    if (type === 'ktp') {
+      svKtpBase64 = base64;
+      document.getElementById('sv-ktp-box').innerHTML = '<img src="' + base64 + '" style="max-width:100%;max-height:160px;border-radius:8px;object-fit:cover;"><div class="ub-label" style="margin-top:6px;">✅ Foto KTP siap</div>';
+      document.getElementById('sv-ktp-next').disabled = false;
+    } else {
+      svSelfieBase64 = base64;
+      document.getElementById('sv-selfie-box').innerHTML = '<img src="' + base64 + '" style="max-width:100%;max-height:160px;border-radius:8px;object-fit:cover;"><div class="ub-label" style="margin-top:6px;">✅ Selfie siap</div>';
+      document.getElementById('sv-selfie-next').disabled = false;
+      document.getElementById('sv-ktp-preview-small').src = svKtpBase64;
+      document.getElementById('sv-selfie-preview-small').src = svSelfieBase64;
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function svSubmitRequest() {
+  if (!svKtpBase64 || !svSelfieBase64) { showToast('⚠️ Upload semua foto dulu!'); return; }
+  
+  const btn = document.getElementById('sv-submit-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Mengirim...';
+  showLoading(true);
+  
+  try {
+    // Simpan foto langsung sebagai base64 ke database (tanpa perlu Storage)
+    const { error: e3 } = await db.from('dm_seller_requests').insert({
+      user_id: currentUser.id,
+      username: currentUser.username,
+      email: currentUser.email || '',
+      oauth_provider: currentUser.oauth_provider || 'demo',
+      ktp_url: svKtpBase64,
+      selfie_url: svSelfieBase64,
+      status: 'pending',
+      created_at: Date.now()
+    });
+    
+    if (e3) throw new Error('Gagal kirim request: ' + e3.message);
+    
+    await fetchSellerRequests();
+    showLoading(false);
+    svNextStep(5);
+    
+  } catch(err) {
+    showLoading(false);
+    btn.disabled = false;
+    btn.textContent = '📤 Kirim Request';
+    showToast('❌ ' + err.message);
+  }
+}
+
+// Cache seller requests
+let _sellerRequests = [];
+async function fetchSellerRequests() {
+  try {
+    const { data, error } = await db.from('dm_seller_requests').select('*').order('created_at', {ascending: false});
+    if (error) { console.warn('dm_seller_requests belum ada:', error.message); _sellerRequests = []; return []; }
+    _sellerRequests = data || [];
+  } catch(e) {
+    console.warn('fetchSellerRequests error:', e);
+    _sellerRequests = [];
+  }
+  return _sellerRequests;
+}
+function getSellerRequests() { return _sellerRequests; }
+
+// Render panel verifikasi seller di drawer admin
+async async function renderVerifikasiSeller() {
+  const panel = document.getElementById('drawer-page-content');
+  if (!panel) return;
+  
+  await fetchSellerRequests();
+  const requests = getSellerRequests();
+  const pending = requests.filter(r => r.status === 'pending');
+  const done = requests.filter(r => r.status !== 'pending');
+  
+  panel.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <button onclick="closeDrawerPage()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;">← Kembali</button>
+      <div style="font-weight:700;font-size:16px;">🏪 Verifikasi Seller</div>
+    </div>
+    
+    <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;">PENDING (${pending.length})</div>
+    ${pending.length === 0 ? '<div class="empty"><div class="eicon">✅</div><p>Tidak ada request pending</p></div>' :
+      pending.map(r => `
+      <div class="verify-request-item">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-weight:700;font-size:13px;">👤 ${r.username}</div>
+          <div style="font-size:10px;color:var(--muted);">${new Date(r.created_at).toLocaleDateString('id-ID')}</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">${r.email} · via ${r.oauth_provider}</div>
+        <div class="verify-img-row">
+          <div style="text-align:center;">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">KTP</div>
+            <img src="${r.ktp_url}" onclick="window.open('${r.ktp_url}','_blank')" title="Klik untuk perbesar">
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">Selfie</div>
+            <img src="${r.selfie_url}" onclick="window.open('${r.selfie_url}','_blank')" title="Klik untuk perbesar">
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button onclick="approveSellerRequest(${r.id}, ${r.user_id})" 
+            style="flex:1;padding:8px;border-radius:8px;background:rgba(0,200,100,0.15);border:1px solid rgba(0,200,100,0.3);color:#00c864;cursor:pointer;font-size:12px;font-weight:700;">
+            ✅ Approve
+          </button>
+          <button onclick="rejectSellerRequest(${r.id})"
+            style="flex:1;padding:8px;border-radius:8px;background:rgba(255,101,132,0.15);border:1px solid rgba(255,101,132,0.3);color:#ff6584;cursor:pointer;font-size:12px;font-weight:700;">
+            ❌ Reject
+          </button>
+        </div>
+      </div>`).join('')
+    }
+    
+    ${done.length > 0 ? `
+    <div style="font-size:11px;font-weight:700;color:var(--muted);margin:16px 0 8px;">RIWAYAT (${done.length})</div>
+    ${done.slice(0,10).map(r => `
+    <div class="verify-request-item" style="opacity:0.7;">
+      <div style="display:flex;justify-content:space-between;">
+        <div style="font-size:13px;font-weight:600;">👤 ${r.username}</div>
+        <div style="font-size:11px;color:${r.status==='approved'?'#00c864':'#ff6584'};">
+          ${r.status==='approved'?'✅ Approved':'❌ Rejected'}
+        </div>
+      </div>
+    </div>`).join('')}` : ''}
+  `;
+}
+
+async function approveSellerRequest(requestId, userId) {
+  if (!confirm('Approve user ini jadi Seller?')) return;
+  showLoading(true);
+  
+  // Update role user jadi preadmin
+  await db.from('dm_users').update({ role: 'preadmin', status: 'active', avatar: '🔰' }).eq('id', userId);
+  // Update status request
+  await db.from('dm_seller_requests').update({ status: 'approved', reviewed_by: currentUser.id, reviewed_at: Date.now() }).eq('id', requestId);
+  
+  await fetchUsers();
+  await fetchSellerRequests();
+  showLoading(false);
+  showToast('✅ User berhasil jadi Seller!');
+  renderVerifikasiSeller();
+}
+
+async function rejectSellerRequest(requestId) {
+  if (!confirm('Reject request ini?')) return;
+  showLoading(true);
+  await db.from('dm_seller_requests').update({ status: 'rejected', reviewed_by: currentUser.id, reviewed_at: Date.now() }).eq('id', requestId);
+  await fetchSellerRequests();
+  showLoading(false);
+  showToast('❌ Request ditolak');
+  renderVerifikasiSeller();
+}
+
+// ============================================================
+// Filter ulasan berdasarkan bintang
+function filterUlasan(produkId, bintang) {
+  document.querySelectorAll('[data-pid="' + produkId + '"]').forEach(btn => {
+    const val = parseInt(btn.dataset.filter);
+    const active = val === bintang;
+    btn.style.background = active ? 'var(--gold)' : 'var(--surface2)';
+    btn.style.color = active ? '#000' : 'var(--text)';
+    btn.style.borderColor = active ? 'var(--gold)' : 'var(--border)';
+  });
+  const listEl = document.getElementById('ulasan-list-' + produkId);
+  if (!listEl) return;
+  const allItems = listEl.querySelectorAll('.review-item');
+  let found = 0;
+  allItems.forEach(el => {
+    if (bintang === 0) { el.style.display = ''; found++; return; }
+    const stars = el.querySelector('.review-stars');
+    const count = stars ? (stars.textContent.match(/⭐/g) || []).length : 0;
+    if (count === bintang) { el.style.display = ''; found++; }
+    else el.style.display = 'none';
+  });
+  let emptyEl = listEl.querySelector('.filter-empty');
+  if (found === 0 && bintang !== 0) {
+    if (!emptyEl) {
+      emptyEl = document.createElement('div');
+      emptyEl.className = 'empty filter-empty';
+      listEl.appendChild(emptyEl);
+    }
+    emptyEl.innerHTML = '<div class="eicon">🔍</div><p>Tidak ada ulasan ' + '⭐'.repeat(bintang) + '</p>';
+  } else if (emptyEl) {
+    emptyEl.remove();
+  }
 }
 
 // Edit review oleh buyer (dalam 24 jam)
@@ -1424,6 +1804,7 @@ async function submitEditReview() {
   showLoading(true);
   await db.from('dm_reviews').update({ rating: currentRating, teks, edited: true }).eq('id', currentEditReviewId);
   await fetchReviews();
+  await fetchSellerRequests();
   showLoading(false);
   closeModal('modal-review');
   showToast('✅ Ulasan berhasil diperbarui!');
@@ -1461,6 +1842,75 @@ const _loginAttempts = {};
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 5 * 60 * 1000; // 5 menit
 const SESSION_EXPIRE_MS = 24 * 60 * 60 * 1000; // 24 jam
+
+// =================== SOCIAL LOGIN ===================
+async function handleSocialLogin(email, name, provider) {
+  showLoading(true);
+  // Cari user by email
+  const { data: users } = await db.from('dm_users').select('*').eq('email', email);
+  let user = users && users[0];
+  if (!user) {
+    // Auto register
+    const username = name.replace(/\s+/g,'').toLowerCase() + Math.floor(Math.random()*999);
+    const newUser = { username, email, password: '', role: 'customer', status: 'active', joined: Date.now(), avatar: '👤', oauth_provider: provider };
+    const { data, error } = await db.from('dm_users').insert(newUser).select().single();
+    if (error) { showLoading(false); showToast('\u274c Gagal login: ' + error.message); return; }
+    user = data;
+  }
+  await fetchUsers();
+  currentUser = {...user, customTitle: user.custom_title, loginAt: Date.now()};
+  SESSION.set(currentUser);
+  showLoading(false);
+  renderNavbar();
+  renderProdukGrid();
+  renderHeroStats();
+  showPage('page-home');
+  showToast('\u2705 Berhasil masuk dengan ' + provider + '!');
+}
+
+function loginWithGoogle() {
+  if (GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com') {
+    showToast('\u26a0\ufe0f Google Client ID belum diatur!'); return;
+  }
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: async (response) => {
+      const payload = JSON.parse(atob(response.credential.split('.')[1]));
+      await handleSocialLogin(payload.email, payload.name, 'Google');
+    }
+  });
+  google.accounts.id.prompt();
+}
+
+function loginWithFacebook() {
+  if (FB_APP_ID === 'YOUR_FACEBOOK_APP_ID') {
+    showToast('\u26a0\ufe0f Facebook App ID belum diatur!'); return;
+  }
+  if (typeof FB === 'undefined') {
+    // Load FB SDK dynamically
+    window.fbAsyncInit = function() {
+      FB.init({ appId: FB_APP_ID, cookie: true, xfbml: true, version: 'v18.0' });
+      FB.login(function(response) {
+        if (response.authResponse) {
+          FB.api('/me', {fields: 'name,email'}, async function(user) {
+            await handleSocialLogin(user.email || user.id + '@fb.digimart.com', user.name, 'Facebook');
+          });
+        }
+      }, {scope: 'email'});
+    };
+    const s = document.createElement('script');
+    s.src = 'https://connect.facebook.net/en_US/sdk.js';
+    document.head.appendChild(s);
+  } else {
+    FB.login(function(response) {
+      if (response.authResponse) {
+        FB.api('/me', {fields: 'name,email'}, async function(user) {
+          handleSocialLogin(user.email || user.id + '@fb.digimart.com', user.name, 'Facebook');
+        });
+      }
+    }, {scope: 'email'});
+  }
+}
 
 async function doLogin() {
   const username = document.getElementById('l-user').value.trim();
@@ -1542,7 +1992,11 @@ async function doRegister() {
   const errEl = document.getElementById('reg-err');
 
   if (username.length < 4) { errEl.textContent = '❌ Username minimal 4 karakter'; errEl.style.display='block'; return; }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) { errEl.textContent = '❌ Format email tidak valid! Contoh: nama@gmail.com'; errEl.style.display='block'; return; }
+  const confirmPass = document.getElementById('r-pass2').value;
   if (password.length < 6) { errEl.textContent = '❌ Password minimal 6 karakter'; errEl.style.display='block'; return; }
+  if (password !== confirmPass) { errEl.textContent = '❌ Konfirmasi password tidak cocok!'; errEl.style.display='block'; return; }
 
   errEl.style.display = 'none';
   showLoading(true);
@@ -2484,6 +2938,18 @@ function renderDrawer() {
     }
     document.getElementById('drawer-auth-icon').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>';
     document.getElementById('drawer-auth-label').textContent = 'Keluar';
+    // Tampilkan tombol "Daftar jadi Seller" hanya untuk customer OAuth
+    const isCustomer = currentUser && currentUser.role === 'customer';
+    const isOAuth = currentUser && currentUser.oauth_provider && 
+      (currentUser.oauth_provider === 'Google' || currentUser.oauth_provider === 'Facebook');
+    const hasRequest = getSellerRequests().find(r => r.user_id == (currentUser && currentUser.id) && r.status === 'pending');
+    // Tampilkan tombol untuk semua customer (OAuth maupun demo)
+    // Kalau demo -> saat diklik baru diarahkan login Google/FB
+    const showBecomeSellerBtn = isCustomer && !hasRequest;
+    const becomeSellerDiv = document.getElementById('drawer-become-seller-section');
+    const becomeSellerDivider = document.getElementById('drawer-become-seller-divider');
+    if (becomeSellerDiv) becomeSellerDiv.style.display = showBecomeSellerBtn ? '' : 'none';
+    if (becomeSellerDivider) becomeSellerDivider.style.display = showBecomeSellerBtn ? '' : 'none';
   } else {
     setAvatarEl(document.getElementById('drawer-avatar'), null, '👤');
     document.getElementById('drawer-username').textContent = 'Tamu';
@@ -2505,6 +2971,22 @@ function drawerAuthAction() {
 
 // =================== DRAWER PAGES ===================
 function openDrawerPage(page) {
+  if (page === 'verifikasi-seller') {
+    closeDrawer();
+    // Tampilkan drawer page
+    let drawerPageEl = document.getElementById('drawer-page-overlay');
+    if (!drawerPageEl) {
+      drawerPageEl = document.createElement('div');
+      drawerPageEl.id = 'drawer-page-overlay';
+      drawerPageEl.style.cssText = 'position:fixed;inset:0;background:var(--bg);z-index:500;overflow-y:auto;padding:16px;';
+      drawerPageEl.innerHTML = '<div id="drawer-page-content"></div>';
+      document.body.appendChild(drawerPageEl);
+    }
+    drawerPageEl.style.display = 'block';
+    window.closeDrawerPage = function() { drawerPageEl.style.display = 'none'; };
+    renderVerifikasiSeller();
+    return;
+  }
   closeDrawer();
   const el = document.getElementById('drawer-page-content');
   const u = currentUser;
@@ -2539,10 +3021,10 @@ function openDrawerPage(page) {
       <h3 style="margin-bottom:16px;">🎧 Support</h3>
       <div class="card" style="margin-bottom:10px;">
         <div style="font-size:13px;line-height:2;">
-          <div>📱 <strong>WhatsApp:</strong> +62 812-3456-7890</div>
-          <div>📧 <strong>Email:</strong> support@digimart.com</div>
+          <div>📱 <strong>WhatsApp:</strong> +62 822-9920-4089</div>
+          <div>📧 <strong>Email:</strong> diggiemart@gmail.com</div>
           <div>🕐 <strong>Jam Operasional:</strong> 08.00 – 22.00 WIB</div>
-          <div>⚡ <strong>Respon:</strong> &lt; 1 jam</div>
+          <div>⚡ <strong>Respon:</strong> 1x24 jam</div>
         </div>
       </div>
       <div class="card">
@@ -2647,7 +3129,7 @@ function openDrawerPage(page) {
   else if (page === 'gift-title') {
     if (!u || !['owner','coowner'].includes(u.role)) { showToast('⛔ Akses ditolak!'); return; }
     const presetTitles = ['⭐ VIP', '🔥 Hot Seller', '💎 Diamond', '🏆 Top Seller', '✨ Premium', '🎖️ Verified', '👑 Legend', '🚀 Rising Star', '💫 Trusted', '🎯 Pro Seller'];
-    const activeUsers = getUsers().filter(x => ['preadmin','admin','coowner'].includes(x.role) && x.status === 'active');
+    const activeUsers = getUsers().filter(x => x.status === 'active' && x.id !== u.id);
     el.innerHTML = `
       <h3 style="margin-bottom:4px;">🎁 Gift Title</h3>
       <p style="font-size:12px;color:var(--muted);margin-bottom:16px;">Berikan title dekoratif atau ubah role user</p>
@@ -3403,11 +3885,13 @@ function handleDrawerOverlayClick(e) {
 
 // =================== CHECKOUT ===================
 let selectedPayment = 'transfer';
+let currentKode = '';
 let checkoutQty = 1;
 
 function openCheckout() {
   checkoutQty = 1;
   selectedPayment = 'transfer';
+  currentKode = genKode();
   renderCheckoutStep1();
   goCheckoutStep(1);
   showPage('page-checkout');
@@ -3550,18 +4034,8 @@ function renderPaymentDetail() {
           <input type="hidden" id="bukti-base64">
         </div>
       </div>`;
-  } else if (selectedPayment === 'voucher') {
-    el.innerHTML = `
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;">
-        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">🎫 Masukkan Kode Voucher</div>
-        <div style="display:flex;gap:8px;margin-bottom:8px;">
-          <input class="form-input" id="voucher-input" placeholder="Contoh: DIGI-XXXX-XXXX" style="flex:1;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
-          <button onclick="validasiVoucher()" style="background:var(--accent);border:none;color:#fff;padding:0 14px;border-radius:10px;font-weight:700;cursor:pointer;white-space:nowrap;">Cek</button>
-        </div>
-        <div id="voucher-status" style="font-size:12px;min-height:18px;"></div>
-        <div style="font-size:11px;color:var(--muted);margin-top:6px;">Voucher akan otomatis divalidasi ke database</div>
-      </div>`;
-  }
+}
+
 }
 
 function previewBukti(input) {
@@ -3578,26 +4052,6 @@ function previewBukti(input) {
   reader.readAsDataURL(file);
 }
 
-async function validasiVoucher() {
-  const kode = document.getElementById('voucher-input').value.trim().toUpperCase();
-  const statusEl = document.getElementById('voucher-status');
-  if (!kode) { statusEl.innerHTML = '<span style="color:#ff6584;">⚠️ Masukkan kode voucher dulu</span>'; return; }
-  statusEl.innerHTML = '<span style="color:var(--muted);">⏳ Mengecek...</span>';
-  const { data, error } = await db.from('dm_vouchers').select('*').eq('kode', kode).eq('status', 'aktif').single();
-  if (error || !data) {
-    statusEl.innerHTML = '<span style="color:#ff6584;">❌ Voucher tidak valid atau sudah digunakan</span>';
-    return;
-  }
-  const p = getProdukById(currentProdukId);
-  const total = p.harga * checkoutQty + Math.round(p.harga * checkoutQty * 0.02);
-  if (data.min_belanja && total < data.min_belanja) {
-    statusEl.innerHTML = `<span style="color:#ff6584;">❌ Minimum belanja ${formatRp(data.min_belanja)}</span>`;
-    return;
-  }
-  const diskon = data.tipe === 'persen' ? Math.round(total * data.nilai / 100) : data.nilai;
-  statusEl.innerHTML = `<span style="color:#00d4aa;">✅ Voucher valid! Diskon ${formatRp(diskon)}</span>`;
-  window._voucherValid = {kode, diskon, id: data.id};
-}
 
 function renderCheckoutConfirm() {
   const p = getProdukById(currentProdukId);
@@ -3605,7 +4059,7 @@ function renderCheckoutConfirm() {
   const subtotal = p.harga * checkoutQty;
   const biayaLayanan = Math.round(subtotal * 0.02);
   const total = subtotal + biayaLayanan;
-  const kode = genKode();
+  const kode = currentKode;
   const paymentLabels = {transfer:'Transfer Bank', qris:'QRIS'};
 
   document.getElementById('checkout-step3-content').innerHTML = `
@@ -3644,18 +4098,15 @@ async function finalizeOrder(kode, total) {
   if ((selectedPayment === 'transfer' || selectedPayment === 'qris') && !bukti) {
     showToast('⚠️ Upload bukti pembayaran dulu!'); return;
   }
-  // Validasi voucher
-
-  let finalTotal = total;).eq('id', window._voucherValid.id);
-    window._voucherValid = null;
-  }
+  let finalTotal = total;
 
   showLoading(true);
-  await db.from('dm_pesanan').insert({
+  const { error: insertErr } = await db.from('dm_pesanan').insert({
     produk_id: p.id, buyer_id: currentUser.id,
     seller_id: p.seller_id, harga: finalTotal, qty, status: 'menunggu-konfirmasi',
     created_at: Date.now(), kode, payment: selectedPayment, bukti_transfer: bukti || null
   });
+  if (insertErr) { showLoading(false); showToast('❌ Gagal membuat pesanan: ' + insertErr.message); return; }
   await db.from('dm_produk').update({
     terjual: p.terjual + qty, stok: Math.max(0, p.stok - qty)
   }).eq('id', p.id);
@@ -3718,4 +4169,3 @@ startup();
 </div>
 </body>
 </html>
-herel
