@@ -1586,6 +1586,51 @@ function doLogout() {
 }
 
 // =================== FOTO PROFIL ===================
+// =================== PAYMENT INFO SELLER ===================
+function previewQrisUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('⚠️ Gambar QRIS maksimal 2MB!'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const base64 = e.target.result;
+    document.getElementById('qris-base64').value = base64;
+    const wrap = document.getElementById('qris-preview-wrap');
+    if (wrap) wrap.innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearQrisImg() {
+  document.getElementById('qris-base64').value = '';
+  const wrap = document.getElementById('qris-preview-wrap');
+  if (wrap) wrap.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12px;"><div style="font-size:28px;margin-bottom:4px;">📲</div>Tap untuk upload foto QRIS</div>`;
+}
+
+async function savePaymentInfo() {
+  const bank_name = (document.getElementById('input-bank-name')?.value || '').trim();
+  const no_rek = (document.getElementById('input-no-rek')?.value || '').trim();
+  const atas_nama = (document.getElementById('input-atas-nama')?.value || '').trim();
+  const qris_img = document.getElementById('qris-base64')?.value || '';
+
+  if (!bank_name && !no_rek && !atas_nama && !qris_img) {
+    showToast('⚠️ Isi minimal satu info pembayaran!'); return;
+  }
+
+  showLoading(true);
+  const { error } = await db.from('dm_users').update({ bank_name, no_rek, atas_nama, qris_img }).eq('id', currentUser.id);
+  if (error) { showLoading(false); showToast('❌ Gagal simpan info pembayaran!'); return; }
+
+  currentUser.bank_name = bank_name;
+  currentUser.no_rek = no_rek;
+  currentUser.atas_nama = atas_nama;
+  currentUser.qris_img = qris_img;
+  SESSION.set(currentUser);
+  await fetchUsers();
+  showLoading(false);
+  showToast('✅ Info pembayaran berhasil disimpan!');
+}
+
 async function uploadFotoProfil(input) {
   const file = input.files[0];
   if (!file) return;
@@ -3162,6 +3207,35 @@ function openProfileOrder() {
       }).join('')}
     </div>
     <div id="profile-order-content"></div>
+    ${isSeller ? `
+    <div style="margin-top:20px;">
+      <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:12px;">💳 Info Pembayaran Saya</div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Info ini ditampilkan ke buyer saat mereka checkout produk kamu.</div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">🏦 Nama Bank</div>
+          <input id="input-bank-name" type="text" placeholder="Contoh: BCA, BRI, Mandiri..." value="${u.bank_name || ''}" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">💳 Nomor Rekening</div>
+          <input id="input-no-rek" type="text" placeholder="Contoh: 1234567890" value="${u.no_rek || ''}" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">👤 Atas Nama</div>
+          <input id="input-atas-nama" type="text" placeholder="Nama pemilik rekening" value="${u.atas_nama || ''}" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">📱 Gambar QRIS (opsional)</div>
+          <div id="qris-preview-wrap" style="width:100%;height:130px;border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--surface);overflow:hidden;margin-bottom:6px;" onclick="document.getElementById('qris-file-input').click()">
+            ${u.qris_img ? '<img src=\''+u.qris_img+'\' style=\'width:100%;height:100%;object-fit:contain;border-radius:8px;\'>' : '<div style=\'text-align:center;color:var(--muted);font-size:12px;\'><div style=\'font-size:28px;margin-bottom:4px;\'>📲</div>Tap untuk upload foto QRIS</div>'}
+          </div>
+          <input type="file" id="qris-file-input" accept="image/*" style="display:none;" onchange="previewQrisUpload(this)">
+          <input type="hidden" id="qris-base64" value="${u.qris_img || ''}">
+          ${u.qris_img ? '<button onclick=\'clearQrisImg()\' style=\'font-size:11px;background:none;border:1px solid #ff6584;color:#ff6584;padding:4px 10px;border-radius:6px;cursor:pointer;\'>🗑️ Hapus QRIS</button>' : ''}
+        </div>
+        <button onclick="savePaymentInfo()" style="width:100%;background:var(--accent);color:#fff;border:none;padding:11px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">💾 Simpan Info Pembayaran</button>
+      </div>
+    </div>` : ''}
     <button class="btn-full btn-outline" style="margin-top:16px;" onclick="doLogout();closeModal('modal-drawer-page')">🚪 Keluar</button>
   `;
   renderOrderTab('menunggu-bayar');
@@ -3404,22 +3478,35 @@ function selectPayment(method) {
 
 function renderPaymentDetail() {
   const p = getProdukById(currentProdukId);
+  const seller = getUser(p.seller_id);
   const subtotal = p.harga * checkoutQty;
   const total = subtotal + Math.round(subtotal * 0.02);
   const el = document.getElementById('payment-detail-wrap');
+
+  // Ambil info pembayaran dari seller produk
+  const bankName = seller?.bank_name || '';
+  const noRek = seller?.no_rek || '';
+  const atasNama = seller?.atas_nama || '';
+  const qrisImg = seller?.qris_img || '';
+  const sellerName = seller?.username || 'Seller';
+
+  // Jika seller belum set payment info, tampilkan warning
+  const noPaymentInfo = !bankName && !noRek && !qrisImg;
+
   if (selectedPayment === 'transfer') {
     el.innerHTML = `
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;">
         <div style="font-weight:700;font-size:14px;margin-bottom:12px;">🏦 Info Transfer Bank</div>
+        ${noPaymentInfo ? `<div style="padding:12px;background:rgba(255,100,100,0.1);border-radius:8px;font-size:12px;color:#ff6584;text-align:center;">⚠️ Seller belum mengatur info rekening.<br>Hubungi seller untuk konfirmasi.</div>` : `
         <div style="font-size:13px;line-height:2.2;color:rgba(240,240,255,0.85);">
-          <div>Bank: <strong>BCA</strong></div>
-          <div>No. Rek: <strong>1234567890</strong></div>
-          <div>Atas Nama: <strong>DigiMart Indonesia</strong></div>
+          <div>Bank: <strong>${bankName || '-'}</strong></div>
+          <div>No. Rek: <strong style="cursor:pointer;color:var(--accent);" onclick="navigator.clipboard&&navigator.clipboard.writeText('${noRek}').then(()=>showToast('✅ No. rekening disalin!'))">${noRek || '-'} 📋</strong></div>
+          <div>Atas Nama: <strong>${atasNama || sellerName}</strong></div>
           <div>Jumlah Transfer: <strong style="color:var(--accent);">${formatRp(total)}</strong></div>
         </div>
         <div style="margin-top:10px;padding:10px;background:rgba(255,200,0,0.1);border-radius:8px;font-size:12px;color:#ffc800;">
           ⚠️ Transfer tepat sesuai nominal, lalu upload bukti di bawah
-        </div>
+        </div>`}
         <div style="margin-top:14px;">
           <div style="font-weight:700;font-size:13px;margin-bottom:8px;">📎 Upload Bukti Transfer</div>
           <div id="bukti-preview" style="width:100%;height:120px;border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--surface);overflow:hidden;" onclick="document.getElementById('bukti-input').click()">
@@ -3437,10 +3524,9 @@ function renderPaymentDetail() {
     el.innerHTML = `
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
         <div style="font-weight:700;font-size:14px;margin-bottom:12px;">📱 Scan QRIS</div>
-        <div style="background:white;border-radius:12px;padding:20px;margin:0 auto;width:160px;height:160px;display:flex;align-items:center;justify-content:center;">
-          <div style="font-size:60px;">📲</div>
-        </div>
+        ${qrisImg ? `<div style="background:white;border-radius:12px;padding:8px;margin:0 auto;width:180px;height:180px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img src="${qrisImg}" style="width:100%;height:100%;object-fit:contain;"></div>` : `<div style="background:var(--surface);border:2px dashed var(--border);border-radius:12px;padding:20px;margin:0 auto;width:160px;height:160px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;"><div style="font-size:40px;">📲</div><div style="font-size:11px;color:#ff6584;">QRIS belum diatur seller</div></div>`}
         <div style="margin-top:12px;font-size:13px;color:var(--muted);">Scan dengan GoPay, OVO, Dana, atau ShopeePay</div>
+        <div style="margin-top:4px;font-size:12px;color:var(--muted);">Seller: <strong>${sellerName}</strong></div>
         <div style="margin-top:6px;font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--accent);">${formatRp(total)}</div>
         <div style="margin-top:14px;text-align:left;">
           <div style="font-weight:700;font-size:13px;margin-bottom:8px;">📎 Upload Bukti Pembayaran</div>
