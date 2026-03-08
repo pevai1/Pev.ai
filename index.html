@@ -568,9 +568,41 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 .verify-request-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;}
 .verify-img-row{display:flex;gap:8px;margin:8px 0;}
 .verify-img-row img{width:80px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;}
+
+/* ===== NOTIF ===== */
+.notif-bell-wrap{position:relative;cursor:pointer;display:flex;align-items:center;}
+.notif-bell-btn{background:none;border:none;font-size:20px;cursor:pointer;padding:4px;color:var(--text);}
+.notif-badge{position:absolute;top:-2px;right:-2px;background:#ff4757;color:#fff;font-size:9px;font-weight:700;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);pointer-events:none;}
+.notif-panel{position:fixed;top:56px;right:12px;width:320px;max-height:420px;background:var(--surface);border:1px solid var(--border);border-radius:16px;z-index:9999;overflow:hidden;display:none;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.5);}
+.notif-panel.open{display:flex;}
+.notif-panel-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid var(--border);}
+.notif-panel-head span{font-weight:700;font-size:14px;}
+.notif-panel-body{overflow-y:auto;flex:1;}
+.notif-item{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start;cursor:pointer;transition:background 0.15s;}
+.notif-item:hover{background:var(--surface2);}
+.notif-item.unread{background:rgba(108,99,255,0.08);}
+.notif-item-icon{font-size:22px;flex-shrink:0;margin-top:2px;}
+.notif-item-body{flex:1;min-width:0;}
+.notif-item-title{font-size:13px;font-weight:600;margin-bottom:2px;}
+.notif-item-desc{font-size:12px;color:var(--muted);line-height:1.4;}
+.notif-item-time{font-size:10px;color:var(--muted);margin-top:3px;}
+.notif-empty{padding:32px;text-align:center;color:var(--muted);font-size:13px;}
 </style>
 </head>
 <body>
+
+<!-- ===== NOTIF PANEL ===== -->
+<div class="notif-panel" id="notif-panel">
+  <div class="notif-panel-head">
+    <span>🔔 Notifikasi</span>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button onclick="markAllNotifRead()" style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;">Baca semua</button>
+      <button onclick="closeNotifPanel()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;">✕</button>
+    </div>
+  </div>
+  <div class="notif-panel-body" id="notif-panel-body"></div>
+</div>
+<div id="notif-overlay" onclick="closeNotifPanel()" style="display:none;position:fixed;inset:0;z-index:9998;"></div>
 
 <!-- ===== PAGE: BERANDA ===== -->
 <div class="page active" id="page-home">
@@ -1241,6 +1273,18 @@ const _produkLimits = {
   preadmin: parseInt(localStorage.getItem('dm_limit_preadmin') || '3'),
 };
 
+async function loadProdukLimits() {
+  try {
+    const { data } = await db.from('dm_settings').select('*').in('key', ['limit_admin','limit_preadmin']);
+    if (data) {
+      data.forEach(row => {
+        if (row.key === 'limit_admin') _produkLimits.admin = parseInt(row.value) || 10;
+        if (row.key === 'limit_preadmin') _produkLimits.preadmin = parseInt(row.value) || 3;
+      });
+    }
+  } catch(e) { /* fallback ke localStorage */ }
+}
+
 function canAddProduk(role) {
   if (role === 'owner' || role === 'coowner') return Infinity;
   if (role === 'admin') return _produkLimits.admin;
@@ -1248,7 +1292,7 @@ function canAddProduk(role) {
   return 0;
 }
 
-function saveProdukLimits() {
+async function saveProdukLimits() {
   const adminLimit = parseInt(document.getElementById('limit-admin').value) || 10;
   const preadminLimit = parseInt(document.getElementById('limit-preadmin').value) || 3;
   _produkLimits.admin = adminLimit;
@@ -1257,6 +1301,13 @@ function saveProdukLimits() {
     localStorage.setItem('dm_limit_admin', adminLimit);
     localStorage.setItem('dm_limit_preadmin', preadminLimit);
   } catch(e) {}
+  // Simpan ke Supabase supaya konsisten di semua device
+  try {
+    await db.from('dm_settings').upsert([
+      { key: 'limit_admin', value: String(adminLimit) },
+      { key: 'limit_preadmin', value: String(preadminLimit) }
+    ], { onConflict: 'key' });
+  } catch(e) { console.warn('Gagal simpan limits ke DB:', e); }
   showToast('✅ Limit produk berhasil disimpan!');
 }
 function canOrder(role) {
@@ -1314,6 +1365,7 @@ function renderNavbar() {
     nr.innerHTML = `
       <span class="role-badge ${roleBadgeClass(currentUser.role)}">${roleLabel(currentUser.role)}</span>
       ${showDashBtn ? `<button class="nav-btn" onclick="showPage('page-dashboard')">Dashboard</button>` : ''}
+      ${currentUser.role === 'owner' ? `<div class="notif-bell-wrap" onclick="toggleNotifPanel()"><button class="notif-bell-btn">🔔</button><span class="notif-badge" id="notif-badge" style="display:none">0</span></div>` : ''}
       <div class="nav-avatar" id="nav-avatar-btn" title="${currentUser.username}" onclick="openProfileOrder()" style="cursor:pointer;overflow:hidden;">${currentUser.avatar && currentUser.avatar.startsWith('data:') ? `<img src="${currentUser.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : (currentUser.avatar || currentUser.username[0].toUpperCase())}</div>
     `;
   } else {
@@ -2120,6 +2172,8 @@ async function doLogin() {
   SESSION.set(user);
   await fetchUsers();
   showToast('✅ Selamat datang, ' + user.username + '!');
+  renderNavbar();
+  if (user.role === 'owner') { await fetchNotifs(); startNotifPolling(); requestNotifPermission(); }
   showPage('page-home');
 }
 
@@ -3987,6 +4041,9 @@ function renderOrderTab(status) {
 }
 
 async function buyerKonfirmasiBayar(orderId) {
+  const o = getPesanan().find(o => o.id === orderId);
+  if (!o) return;
+  if (o.buyer_id != currentUser.id) { showToast('⛔ Kamu bukan pembeli pesanan ini!'); return; }
   showLoading(true);
   await db.from('dm_pesanan').update({status:'menunggu-kirim', paid_at: Date.now()}).eq('id', orderId);
   await fetchPesanan();
@@ -4087,15 +4144,12 @@ function renderCheckoutInvoice() {
   const p = getProdukById(currentProdukId);
   if (!p) return;
   const subtotal = p.harga * checkoutQty;
-  const biayaLayanan = Math.round(subtotal * 0.02);
-  const total = subtotal + biayaLayanan;
+  const total = subtotal;
   document.getElementById('checkout-invoice').innerHTML = `
     <div class="invoice-row"><span>Harga satuan</span><span>${formatRp(p.harga)}</span></div>
     <div class="invoice-row"><span>Jumlah</span><span>× ${checkoutQty}</span></div>
-    <div class="invoice-row"><span>Subtotal</span><span>${formatRp(subtotal)}</span></div>
-    <div class="invoice-row"><span style="color:var(--muted);">Biaya layanan (2%)</span><span style="color:var(--muted);">${formatRp(biayaLayanan)}</span></div>
     <div class="invoice-row total"><span>Total Pembayaran</span><span style="color:var(--accent);">${formatRp(total)}</span></div>`;
-  return {subtotal, biayaLayanan, total};
+  return {subtotal, total};
 }
 
 function goCheckoutStep(step) {
@@ -4134,7 +4188,7 @@ function renderPaymentDetail() {
   const p = getProdukById(currentProdukId);
   const seller = getUser(p.seller_id);
   const subtotal = p.harga * checkoutQty;
-  const total = subtotal + Math.round(subtotal * 0.02);
+  const total = subtotal;
   const el = document.getElementById('payment-detail-wrap');
 
   // Ambil info pembayaran dari seller produk
@@ -4218,8 +4272,7 @@ function renderCheckoutConfirm() {
   const p = getProdukById(currentProdukId);
   const seller = getUser(p.seller_id);
   const subtotal = p.harga * checkoutQty;
-  const biayaLayanan = Math.round(subtotal * 0.02);
-  const total = subtotal + biayaLayanan;
+  const total = subtotal;
   const kode = currentKode;
   const paymentLabels = {transfer:'Transfer Bank', qris:'QRIS'};
 
@@ -4237,12 +4290,11 @@ function renderCheckoutConfirm() {
         <div class="invoice-row"><span>Seller</span><span>${seller?.username}</span></div>
         <div class="invoice-row"><span>Jumlah</span><span>${checkoutQty}x</span></div>
         <div class="invoice-row"><span>Metode Bayar</span><span>${paymentLabels[selectedPayment]}</span></div>
-        <div class="invoice-row"><span>Subtotal</span><span>${formatRp(subtotal)}</span></div>
-        <div class="invoice-row"><span style="color:var(--muted);">Biaya Layanan</span><span style="color:var(--muted);">${formatRp(biayaLayanan)}</span></div>
         <div class="invoice-row total"><span>Total</span><span style="color:var(--accent);">${formatRp(total)}</span></div>
       </div>
 
       <button class="btn-full btn-accent" style="margin-top:0;margin-bottom:10px;" onclick="finalizeOrder('${kode}',${total})">✅ Selesaikan Pembayaran</button>
+      <button class="btn-full" style="margin-top:0;margin-bottom:10px;background:var(--surface2);border:1px solid var(--accent);color:var(--accent);" onclick="openChatRoom(${p.seller_id}, ${p.id})">💬 Chat Seller</button>
       <button class="btn-full btn-outline" style="margin-top:0;" onclick="showPage('page-home')">🏠 Kembali ke Beranda</button>
     </div>`;
 }
@@ -4271,6 +4323,10 @@ async function finalizeOrder(kode, total) {
   await db.from('dm_produk').update({
     terjual: p.terjual + qty, stok: Math.max(0, p.stok - qty)
   }).eq('id', p.id);
+  // Push notif ke owner
+  await pushNotif('order', '🛒 Pesanan Baru!', `${currentUser.username} beli ${qty}x ${p.nama} • ${formatRp(total)}`, { kode, produk_id: p.id });
+  // Kirim notif Telegram
+  await sendTelegram(`🛒 <b>Pesanan Baru!</b>\n\n👤 Pembeli: <b>${currentUser.username}</b>\n📦 Produk: <b>${p.nama}</b> × ${qty}\n💰 Total: <b>${formatRp(total)}</b>\n🏷️ Kode: <code>${kode}</code>\n💳 Metode: ${selectedPayment === 'transfer' ? 'Transfer Bank' : 'QRIS'}`);
   await Promise.all([fetchPesanan(), fetchProduk()]);
   showLoading(false);
   showToast('🎉 Pembelian berhasil! Cek Profil > Pesanan');
@@ -4330,14 +4386,145 @@ async function resetAllData() {
   }
 }
 
+// =================== NOTIFIKASI ===================
+let _notifs = [];
+let _notifPollInterval = null;
+let _lastPesananCount = null;
+
+async function fetchNotifs() {
+  try {
+    const { data } = await db.from('dm_notifs').select('*').order('created_at', {ascending: false}).limit(30);
+    _notifs = data || [];
+    renderNotifBadge();
+    if (document.getElementById('notif-panel').classList.contains('open')) renderNotifPanel();
+  } catch(e) {}
+}
+
+// =================== TELEGRAM NOTIF ===================
+const TG_BOT_TOKEN = '8469663299:AAHWZDEIQam2BhlBBvR4rSJnkbQ1hzemg-g';
+const TG_CHAT_ID = '7624185784';
+
+async function sendTelegram(msg) {
+  try {
+    await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: TG_CHAT_ID, text: msg, parse_mode: 'HTML' })
+    });
+  } catch(e) { console.warn('Telegram notif gagal:', e); }
+}
+
+async function pushNotif(type, title, desc, meta = {}) {
+  try {
+    await db.from('dm_notifs').insert({ type, title, desc, meta: JSON.stringify(meta), read: false, created_at: Date.now() });
+    await fetchNotifs();
+    // Browser notification kalau diizinkan
+    if (Notification.permission === 'granted') {
+      new Notification(title, { body: desc, icon: '' });
+    }
+  } catch(e) {}
+}
+
+function renderNotifBadge() {
+  const badge = document.getElementById('notif-badge');
+  if (!badge) return;
+  const unread = _notifs.filter(n => !n.read).length;
+  if (unread > 0) {
+    badge.textContent = unread > 9 ? '9+' : unread;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function toggleNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  const overlay = document.getElementById('notif-overlay');
+  if (panel.classList.contains('open')) {
+    closeNotifPanel();
+  } else {
+    panel.classList.add('open');
+    overlay.style.display = 'block';
+    renderNotifPanel();
+  }
+}
+
+function closeNotifPanel() {
+  document.getElementById('notif-panel').classList.remove('open');
+  document.getElementById('notif-overlay').style.display = 'none';
+}
+
+function renderNotifPanel() {
+  const body = document.getElementById('notif-panel-body');
+  if (!_notifs.length) {
+    body.innerHTML = '<div class="notif-empty">🔕 Belum ada notifikasi</div>';
+    return;
+  }
+  body.innerHTML = _notifs.map(n => {
+    const icons = { order: '🛒', chat: '💬', info: 'ℹ️' };
+    const time = formatNotifTime(n.created_at);
+    return `<div class="notif-item ${n.read ? '' : 'unread'}" onclick="clickNotif(${n.id}, '${n.type}', ${n.meta ? `'${n.meta}'` : 'null'})">
+      <div class="notif-item-icon">${icons[n.type] || '🔔'}</div>
+      <div class="notif-item-body">
+        <div class="notif-item-title">${n.title}</div>
+        <div class="notif-item-desc">${n.desc}</div>
+        <div class="notif-item-time">${time}</div>
+      </div>
+      ${!n.read ? '<div style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:6px;"></div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function formatNotifTime(ts) {
+  const diff = Date.now() - ts;
+  if (diff < 60000) return 'Baru saja';
+  if (diff < 3600000) return Math.floor(diff/60000) + ' menit lalu';
+  if (diff < 86400000) return Math.floor(diff/3600000) + ' jam lalu';
+  return Math.floor(diff/86400000) + ' hari lalu';
+}
+
+async function clickNotif(id, type, metaStr) {
+  await db.from('dm_notifs').update({read: true}).eq('id', id);
+  await fetchNotifs();
+  closeNotifPanel();
+  if (type === 'order') { showPage('page-dashboard'); setTimeout(() => { renderDashboard(); switchDashTab('pesanan', null); }, 100); }
+  else if (type === 'chat') { showPage('page-dashboard'); setTimeout(() => { renderDashboard(); switchDashTab('monitor-chat', null); }, 100); }
+}
+
+async function markAllNotifRead() {
+  try {
+    await db.from('dm_notifs').update({read: true}).eq('read', false);
+    await fetchNotifs();
+  } catch(e) {}
+}
+
+function startNotifPolling() {
+  if (_notifPollInterval) return;
+  _notifPollInterval = setInterval(async () => {
+    if (currentUser?.role === 'owner') await fetchNotifs();
+  }, 10000); // cek tiap 10 detik
+}
+
+function requestNotifPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
 // =================== STARTUP ===================
 async function startup() {
   checkSessionExpire();
   showLoading(true);
   await initData();
+  await loadProdukLimits();
   renderNavbar();
   renderProdukGrid();
   renderHeroStats();
+  if (currentUser?.role === 'owner') {
+    await fetchNotifs();
+    startNotifPolling();
+    requestNotifPermission();
+  }
   // Cek session expire setiap 5 menit
   setInterval(checkSessionExpire, 5 * 60 * 1000);
 }
