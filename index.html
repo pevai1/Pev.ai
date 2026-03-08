@@ -2039,6 +2039,9 @@ function switchTab(id, btn) {
 }
 
 // =================== AUTH ===================
+// ===== GOOGLE OAUTH CONFIG =====
+const GOOGLE_CLIENT_ID = '697019145401-u67i2am0ffhp3j38o0cmlsjtcbc8sj4o.apps.googleusercontent.com';
+
 // ===== LOGIN ATTEMPT TRACKER =====
 const _loginAttempts = {};
 const MAX_ATTEMPTS = 5;
@@ -2070,18 +2073,18 @@ async function handleSocialLogin(email, name, provider) {
   showToast('\u2705 Berhasil masuk dengan ' + provider + '!');
 }
 
-function loginWithGoogle() {
-  if (GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com') {
-    showToast('\u26a0\ufe0f Google Client ID belum diatur!'); return;
+async function loginWithGoogle() {
+  try {
+    showLoading(true);
+    const { data, error } = await db.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: 'https://diggie.netlify.app/' }
+    });
+    if (error) { showLoading(false); showToast('\u274c Gagal login Google: ' + error.message); }
+  } catch(e) {
+    showLoading(false);
+    showToast('\u274c Error: ' + e.message);
   }
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: async (response) => {
-      const payload = JSON.parse(atob(response.credential.split('.')[1]));
-      await handleSocialLogin(payload.email, payload.name, 'Google');
-    }
-  });
-  google.accounts.id.prompt();
 }
 
 function loginWithFacebook() {
@@ -4512,19 +4515,62 @@ function requestNotifPermission() {
 }
 
 // =================== STARTUP ===================
+async function handleGoogleOAuthCallback() {
+  // Cek kalau ada session dari Supabase OAuth (setelah redirect balik dari Google)
+  try {
+    const { data: { session }, error } = await db.auth.getSession();
+    if (session && session.user) {
+      const u = session.user;
+      const email = u.email;
+      const name = u.user_metadata?.full_name || u.user_metadata?.name || email.split('@')[0];
+      // Cek apakah user sudah ada di dm_users
+      const { data: users } = await db.from('dm_users').select('*').eq('email', email);
+      let user = users && users[0];
+      if (!user) {
+        // Auto register
+        const username = name.replace(/\s+/g,'').toLowerCase() + Math.floor(Math.random()*999);
+        const newUser = { username, email, password: '', role: 'customer', status: 'active', joined: Date.now(), avatar: '👤', oauth_provider: 'Google' };
+        const { data, error: regErr } = await db.from('dm_users').insert(newUser).select().single();
+        if (regErr) { showToast('\u274c Gagal register: ' + regErr.message); return; }
+        user = data;
+      }
+      await fetchUsers();
+      currentUser = {...user, customTitle: user.custom_title, loginAt: Date.now()};
+      SESSION.set(currentUser);
+      renderNavbar();
+      renderProdukGrid();
+      renderHeroStats();
+      showPage('page-home');
+      showToast('\u2705 Berhasil masuk dengan Google!');
+      if (currentUser?.role === 'owner') {
+        await fetchNotifs();
+        startNotifPolling();
+        requestNotifPermission();
+      }
+      return true;
+    }
+  } catch(e) { console.warn('OAuth callback error:', e); }
+  return false;
+}
+
 async function startup() {
   checkSessionExpire();
   showLoading(true);
   await initData();
   await loadProdukLimits();
-  renderNavbar();
-  renderProdukGrid();
-  renderHeroStats();
-  if (currentUser?.role === 'owner') {
-    await fetchNotifs();
-    startNotifPolling();
-    requestNotifPermission();
+  // Cek OAuth callback dari Google
+  const isOAuth = await handleGoogleOAuthCallback();
+  if (!isOAuth) {
+    renderNavbar();
+    renderProdukGrid();
+    renderHeroStats();
+    if (currentUser?.role === 'owner') {
+      await fetchNotifs();
+      startNotifPolling();
+      requestNotifPermission();
+    }
   }
+  showLoading(false);
   // Cek session expire setiap 5 menit
   setInterval(checkSessionExpire, 5 * 60 * 1000);
 }
