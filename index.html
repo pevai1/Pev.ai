@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BypassKit v3</title>
+<title>BypassKit v4</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Nunito:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -42,7 +42,6 @@ h1 span{color:var(--accent)}
 
 .btn-main{width:100%;padding:14px;background:var(--accent);color:#000;border:none;border-radius:10px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 20px var(--glow)}
 .btn-main:hover{background:var(--accent2);transform:translateY(-1px)}
-.btn-main:active{transform:translateY(0)}
 .btn-main:disabled{background:var(--border2);color:var(--text3);cursor:not-allowed;transform:none;box-shadow:none}
 
 .progress-wrap{margin-top:18px;display:none}
@@ -72,10 +71,15 @@ h1 span{color:var(--accent)}
 .btn-copy.copied{background:var(--ok-s);border-color:var(--ok);color:var(--ok)}
 .btn-open{background:var(--accent);color:#000;border-color:var(--accent);font-weight:800}.btn-open:hover{background:var(--accent2)}
 
+/* DEBUG BOX */
+.debug-box{margin-top:10px;background:#0a0c10;border:1px solid var(--border2);border-radius:8px;padding:10px 12px;display:none}
+.debug-box.show{display:block}
+.debug-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.debug-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6b7a99;line-height:1.6;white-space:pre-wrap;word-break:break-all;max-height:120px;overflow-y:auto}
+
 .hist-list{display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto}
 .hist-list::-webkit-scrollbar{width:3px}.hist-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-.hist-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:border-color .15s}
-.hist-item:hover{border-color:var(--border2)}
+.hist-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 13px;display:flex;align-items:center;gap:10px;cursor:pointer}
 .hdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .hdot.ok{background:var(--ok)}.hdot.fail{background:var(--err)}
 .hurl{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -94,16 +98,16 @@ h1 span{color:var(--accent)}
 <div class="header">
   <div class="logo-wrap">
     <div class="logo-icon">⚡</div>
-    <h1>Bypass<span>Kit</span> <span style="font-size:14px;color:var(--text3)">v3</span></h1>
+    <h1>Bypass<span>Kit</span> <span style="font-size:14px;color:var(--text3)">v4</span></h1>
   </div>
-  <p class="subtitle">Linkvertise Bypasser — Direct Internal API</p>
-  <div class="badge">✓ No Server · No Proxy · Pure Browser</div>
+  <p class="subtitle">Linkvertise Bypasser</p>
+  <div class="badge">✓ Netlify Ready · No Server</div>
 </div>
 
 <div class="card">
   <div class="card-title">Bypass Linkvertise</div>
   <label class="input-label">URL Linkvertise</label>
-  <input type="url" class="input-field" id="urlInput" placeholder="https://linkvertise.com/454392/hack-king-...">
+  <input type="url" class="input-field" id="urlInput" placeholder="https://linkvertise.com/454392/nama-script">
   <button class="btn-main" id="bypassBtn" onclick="runBypass()">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
     Jalankan Bypass
@@ -123,6 +127,12 @@ h1 span{color:var(--accent)}
       <button class="btn-s btn-open" id="opBtn" onclick="openRes()" style="display:none">↗ Buka</button>
     </div>
   </div>
+
+  <!-- DEBUG: tampil kalau gagal -->
+  <div class="debug-box" id="debugBox">
+    <div class="debug-title">Debug Response</div>
+    <div class="debug-val" id="debugVal"></div>
+  </div>
 </div>
 
 <div class="card">
@@ -135,98 +145,124 @@ h1 span{color:var(--accent)}
 <script>
 const STEPS_DEF = [
   "Parsing URL Linkvertise...",
-  "Request ke Linkvertise API...",
-  "Decode response...",
-  "Mengambil URL final...",
+  "Fetch link info (Step 1)...",
+  "Generate serial token...",
+  "Fetch URL target (Step 2)...",
 ];
 
-let lastRes = null;
-let hist = JSON.parse(localStorage.getItem("bk3_hist") || "[]");
+const PROXY = "https://api.allorigins.win/get?url=";
 
-// ─── PARSE LINKVERTISE URL ───
-// Format: linkvertise.com/{id}/{slug}
+let lastRes = null;
+let hist = JSON.parse(localStorage.getItem("bk4_hist") || "[]");
+let debugLog = [];
+
+// ─── PARSE URL ───
 function parseLV(url) {
   try {
     const u = new URL(url);
     if (!u.hostname.includes("linkvertise")) return null;
-    const parts = u.pathname.replace(/^\//, "").split("/");
+    // Hapus query string & trailing slash
+    const clean = u.pathname.replace(/^\//, "").replace(/\/$/, "").split("?")[0];
+    const parts = clean.split("/");
     if (parts.length < 2) return null;
-    return { id: parts[0], slug: parts[1] };
+    return { id: parts[0], slug: parts.slice(1).join("/") };
   } catch { return null; }
 }
 
-// ─── BYPASS LINKVERTISE VIA INTERNAL API ───
-async function bypassLinkvertise(url) {
-  const parsed = parseLV(url);
-  if (!parsed) return { ok: false, err: "URL bukan Linkvertise yang valid. Format: linkvertise.com/{id}/{slug}" };
+// ─── FETCH VIA PROXY ───
+async function proxyFetch(url) {
+  const res = await fetch(PROXY + encodeURIComponent(url), {
+    signal: AbortSignal.timeout(15000)
+  });
+  if (!res.ok) throw new Error("Proxy HTTP " + res.status);
+  const wrapper = await res.json();
+  if (!wrapper.contents) throw new Error("Proxy: contents kosong");
+  return JSON.parse(wrapper.contents);
+}
+
+// ─── BYPASS LOGIC ───
+async function bypassLinkvertise(rawUrl) {
+  debugLog = [];
+
+  const parsed = parseLV(rawUrl);
+  if (!parsed) return { ok: false, err: "URL bukan Linkvertise valid.\nFormat: linkvertise.com/{id}/{slug}" };
 
   const { id, slug } = parsed;
+  debugLog.push(`Parsed → id: ${id}, slug: ${slug}`);
 
+  // ── STEP 1: Get link info ──
+  const infoEndpoint = `https://publisher.linkvertise.com/api/v1/redirect/link/static/${id}/${slug}`;
+  debugLog.push(`Step1 URL: ${infoEndpoint}`);
+
+  let info;
   try {
-    // Step 1: Get link info dari Linkvertise publisher API
-    const infoUrl = `https://publisher.linkvertise.com/api/v1/redirect/link/static/${id}/${slug}`;
-    const infoRes = await fetch(infoUrl, {
-      headers: {
-        "Accept": "application/json",
-        "Origin": "https://linkvertise.com",
-        "Referer": "https://linkvertise.com/",
-      }
-    });
-
-    if (!infoRes.ok) throw new Error(`Info API error: ${infoRes.status}`);
-    const infoData = await infoRes.json();
-
-    const linkId = infoData?.data?.link?.id;
-    if (!linkId) throw new Error("Link ID tidak ditemukan di response");
-
-    // Step 2: Build serial token (timestamp + random + link_id)
-    const timestamp = Math.floor(Date.now() / 1000);
-    const random = "6548307"; // fixed value dari reverse engineering
-    const serial = btoa(JSON.stringify({ timestamp, random, link_id: linkId }));
-
-    // Step 3: Get target URL
-    const targetUrl = `https://publisher.linkvertise.com/api/v1/redirect/link/${id}/${slug}/target?serial=${encodeURIComponent(serial)}`;
-    const targetRes = await fetch(targetUrl, {
-      headers: {
-        "Accept": "application/json",
-        "Origin": "https://linkvertise.com",
-        "Referer": "https://linkvertise.com/",
-      }
-    });
-
-    if (!targetRes.ok) throw new Error(`Target API error: ${targetRes.status}`);
-    const targetData = await targetRes.json();
-
-    const finalUrl = targetData?.data?.target?.url || targetData?.data?.url || targetData?.url;
-    if (!finalUrl) throw new Error("URL tujuan tidak ada di response: " + JSON.stringify(targetData).slice(0, 100));
-
-    return { ok: true, result: finalUrl, via: "Linkvertise Internal API" };
-
+    info = await proxyFetch(infoEndpoint);
+    debugLog.push(`Step1 response: ${JSON.stringify(info).slice(0, 200)}`);
   } catch (e) {
-    // Fallback: coba corsproxy jika direct gagal (CORS)
+    return { ok: false, err: `Step1 gagal: ${e.message}`, debug: debugLog.join("\n") };
+  }
+
+  // Cari link_id dari berbagai kemungkinan struktur response
+  const linkId =
+    info?.data?.link?.id ||
+    info?.data?.id ||
+    info?.link?.id ||
+    info?.id ||
+    null;
+
+  debugLog.push(`Link ID ditemukan: ${linkId}`);
+
+  if (!linkId) {
+    return {
+      ok: false,
+      err: `Link ID tidak ada di response.\nCheck debug untuk struktur response.`,
+      debug: debugLog.join("\n")
+    };
+  }
+
+  // ── STEP 2: Build serial & fetch target ──
+  const timestamp = Math.floor(Date.now() / 1000);
+  const serial = btoa(JSON.stringify({
+    timestamp,
+    random: "6548307",
+    link_id: linkId
+  }));
+
+  // Coba 2 endpoint: serial (lama) dan X-Linkvertise-UT (baru)
+  const targetEndpoints = [
+    `https://publisher.linkvertise.com/api/v1/redirect/link/${id}/${slug}/target?serial=${encodeURIComponent(serial)}`,
+    `https://publisher.linkvertise.com/api/v1/redirect/link/${id}/${slug}/target?X-Linkvertise-UT=${encodeURIComponent(serial)}`,
+  ];
+
+  for (const ep of targetEndpoints) {
+    debugLog.push(`\nTrying target: ${ep}`);
     try {
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://publisher.linkvertise.com/api/v1/redirect/link/static/${id}/${slug}`)}`;
-      const pRes = await fetch(proxyUrl);
-      const pData = await pRes.json();
-      const inner = JSON.parse(pData.contents);
-      const linkId2 = inner?.data?.link?.id;
-      if (!linkId2) throw new Error("Fallback: link ID tidak ada");
+      const target = await proxyFetch(ep);
+      debugLog.push(`Target response: ${JSON.stringify(target).slice(0, 300)}`);
 
-      const ts2 = Math.floor(Date.now() / 1000);
-      const serial2 = btoa(JSON.stringify({ timestamp: ts2, random: "6548307", link_id: linkId2 }));
+      const finalUrl =
+        target?.data?.target?.url ||
+        target?.data?.url ||
+        target?.url ||
+        target?.target ||
+        target?.link ||
+        null;
 
-      const t2Proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://publisher.linkvertise.com/api/v1/redirect/link/${id}/${slug}/target?serial=${serial2}`)}`;
-      const t2Res = await fetch(t2Proxy);
-      const t2Data = await t2Res.json();
-      const t2Inner = JSON.parse(t2Data.contents);
-      const finalUrl2 = t2Inner?.data?.target?.url || t2Inner?.data?.url;
-      if (!finalUrl2) throw new Error("Fallback: URL tidak ada");
-
-      return { ok: true, result: finalUrl2, via: "Linkvertise API + allorigins proxy" };
-    } catch (e2) {
-      return { ok: false, err: `Bypass gagal: ${e.message}. Fallback: ${e2.message}` };
+      if (finalUrl) {
+        debugLog.push(`\n✅ Final URL: ${finalUrl}`);
+        return { ok: true, result: finalUrl, via: "publisher.linkvertise.com", debug: debugLog.join("\n") };
+      }
+    } catch (e) {
+      debugLog.push(`Error: ${e.message}`);
+      continue;
     }
   }
+
+  return {
+    ok: false,
+    err: "Dapat link ID tapi URL target tidak ditemukan.\nCek debug di bawah.",
+    debug: debugLog.join("\n")
+  };
 }
 
 // ─── RENDER STEPS ───
@@ -245,7 +281,7 @@ function setBar(p) { document.getElementById("bar").style.width = p + "%"; }
 async function runBypass() {
   const url = document.getElementById("urlInput").value.trim();
   if (!url) { toast("Masukkin URL dulu!"); return; }
-  if (!url.includes("linkvertise")) { toast("Harus URL Linkvertise bre!"); return; }
+  if (!url.includes("linkvertise")) { toast("Harus URL Linkvertise!"); return; }
 
   const btn = document.getElementById("bypassBtn");
   btn.disabled = true;
@@ -253,18 +289,25 @@ async function runBypass() {
 
   document.getElementById("pw").classList.add("show");
   document.getElementById("rb").classList.remove("show","ok","fail");
+  document.getElementById("debugBox").classList.remove("show");
 
   renderSteps(0); setBar(10);
-  await w(300); renderSteps(1); setBar(30);
-  await w(400); renderSteps(2); setBar(60);
+  await w(200); renderSteps(1); setBar(25);
 
   const res = await bypassLinkvertise(url);
 
   setBar(100);
   renderSteps(res.ok ? 4 : 3, res.ok ? -1 : 3);
-  await w(200);
+  await w(150);
 
   showResult(res.ok, res.ok ? res.result : res.err, res.via, url);
+
+  // Tampilkan debug kalau gagal
+  if (!res.ok && res.debug) {
+    document.getElementById("debugBox").classList.add("show");
+    document.getElementById("debugVal").textContent = res.debug;
+  }
+
   addHist(url, res.ok ? res.result : "GAGAL", res.ok);
 
   btn.disabled = false;
@@ -299,24 +342,19 @@ function addHist(url, result, ok) {
   const time = t.getHours().toString().padStart(2,"0") + ":" + t.getMinutes().toString().padStart(2,"0");
   hist.unshift({ url, result, ok, time });
   if (hist.length > 30) hist.pop();
-  localStorage.setItem("bk3_hist", JSON.stringify(hist));
+  localStorage.setItem("bk4_hist", JSON.stringify(hist));
   renderHist();
 }
 function renderHist() {
   const el = document.getElementById("hl");
   if (!hist.length) { el.innerHTML = '<div class="empty-h">Belum ada riwayat.</div>'; return; }
   el.innerHTML = hist.map(h => `
-    <div class="hist-item" onclick="loadHist('${encodeURIComponent(h.result)}')">
+    <div class="hist-item">
       <div class="hdot ${h.ok?'ok':'fail'}"></div>
-      <div class="hurl" title="${h.url}">${h.url}</div>
+      <div class="hurl">${h.url}</div>
       <div class="hres">${h.result}</div>
       <div class="htime">${h.time}</div>
     </div>`).join("");
-}
-function loadHist(enc) {
-  lastRes = decodeURIComponent(enc);
-  showResult(true, lastRes, "Riwayat", "");
-  toast("Load dari riwayat ✅");
 }
 
 function w(ms) { return new Promise(r => setTimeout(r, ms)); }
