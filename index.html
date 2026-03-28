@@ -2,383 +2,3555 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BypassKit v5</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Nunito:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Account Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0b0d12;--surface:#12151e;--surface2:#1a1e2a;
-  --border:#232838;--border2:#2e3448;
-  --text:#e8ecf4;--text2:#8b93a8;--text3:#4a5168;
-  --accent:#00d4aa;--accent2:#00b891;
-  --glow:rgba(0,212,170,0.15);--soft:rgba(0,212,170,0.08);
-  --err:#ef4444;--err-s:rgba(239,68,68,0.08);
-  --ok:#10b981;--ok-s:rgba(16,185,129,0.08);
-  --shadow:0 8px 32px rgba(0,0,0,0.4);
+:root {
+  --bg: #07090f;
+  --surface: #0d1018;
+  --card: #111520;
+  --card2: #161c2a;
+  --border: #1e2538;
+  --border2: #252d42;
+  --accent: #00f0ff;
+  --accent2: #0066ff;
+  --green: #00ff88;
+  --red: #ff3b6b;
+  --yellow: #ffcc00;
+  --text: #e2e8f8;
+  --muted: #4a5470;
+  --muted2: #6b7a9e;
+  --coins: #ffcc00;
+  --gems: #7dd3fc;
+  --level: #a78bfa;
 }
-body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:36px 14px 60px;
-background-image:radial-gradient(ellipse at 15% 10%,rgba(0,212,170,0.05) 0%,transparent 50%),radial-gradient(ellipse at 85% 85%,rgba(99,102,241,0.04) 0%,transparent 50%);}
-.header{text-align:center;margin-bottom:28px;animation:fadeD .4s ease both}
-@keyframes fadeD{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:translateY(0)}}
-.logo-wrap{display:inline-flex;align-items:center;gap:12px;margin-bottom:8px}
-.logo-icon{width:42px;height:42px;background:linear-gradient(135deg,var(--accent),#00a8ff);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 24px var(--glow)}
-h1{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;letter-spacing:-.5px}
-h1 span{color:var(--accent)}
-.subtitle{font-size:13px;color:var(--text2);font-weight:500}
-.badge{display:inline-flex;align-items:center;gap:5px;background:var(--ok-s);border:1px solid rgba(16,185,129,.2);color:var(--ok);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:8px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:600px;box-shadow:var(--shadow);animation:fadeU .4s ease both}
-@keyframes fadeU{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-.card+.card{margin-top:14px;animation-delay:.07s}
-.card-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);margin-bottom:16px;display:flex;align-items:center;gap:8px}
-.card-title::before{content:'';display:inline-block;width:3px;height:13px;background:var(--accent);border-radius:2px}
-.input-label{display:block;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px}
-.input-field{width:100%;padding:12px 14px;background:var(--surface2);border:1.5px solid var(--border2);border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);outline:none;transition:all .2s;margin-bottom:14px}
-.input-field:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--soft);background:#1e2230}
-.input-field::placeholder{color:var(--text3)}
-.btn-main{width:100%;padding:14px;background:var(--accent);color:#000;border:none;border-radius:10px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 20px var(--glow)}
-.btn-main:hover{background:var(--accent2);transform:translateY(-1px)}
-.btn-main:disabled{background:var(--border2);color:var(--text3);cursor:not-allowed;transform:none;box-shadow:none}
-.progress-wrap{margin-top:18px;display:none}
-.progress-wrap.show{display:block}
-.bar-bg{background:var(--surface2);border-radius:6px;height:5px;overflow:hidden;margin-bottom:12px}
-.bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),#00a8ff);border-radius:6px;width:0%;transition:width .5s ease}
-.steps{display:flex;flex-direction:column;gap:7px}
-.step{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text3);font-weight:500;transition:color .25s}
-.step.active{color:var(--accent)}.step.done{color:var(--ok)}.step.error{color:var(--err)}
-.sdot{width:18px;height:18px;border-radius:50%;background:var(--surface2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;transition:all .25s}
-.step.active .sdot{border-color:var(--accent);background:var(--soft);animation:pulse 1s infinite}
-.step.done .sdot{border-color:var(--ok);background:var(--ok-s);color:var(--ok)}
-.step.error .sdot{border-color:var(--err);background:var(--err-s);color:var(--err)}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,212,170,.4)}50%{box-shadow:0 0 0 5px rgba(0,212,170,0)}}
-.result-box{margin-top:16px;background:var(--surface2);border:1.5px solid var(--border2);border-radius:10px;padding:14px 16px;display:none}
-.result-box.show{display:block}
-.result-box.ok{border-color:var(--ok);background:var(--ok-s)}
-.result-box.fail{border-color:var(--err);background:var(--err-s)}
-.result-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);margin-bottom:8px}
-.result-box.ok .result-label{color:var(--ok)}.result-box.fail .result-label{color:var(--err)}
-.result-val{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);word-break:break-all;line-height:1.6}
-.via{display:inline-block;font-size:10px;font-weight:700;color:var(--text3);background:var(--border);padding:2px 8px;border-radius:20px;margin-top:8px}
-.result-acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.btn-s{padding:7px 14px;border-radius:7px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border2);transition:all .15s}
-.btn-copy{background:var(--surface);color:var(--text2)}.btn-copy:hover{background:var(--border2);color:var(--text)}
-.btn-copy.copied{background:var(--ok-s);border-color:var(--ok);color:var(--ok)}
-.btn-open{background:var(--accent);color:#000;border-color:var(--accent);font-weight:800}.btn-open:hover{background:var(--accent2)}
-.debug-box{margin-top:10px;background:#0a0c10;border:1px solid var(--border2);border-radius:8px;padding:10px 12px;display:none}
-.debug-box.show{display:block}
-.debug-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
-.debug-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6b7a99;line-height:1.6;white-space:pre-wrap;word-break:break-all;max-height:140px;overflow-y:auto}
-.hist-list{display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto}
-.hist-list::-webkit-scrollbar{width:3px}.hist-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-.hist-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 13px;display:flex;align-items:center;gap:10px}
-.hdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.hdot.ok{background:var(--ok)}.hdot.fail{background:var(--err)}
-.hurl{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hres{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);flex-shrink:0;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.htime{font-size:10px;color:var(--text3);flex-shrink:0}
-.empty-h{text-align:center;padding:20px;color:var(--text3);font-size:13px}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--surface2);color:var(--text);padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;border:1px solid var(--border2);box-shadow:var(--shadow);opacity:0;transition:all .25s;z-index:999;pointer-events:none;white-space:nowrap}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-@media(max-width:480px){body{padding:20px 10px 50px}.card{padding:18px 14px}h1{font-size:22px}}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html {
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 40px;
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,240,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,240,255,0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: -200px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse, rgba(0,102,255,0.07) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar-left { display: flex; align-items: center; gap: 10px; }
+
+.logo-mark {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 0 20px rgba(0,102,255,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+
+.app-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.app-name span { color: var(--accent); }
+
+.topbar-right { display: flex; gap: 6px; }
+
+.top-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--border2);
+  background: var(--card);
+  color: var(--muted2);
+  transition: all 0.2s;
+}
+.top-btn.accent { background: rgba(0,240,255,0.07); color: var(--accent); border-color: rgba(0,240,255,0.2); }
+.top-btn.warn   { background: rgba(255,204,0,0.07); color: var(--yellow); border-color: rgba(255,204,0,0.2); }
+.top-btn:active { transform: scale(0.95); }
+
+/* ── HERO ── */
+.hero {
+  padding: 20px 16px 6px;
+  position: relative; z-index: 1;
+}
+
+.hero-greeting {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.7rem;
+  font-weight: 900;
+  letter-spacing: -0.8px;
+  line-height: 1.15;
+}
+
+.hero-greeting .name {
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.live-bar {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 8px;
+  font-size: 0.68rem;
+  color: var(--muted2);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.pulse {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: blink 2s infinite;
+  flex-shrink: 0;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.live-sep { color: var(--border2); }
+.live-val { color: var(--text); font-weight: 700; }
+
+/* ── STATS ROW ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 14px 16px;
+  position: relative; z-index: 1;
+}
+
+.stat-pill {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px 10px 16px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.stat-pill::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 15%; right: 15%;
+  height: 1px;
+}
+.s-online::before  { background: linear-gradient(90deg, transparent, var(--green), transparent); }
+.s-offline::before { background: linear-gradient(90deg, transparent, var(--red), transparent); }
+.s-total::before   { background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+
+.stat-pill-num {
+  font-family: 'Outfit', sans-serif;
+  font-size: 2.4rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -2px;
+}
+.s-online  .stat-pill-num { color: var(--green); text-shadow: 0 0 20px rgba(0,255,136,0.35); }
+.s-offline .stat-pill-num { color: var(--red); }
+.s-total   .stat-pill-num { color: var(--accent); }
+
+.stat-pill-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.54rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ── COL HEADERS ── */
+.col-headers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 4px 16px 10px;
+  position: relative; z-index: 1;
+}
+
+.col-hdr {
+  display: flex; align-items: center; gap: 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.col-hdr .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%; flex-shrink: 0;
+}
+.online-hdr  { color: var(--green); }
+.offline-hdr { color: var(--red); }
+.online-hdr  .dot { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 2s infinite; }
+.offline-hdr .dot { background: var(--red); }
+
+.col-badge {
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 1px 7px;
+  font-size: 0.58rem;
+  color: var(--muted2);
+}
+
+/* ── SPLIT ── */
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 16px;
+  position: relative; z-index: 1;
+}
+.col { display: flex; flex-direction: column; gap: 8px; }
+
+/* ── ACCOUNT CARD ── */
+.acc-card {
+  border-radius: 16px;
+  padding: 12px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--card);
+  animation: cardIn 0.35s ease both;
+  transition: border-color 0.3s;
+}
+@keyframes cardIn {
+  from { opacity:0; transform:translateY(8px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.acc-card.online {
+  background: linear-gradient(145deg, #0d1520, #0a1a18);
+  border-color: rgba(0,255,136,0.2);
+}
+
+.acc-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+}
+.acc-card.online::before  { background: linear-gradient(90deg, transparent, var(--green), transparent); }
+.acc-card.offline::before { background: linear-gradient(90deg, transparent, var(--border2), transparent); }
+
+.acc-card.online::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 50px; height: 50px;
+  background: radial-gradient(circle at top right, rgba(0,255,136,0.07), transparent 70%);
+  pointer-events: none;
+}
+
+/* card header */
+.card-top {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 9px;
+}
+
+.avi {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+  position: relative;
+}
+.acc-card.online  .avi { background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2); }
+.acc-card.offline .avi { background: rgba(255,255,255,0.03); border: 1px solid var(--border); }
+
+.avi-dot {
+  position: absolute;
+  bottom: -1px; right: -1px;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  border: 2px solid var(--card);
+}
+.acc-card.online  .avi-dot { background: var(--green); box-shadow: 0 0 5px var(--green); }
+.acc-card.offline .avi-dot { background: var(--muted); }
+
+.card-info { flex: 1; min-width: 0; }
+
+.card-name {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.card-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.54rem;
+  color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.status-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.54rem;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.acc-card.online  .status-chip { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.22); }
+.acc-card.offline .status-chip { background: rgba(255,255,255,0.03); color: var(--muted2); border: 1px solid var(--border); }
+
+/* stats */
+.card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-bottom: 7px;
+}
+
+.cstat {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 3px;
+  text-align: center;
+}
+
+.cstat-icon { font-size: 11px; line-height: 1; }
+
+.cstat-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cstat-val.c { color: var(--coins); }
+.cstat-val.g { color: var(--gems); }
+.cstat-val.l { color: var(--level); }
+
+.cstat-key {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.46rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+/* game badge */
+.game-tag {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 7px;
+  border-radius: 7px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border);
+  margin-bottom: 7px;
+  font-size: 0.6rem;
+  color: var(--muted2);
+  white-space: nowrap; overflow: hidden;
+}
+.game-tag span { color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+
+/* footer */
+.card-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  color: var(--muted);
+}
+.foot-label { text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.46rem; }
+.foot-val { font-weight: 700; font-size: 0.6rem; }
+.foot-val.active { color: var(--accent); }
+.foot-val.inactive { color: var(--muted2); }
+.foot-time { font-size: 0.55rem; color: var(--muted2); }
+
+/* delete */
+.del-btn {
+  width: 100%;
+  margin-top: 7px;
+  padding: 5px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,59,107,0.18);
+  background: rgba(255,59,107,0.05);
+  color: var(--red);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.del-btn:active { background: rgba(255,59,107,0.15); transform: scale(0.97); }
+
+/* empty */
+.empty-col {
+  border-radius: 16px;
+  border: 1px dashed var(--border2);
+  padding: 30px 10px;
+  text-align: center;
+  background: rgba(255,255,255,0.01);
+}
+.em-icon { font-size: 1.8rem; margin-bottom: 6px; }
+.empty-col > div:last-child {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.56rem;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+}
+
+/* ── CONFIG MODAL ── */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 200;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 16px 36px;
+  width: 100%; max-width: 480px;
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+
+.modal-handle {
+  width: 36px; height: 4px;
+  background: var(--border2);
+  border-radius: 4px;
+  margin: 0 auto 18px;
+}
+
+.modal h3 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem; font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+
+.field label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--muted2);
+}
+
+.field input {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.8rem;
+  outline: none;
+}
+.field input:focus { border-color: var(--accent); }
+
+.modal-footer { display: flex; gap: 8px; margin-top: 16px; }
+
+.mbtn {
+  flex: 1; padding: 11px;
+  border-radius: 10px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.82rem; font-weight: 700;
+  cursor: pointer; border: none;
+  transition: all 0.2s;
+}
+.mbtn-primary { background: var(--accent); color: #000; }
+.mbtn-cancel  { background: var(--card); color: var(--muted2); border: 1px solid var(--border2); }
+.mbtn:active  { transform: scale(0.97); }
+
+/* ── DETAIL MODAL ── */
+.detail-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 250;
+  align-items: flex-end; justify-content: center;
+  padding: 0 10px 16px;
+}
+.detail-overlay.open { display: flex; }
+.detail-modal {
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  border-radius: 24px;
+  padding: 0 0 28px;
+  width: 100%; max-width: 480px;
+  animation: slideUp 0.32s cubic-bezier(0.34,1.2,0.64,1);
+  max-height: 88vh; overflow-y: auto;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+}
+.detail-handle {
+  width: 36px; height: 4px; background: var(--border2);
+  border-radius: 4px; margin: 0 auto 14px;
+}
+.detail-header {
+  padding: 16px 16px 14px; border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--card2); z-index: 1;
+}
+.detail-hero { display: flex; align-items: center; gap: 12px; }
+.detail-avi {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0; position: relative;
+}
+.detail-avi.online  { background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.25); }
+.detail-avi.offline { background: rgba(255,255,255,0.04); border: 1px solid var(--border2); }
+.detail-avi-dot {
+  position: absolute; bottom: 0; right: 0;
+  width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--card2);
+}
+.detail-avi.online  .detail-avi-dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.detail-avi.offline .detail-avi-dot { background: var(--muted); }
+.detail-name-wrap { flex: 1; }
+.detail-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem; font-weight: 800; letter-spacing: -0.3px;
+}
+.detail-username {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem; color: var(--muted2); margin-top: 2px;
+}
+.detail-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem; font-weight: 700; padding: 5px 10px; border-radius: 8px;
+}
+.detail-status.online  { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.22); }
+.detail-status.offline { background: rgba(255,255,255,0.03); color: var(--muted2); border: 1px solid var(--border); }
+.detail-body { padding: 16px; }
+.detail-section-title {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.52rem;
+  font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.detail-section-title::after { content:''; flex:1; height:1px; background: var(--border); }
+.detail-stats-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 8px; margin-bottom: 16px;
+}
+.detail-stat {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 8px; text-align: center;
+  position: relative; overflow: hidden;
+}
+.detail-stat::before {
+  content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 1px;
+}
+.ds-coins::before { background: linear-gradient(90deg,transparent,var(--coins),transparent); }
+.ds-gems::before  { background: linear-gradient(90deg,transparent,var(--gems),transparent); }
+.ds-level::before { background: linear-gradient(90deg,transparent,var(--level),transparent); }
+.detail-stat-icon { font-size: 18px; margin-bottom: 4px; }
+.detail-stat-val {
+  font-family: 'Outfit', sans-serif; font-size: 1.1rem;
+  font-weight: 800; line-height: 1; letter-spacing: -0.5px;
+}
+.ds-coins .detail-stat-val { color: var(--coins); }
+.ds-gems  .detail-stat-val { color: var(--gems); }
+.ds-level .detail-stat-val { color: var(--level); }
+.detail-stat-key {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.48rem;
+  letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-top: 3px;
+}
+.detail-info-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.detail-info-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 10px;
+}
+.detail-info-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.58rem;
+  color: var(--muted2); text-transform: uppercase; letter-spacing: 1px;
+}
+.detail-info-val {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+  font-weight: 700; color: var(--text);
+}
+.detail-info-val.green  { color: var(--green); }
+.detail-info-val.yellow { color: var(--yellow); }
+.detail-info-val.accent { color: var(--accent); }
+.coins-match-card {
+  background: linear-gradient(135deg, rgba(255,204,0,0.08), rgba(255,204,0,0.03));
+  border: 1px solid rgba(255,204,0,0.2); border-radius: 14px;
+  padding: 14px; margin-bottom: 16px; position: relative; overflow: hidden;
+}
+.coins-match-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--yellow), transparent);
+}
+.coins-match-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.coins-match-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.55rem;
+  color: var(--muted2); text-transform: uppercase; letter-spacing: 1.5px;
+}
+.coins-match-val {
+  font-family: 'Outfit', sans-serif; font-size: 1.6rem;
+  font-weight: 900; color: var(--yellow); letter-spacing: -1px;
+}
+.coins-match-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; color: var(--muted2); }
+.detail-close-btn {
+  display: flex; align-items: center; gap: 5px;
+  margin-bottom: 12px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--card);
+  color: var(--muted2);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.7rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+}
+.detail-close-btn:active { background: var(--border2); transform: scale(0.96); }
+.detail-del-btn {
+  width: 100%; padding: 12px; border-radius: 12px;
+  border: 1px solid rgba(255,59,107,0.25); background: rgba(255,59,107,0.07);
+  color: var(--red); font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+}
+.detail-del-btn:active { background: rgba(255,59,107,0.18); transform: scale(0.98); }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 0.75rem; font-weight: 600;
+  z-index: 300;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  white-space: nowrap;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+}
+.toast.show    { transform: translateX(-50%) translateY(0); }
+.toast.success { color: var(--green); border-color: rgba(0,255,136,0.25); }
+.toast.error   { color: var(--red);   border-color: rgba(255,59,107,0.25); }
+
+@media (max-width: 380px) {
+  .hero-greeting { font-size: 1.3rem; }
+  .split { grid-template-columns: 1fr; }
+  .col-headers { grid-template-columns: 1fr; }
+}
+
+/* ── HERO TOP ROW ── */
+.hero-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px;
+}
+
+/* ── FULL AKUN BUTTON ── */
+.full-akun-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 13px;
+  border-radius: 12px;
+  background: rgba(0,240,255,0.07);
+  border: 1px solid rgba(0,240,255,0.22);
+  color: var(--accent);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.72rem; font-weight: 700;
+  cursor: pointer; flex-shrink: 0;
+  transition: all 0.2s;
+}
+.full-akun-btn:active { transform: scale(0.95); background: rgba(0,240,255,0.14); }
+.fa-icon { font-size: 0.9rem; }
+.fa-badge {
+  background: var(--accent); color: #000;
+  font-size: 0.58rem; font-weight: 800;
+  border-radius: 20px; padding: 1px 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── FULL AKUN PANEL ── */
+.fa-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 260;
+  align-items: flex-end; justify-content: center;
+  padding: 0 10px 16px;
+  overscroll-behavior: none;
+}
+.fa-overlay.open { display: flex; }
+.fa-panel {
+  background: var(--card2); border: 1px solid var(--border2);
+  border-radius: 24px; width: 100%; max-width: 480px;
+  animation: slideUp 0.32s cubic-bezier(0.34,1.2,0.64,1);
+  max-height: 88vh; display: flex; flex-direction: column;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+}
+.fa-header {
+  padding: 14px 16px 12px; border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--card2);
+  border-radius: 24px 24px 0 0; z-index: 1; flex-shrink: 0;
+}
+.fa-handle {
+  width: 36px; height: 4px; background: var(--border2);
+  border-radius: 4px; margin: 0 auto 12px;
+}
+.fa-title-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 10px;
+}
+.fa-title {
+  font-family: 'Outfit', sans-serif; font-size: 0.92rem;
+  font-weight: 800; letter-spacing: -0.3px;
+  flex: 1;
+}
+.fa-back-btn {
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: var(--card);
+  color: var(--text);
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1;
+  margin-right: 4px;
+  transition: all 0.15s;
+}
+.fa-back-btn:active { background: var(--border2); transform: scale(0.92); }
+.fa-ss-btn {
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+  border: 1px solid rgba(0,240,255,0.2);
+  background: rgba(0,240,255,0.07);
+  color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.fa-ss-btn:active { background: rgba(0,240,255,0.18); transform: scale(0.92); }
+.fa-close-btn {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+  border: 1px solid rgba(255,59,107,0.2);
+  background: rgba(255,59,107,0.06);
+  color: var(--red);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.fa-close-btn:active { background: rgba(255,59,107,0.18); transform: scale(0.92); }
+.fa-tabs { display: flex; gap: 5px; }
+.fa-tab {
+  padding: 4px 10px; border-radius: 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.65rem; font-weight: 700;
+  border: 1px solid var(--border2); background: var(--card);
+  color: var(--muted2); cursor: pointer; transition: all 0.15s;
+}
+.fa-tab.active {
+  background: rgba(0,240,255,0.1); color: var(--accent);
+  border-color: rgba(0,240,255,0.25);
+}
+.fa-search {
+  width: 100%; padding: 9px 12px;
+  background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 10px; color: var(--text);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.78rem; outline: none;
+}
+.fa-search:focus { border-color: var(--accent); }
+.fa-grid {
+  display: flex; flex-direction: column;
+  gap: 16px; padding: 12px 12px 40px;
+  overflow-y: auto; flex: 1;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* ── VIP GROUP ── */
+.fa-vip-group {
+  display: flex; flex-direction: column; gap: 8px;
+  transition: transform 0.2s cubic-bezier(0.34,1.4,0.64,1);
+}
+.fa-vip-label-wrap {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 2px;
+}
+.fa-vip-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  background: var(--accent); box-shadow: 0 0 6px var(--accent);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.fa-vip-group.drag-target .fa-vip-dot {
+  transform: scale(1.6);
+  box-shadow: 0 0 12px var(--accent);
+}
+.fa-vip-name {
+  font-family: 'Outfit', sans-serif; font-size: 0.72rem; font-weight: 800;
+  color: var(--muted2); letter-spacing: 0.5px; text-transform: uppercase;
+  background: none; border: none; outline: none;
+  padding: 0; flex: 1; cursor: text;
+  transition: color 0.2s;
+}
+.fa-vip-name:focus { color: var(--accent); }
+.fa-vip-count {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.52rem;
+  color: var(--muted); background: var(--card);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 1px 6px; flex-shrink: 0;
+  transition: all 0.2s;
+}
+.fa-vip-group.drag-target .fa-vip-count {
+  color: var(--accent); border-color: rgba(0,240,255,0.4);
+  background: rgba(0,240,255,0.08);
+}
+.fa-vip-cards {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  transition: background 0.25s, border-color 0.25s, padding 0.25s, min-height 0.25s;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  padding: 0;
+}
+.fa-vip-group.drag-target .fa-vip-cards {
+  border-color: rgba(0,240,255,0.45);
+  background: rgba(0,240,255,0.05);
+  padding: 6px;
+  min-height: 70px;
+  animation: pulseTarget 1s ease infinite;
+}
+@keyframes pulseTarget {
+  0%,100% { box-shadow: 0 0 0 0 rgba(0,240,255,0.15); }
+  50%      { box-shadow: 0 0 0 6px rgba(0,240,255,0); }
+}
+
+/* ── FULL AKUN CARD ── */
+.fa-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 10px;
+  cursor: pointer;
+  transition: transform 0.18s cubic-bezier(0.34,1.4,0.64,1), border-color 0.18s, box-shadow 0.18s, opacity 0.18s;
+  position: relative; overflow: visible;
+  animation: cardIn 0.3s cubic-bezier(0.34,1.3,0.64,1) both;
+  min-height: 110px;
+  will-change: transform;
+}
+.fa-card.fa-online {
+  background: linear-gradient(145deg, #0d1520, #0a1a18);
+  border-color: rgba(0,255,136,0.25);
+}
+.fa-card.fa-online::before {
+  content: ''; position: absolute;
+  top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+}
+.fa-card:active { transform: scale(0.95); }
+.fa-card.drag-over {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0,240,255,0.25);
+  transform: scale(1.03);
+}
+@keyframes cardDropIn {
+  0%   { opacity: 0; transform: scale(0.88) translateY(-6px); }
+  65%  { transform: scale(1.04) translateY(1px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.fa-card.just-dropped {
+  animation: cardDropIn 0.32s cubic-bezier(0.34,1.4,0.64,1) both;
+}
+.fa-card-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 7px;
+}
+.fa-avi {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; position: relative; flex-shrink: 0;
+}
+.fa-online .fa-avi { background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2); }
+.fa-card:not(.fa-online) .fa-avi { background: rgba(255,255,255,0.03); border: 1px solid var(--border); }
+.fa-avi-dot {
+  position: absolute; bottom: -1px; right: -1px;
+  width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--card);
+}
+.fa-online .fa-avi-dot { background: var(--green); box-shadow: 0 0 5px var(--green); }
+.fa-card:not(.fa-online) .fa-avi-dot { background: var(--muted); }
+.fa-chip {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.48rem; font-weight: 700;
+  padding: 2px 6px; border-radius: 5px; letter-spacing: 0.5px;
+}
+.fa-online .fa-chip { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.22); }
+.fa-card:not(.fa-online) .fa-chip { background: rgba(255,255,255,0.03); color: var(--muted2); border: 1px solid var(--border); }
+.fa-name {
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.75rem; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+.fa-id {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.5rem;
+  color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fa-stats {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 3px; margin-top: 7px;
+}
+.fa-stat {
+  background: rgba(255,255,255,0.025); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 2px; text-align: center;
+}
+.fa-stat-val {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fa-stat-val.c { color: var(--coins); }
+.fa-stat-val.g { color: var(--gems); }
+.fa-stat-val.l { color: var(--level); }
+.fa-stat-key {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.4rem;
+  letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted);
+}
+.fa-empty {
+  grid-column: span 2; text-align: center; padding: 40px 0;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--muted);
+}
+/* Move row */
+.fa-move-row {
+  display: flex; flex-wrap: wrap; gap: 3px; margin-top: 6px;
+}
+.fa-move-btn {
+  flex: 1; min-width: 26px; padding: 3px 2px;
+  background: rgba(0,240,255,0.06);
+  border: 1px solid rgba(0,240,255,0.18);
+  border-radius: 6px;
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.52rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+  text-align: center;
+}
+.fa-move-btn.current-vip {
+  background: rgba(0,240,255,0.2);
+  border-color: rgba(0,240,255,0.55);
+  color: #fff; cursor: default;
+}
+.fa-move-btn:not(.current-vip):active { background: rgba(0,240,255,0.25); transform: scale(0.93); }
+
+/* ── SETTINGS MODAL ── */
+.settings-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(14px);
+  z-index: 300;
+  align-items: flex-end; justify-content: center;
+  padding: 0 10px 16px;
+}
+.settings-overlay.open { display: flex; }
+.settings-modal {
+  background: var(--card2); border: 1px solid var(--border2);
+  border-radius: 24px; padding: 0; width: 100%; max-width: 480px;
+  animation: slideUp 0.3s cubic-bezier(0.34,1.2,0.64,1);
+  max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+}
+.settings-handle {
+  width: 36px; height: 4px; background: var(--border2);
+  border-radius: 4px; margin: 14px auto 0;
+}
+.settings-header {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.settings-header-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: rgba(0,240,255,0.08); border: 1px solid rgba(0,240,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent); flex-shrink: 0;
+}
+.settings-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem; font-weight: 800; letter-spacing: -0.3px; flex: 1;
+}
+.settings-body { padding: 14px 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+.settings-section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.52rem; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--muted2);
+  margin-bottom: 8px;
+}
+.settings-field { display: flex; flex-direction: column; gap: 5px; }
+.settings-field label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.56rem; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--muted2);
+}
+.settings-input {
+  background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 10px 12px;
+  color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.82rem; outline: none; width: 100%;
+}
+.settings-input:focus { border-color: var(--accent); }
+.theme-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+.theme-btn {
+  padding: 10px 6px; border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: var(--card);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem; font-weight: 700;
+  color: var(--muted2); cursor: pointer;
+  text-align: center; transition: all 0.15s;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+}
+.theme-btn .theme-dot {
+  width: 18px; height: 18px; border-radius: 50%;
+}
+.theme-btn.active {
+  border-color: var(--accent);
+  background: rgba(0,240,255,0.08);
+  color: var(--accent);
+}
+.theme-btn:active { transform: scale(0.94); }
+.interval-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.interval-chip {
+  padding: 6px 12px; border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--card);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; font-weight: 700;
+  color: var(--muted2); cursor: pointer;
+  transition: all 0.15s;
+}
+.interval-chip.active {
+  background: rgba(0,240,255,0.1); color: var(--accent);
+  border-color: rgba(0,240,255,0.3);
+}
+.interval-chip:active { transform: scale(0.93); }
+.settings-save-btn {
+  width: 100%; padding: 13px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  color: #000; font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.85rem; font-weight: 800;
+  border: none; cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(0,102,255,0.25);
+}
+.settings-save-btn:active { transform: scale(0.97); }
+
+/* ── STATS BAR ── */
+.stats-summary-bar {
+  display: flex; gap: 8px; padding: 0 16px 10px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; position: relative; z-index: 1;
+}
+.stats-summary-bar::-webkit-scrollbar { display: none; }
+.sum-card {
+  flex-shrink: 0;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 14px;
+  display: flex; align-items: center; gap: 9px;
+  min-width: 130px;
+}
+.sum-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sum-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--muted2);
+}
+.sum-val {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem; font-weight: 800; letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+/* ── HISTORY LOG ── */
+.history-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(14px);
+  z-index: 270; align-items: flex-end; justify-content: center;
+  padding: 0 10px 16px;
+}
+.history-overlay.open { display: flex; }
+.history-panel {
+  background: var(--card2); border: 1px solid var(--border2);
+  border-radius: 24px; width: 100%; max-width: 480px;
+  animation: slideUp 0.3s cubic-bezier(0.34,1.2,0.64,1);
+  max-height: 80vh; display: flex; flex-direction: column;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+}
+.history-header {
+  padding: 14px 16px 12px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.history-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.92rem; font-weight: 800; flex: 1;
+}
+.history-clear-btn {
+  padding: 5px 10px; border-radius: 7px;
+  border: 1px solid rgba(255,59,107,0.2);
+  background: rgba(255,59,107,0.06);
+  color: var(--red); font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem; font-weight: 700; cursor: pointer;
+  transition: all 0.15s;
+}
+.history-clear-btn:active { background: rgba(255,59,107,0.18); }
+.history-list {
+  overflow-y: auto; flex: 1; padding: 10px 12px 20px;
+  display: flex; flex-direction: column; gap: 6px;
+  -webkit-overflow-scrolling: touch;
+}
+.history-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 10px;
+  background: var(--card); border: 1px solid var(--border);
+  animation: cardIn 0.2s ease both;
+}
+.history-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.history-dot.on  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.history-dot.off { background: var(--red); }
+.history-name {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.75rem; font-weight: 700; flex: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.history-event {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem; font-weight: 700; flex-shrink: 0;
+}
+.history-event.on  { color: var(--green); }
+.history-event.off { color: var(--red); }
+.history-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.54rem; color: var(--muted); flex-shrink: 0;
+}
+.history-empty {
+  text-align: center; padding: 40px 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem; color: var(--muted); letter-spacing: 1px;
+}
+
+/* ── INTERVAL BADGE di live-bar (clickable) ── */
+.interval-tap {
+  cursor: pointer; padding: 2px 6px; border-radius: 5px;
+  transition: background 0.15s;
+}
+.interval-tap:active { background: rgba(0,240,255,0.1); }
+
+/* ── GEAR BTN di fa-card ── */
+.fa-gear-btn {
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--border2);
+  background: var(--card2);
+  font-size: 0.65rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  margin-left: 2px;
+  line-height: 1;
+}
+.fa-gear-btn:active { background: var(--border2); transform: scale(0.9); }
+
+/* ── VIP PICKER OVERLAY ── */
+.vip-picker-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(10px);
+  z-index: 320;
+  align-items: flex-end; justify-content: center;
+  padding: 0 10px 16px;
+}
+.vip-picker-overlay.open { display: flex; }
+.vip-picker-panel {
+  background: var(--card2); border: 1px solid var(--border2);
+  border-radius: 24px; width: 100%; max-width: 480px;
+  padding: 0 0 24px;
+  animation: slideUp 0.28s cubic-bezier(0.34,1.2,0.64,1);
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+}
+.vip-picker-handle {
+  width: 36px; height: 4px; background: var(--border2);
+  border-radius: 4px; margin: 14px auto 0;
+}
+.vip-picker-header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.vip-picker-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem; font-weight: 800; flex: 1;
+}
+.vip-picker-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; color: var(--accent); font-weight: 700;
+}
+.vip-picker-close {
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px; border: 1px solid rgba(255,59,107,0.2);
+  background: rgba(255,59,107,0.06); color: var(--red);
+  font-size: 0.7rem; font-weight: 700; cursor: pointer;
+  transition: all 0.15s;
+}
+.vip-picker-close:active { background: rgba(255,59,107,0.18); transform: scale(0.92); }
+.vip-picker-grid {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 8px; padding: 14px 16px;
+}
+.vip-picker-btn {
+  padding: 12px 6px; border-radius: 12px;
+  border: 1px solid var(--border2); background: var(--card);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem; font-weight: 800;
+  color: var(--muted2); cursor: pointer;
+  text-align: center; transition: all 0.15s;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.vip-picker-btn.active-vip {
+  background: rgba(0,240,255,0.12);
+  border-color: rgba(0,240,255,0.4);
+  color: var(--accent);
+}
+.vip-picker-btn:not(.active-vip):active { background: var(--border2); transform: scale(0.95); }
+.vip-picker-btn-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.45rem; color: var(--muted); letter-spacing: 1px;
+}
+
+/* ── SKIN: SAKURA ── */
+body.skin-sakura {
+  --bg: #1a0a12;
+  --surface: #220d18;
+  --card: #2a1020;
+  --card2: #321428;
+  --border: #4a1e35;
+  --border2: #5e2645;
+  --text: #fce4ec;
+  --muted: #7a3a55;
+  --muted2: #b06080;
+  --accent: #ff6eb4;
+  --accent2: #c2185b;
+  --green: #f48fb1;
+  background: var(--bg);
+}
+body.skin-sakura::before {
+  background-image:
+    linear-gradient(rgba(255,110,180,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,110,180,0.03) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+body.skin-sakura::after {
+  background: radial-gradient(ellipse, rgba(194,24,91,0.1) 0%, transparent 70%);
+}
+body.skin-sakura .topbar { background: rgba(26,10,18,0.92); border-color: var(--border); }
+body.skin-sakura .acc-card.online {
+  background: linear-gradient(145deg, #2a1020, #221028);
+  border-color: rgba(255,110,180,0.3);
+  box-shadow: 0 0 16px rgba(255,110,180,0.06);
+}
+body.skin-sakura .acc-card.online::before {
+  background: linear-gradient(90deg, transparent, rgba(255,110,180,0.6), transparent);
+}
+body.skin-sakura .logo-mark {
+  background: linear-gradient(135deg, #c2185b, #ff6eb4);
+}
+body.skin-sakura .stat-pill.s-online .stat-pill-num { text-shadow: 0 0 20px rgba(255,110,180,0.4); }
+body.skin-sakura .pulse { background: #ff6eb4; box-shadow: 0 0 8px #ff6eb4; }
+body.skin-sakura .fa-panel,
+body.skin-sakura .settings-modal,
+body.skin-sakura .detail-modal,
+body.skin-sakura .history-panel { background: #220d18; border-color: var(--border); }
+
+/* ── SKIN: CLEAN MINIMAL ── */
+body.skin-minimal {
+  --bg: #f0f2f5;
+  --surface: #e8eaed;
+  --card: #ffffff;
+  --card2: #f7f8fa;
+  --border: #dde1e9;
+  --border2: #c8cdd8;
+  --text: #1a1d26;
+  --muted: #8892aa;
+  --muted2: #5a6380;
+  background: var(--bg);
+}
+body.skin-minimal::before { display: none; }
+body.skin-minimal::after  { display: none; }
+body.skin-minimal .topbar { background: rgba(240,242,245,0.92); border-color: var(--border); }
+body.skin-minimal .acc-card { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+body.skin-minimal .acc-card.online { background: linear-gradient(145deg,#f0fff8,#e8faf2); border-color: rgba(0,180,90,0.25); }
+body.skin-minimal .stat-pill { box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+body.skin-minimal .fa-panel,
+body.skin-minimal .settings-modal,
+body.skin-minimal .detail-modal,
+body.skin-minimal .history-panel { background: #ffffff; border-color: var(--border); }
+body.skin-minimal .fa-header,
+body.skin-minimal .fa-tab { background: #f7f8fa; }
+
+/* ── SKIN: NEON RETRO ── */
+body.skin-neon {
+  --bg: #000000;
+  --surface: #050505;
+  --card: #0a0a0a;
+  --card2: #111111;
+  --border: #1a1a1a;
+  --border2: #252525;
+  --text: #ffffff;
+  --muted: #444444;
+  --muted2: #888888;
+  background: var(--bg);
+}
+body.skin-neon::before {
+  background-image:
+    linear-gradient(rgba(0,255,136,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,136,0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+body.skin-neon .acc-card.online {
+  background: #050f0a;
+  border-color: rgba(0,255,136,0.4);
+  box-shadow: 0 0 16px rgba(0,255,136,0.07), inset 0 0 20px rgba(0,255,136,0.03);
+}
+body.skin-neon .stat-pill.s-online { box-shadow: 0 0 20px rgba(0,255,136,0.12); }
+body.skin-neon .topbar { background: rgba(0,0,0,0.95); }
+body.skin-neon .acc-card { border-color: #1f1f1f; }
+body.skin-neon .fa-panel,
+body.skin-neon .settings-modal,
+body.skin-neon .detail-modal { background: #0a0a0a; border-color: #222; }
+
+/* ── CARD SIZE ── */
+body.card-compact .acc-card { padding: 8px; }
+body.card-compact .card-stats { gap: 3px; margin-bottom: 5px; }
+body.card-compact .card-top { margin-bottom: 6px; }
+body.card-compact .cstat { padding: 3px 2px; }
+body.card-compact .cstat-val { font-size: 0.6rem; }
+body.card-compact .card-name { font-size: 0.75rem; }
+body.card-compact .game-tag { padding: 3px 5px; margin-bottom: 5px; font-size: 0.54rem; }
+body.card-compact .del-btn { padding: 4px; font-size: 0.56rem; }
+
+body.card-large .acc-card { padding: 16px; }
+body.card-large .card-stats { gap: 6px; margin-bottom: 10px; }
+body.card-large .card-top { margin-bottom: 12px; }
+body.card-large .avi { width: 38px; height: 38px; font-size: 17px; }
+body.card-large .cstat { padding: 8px 4px; }
+body.card-large .cstat-val { font-size: 0.78rem; }
+body.card-large .cstat-icon { font-size: 14px; }
+body.card-large .card-name { font-size: 0.94rem; }
+body.card-large .status-chip { font-size: 0.6rem; padding: 4px 9px; }
+
+/* ── FONT ── */
+body.font-mono { font-family: 'JetBrains Mono', monospace; }
+body.font-mono .card-name,
+body.font-mono .app-name,
+body.font-mono .hero-greeting,
+body.font-mono .fa-title,
+body.font-mono .fa-name { font-family: 'JetBrains Mono', monospace; letter-spacing: -0.5px; }
+
+body.font-rounded { font-family: 'Outfit', sans-serif; }
+body.font-rounded .card-name,
+body.font-rounded .app-name,
+body.font-rounded .card-sub,
+body.font-rounded .fa-name,
+body.font-rounded .cstat-val,
+body.font-rounded .cstat-key { font-family: 'Outfit', sans-serif; }
+
+/* ── SKIN / SIZE / FONT PICKER in Settings ── */
+.skin-grid {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 8px;
+}
+.skin-btn {
+  border-radius: 12px; border: 2px solid var(--border2);
+  background: var(--card); cursor: pointer;
+  padding: 10px 6px 8px; text-align: center;
+  transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.skin-btn.active { border-color: var(--accent); background: rgba(0,240,255,0.07); }
+.skin-btn:active { transform: scale(0.96); }
+.skin-preview {
+  width: 44px; height: 30px; border-radius: 7px; overflow: hidden;
+  display: flex; flex-direction: column; gap: 2px; padding: 4px;
+  flex-shrink: 0;
+}
+.skin-preview-cyber { background: #07090f; border: 1px solid #1e2538; }
+.skin-preview-minimal { background: #f0f2f5; border: 1px solid #dde1e9; }
+.skin-preview-neon { background: #000; border: 1px solid #1a1a1a; }
+.skin-preview-bar {
+  height: 4px; border-radius: 2px; width: 100%;
+}
+.skin-btn-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.52rem;
+  font-weight: 700; letter-spacing: 1px; color: var(--muted2); text-transform: uppercase;
+}
+.skin-btn.active .skin-btn-label { color: var(--accent); }
+
+.size-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.size-btn {
+  border-radius: 10px; border: 2px solid var(--border2);
+  background: var(--card); cursor: pointer;
+  padding: 10px 4px; text-align: center;
+  transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 5px;
+}
+.size-btn.active { border-color: var(--accent); background: rgba(0,240,255,0.07); }
+.size-btn:active { transform: scale(0.96); }
+.size-icon { font-size: 1.2rem; line-height: 1; }
+.size-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.52rem;
+  font-weight: 700; letter-spacing: 1px; color: var(--muted2); text-transform: uppercase;
+}
+.size-btn.active .size-label { color: var(--accent); }
+
+.font-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.font-btn {
+  border-radius: 10px; border: 2px solid var(--border2);
+  background: var(--card); cursor: pointer;
+  padding: 10px 6px; text-align: center;
+  transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.font-btn.active { border-color: var(--accent); background: rgba(0,240,255,0.07); }
+.font-btn:active { transform: scale(0.96); }
+.font-sample {
+  font-size: 1rem; font-weight: 700; color: var(--text); line-height: 1;
+}
+.font-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.5rem;
+  font-weight: 700; letter-spacing: 1px; color: var(--muted2); text-transform: uppercase;
+}
+.font-btn.active .font-label { color: var(--accent); }
+
+.move-list { display: flex; flex-direction: column; gap: 8px; }
+.move-acc-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 12px;
+  cursor: pointer; transition: all 0.15s;
+}
+.move-acc-item:active { background: var(--card2); transform: scale(0.98); }
+.move-acc-item.selected {
+  border-color: rgba(0,240,255,0.5);
+  background: rgba(0,240,255,0.07);
+}
+.move-acc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.move-acc-dot.on  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.move-acc-dot.off { background: var(--muted); }
+.move-acc-name {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.8rem; font-weight: 700; flex: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.move-acc-vip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.52rem; font-weight: 700; letter-spacing: 1px;
+  padding: 2px 8px; border-radius: 6px;
+  background: rgba(0,240,255,0.08); border: 1px solid rgba(0,240,255,0.2);
+  color: var(--accent); flex-shrink: 0;
+}
+.move-section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--muted2);
+  margin: 12px 0 6px;
+}
+.move-vip-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+.move-vip-btn {
+  padding: 10px 6px; border-radius: 10px;
+  border: 1px solid var(--border2); background: var(--card);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem; font-weight: 800;
+  color: var(--muted2); cursor: pointer;
+  text-align: center; transition: all 0.15s;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.move-vip-btn.current {
+  background: rgba(0,240,255,0.12);
+  border-color: rgba(0,240,255,0.4);
+  color: var(--accent); cursor: default;
+}
+.move-vip-btn:not(.current):active { background: var(--border2); transform: scale(0.95); }
+.move-vip-btn-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.42rem; color: var(--muted); letter-spacing: 1px;
+}
+.move-placeholder {
+  text-align: center; padding: 36px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem; color: var(--muted); line-height: 1.8;
+}
+
+/* ── MOD BADGE di VIP label ── *//* ── MOD BADGE di VIP label ── */
+.fa-mod-badge {
+  display: flex; align-items: center; gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(255,59,107,0.12);
+  border: 1px solid rgba(255,59,107,0.35);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.52rem;
+  font-weight: 700;
+  color: var(--red);
+  white-space: nowrap;
+  animation: modPulse 2s ease infinite;
+  flex-shrink: 0;
+}
+.fa-mod-name {
+  color: #fff;
+  font-weight: 800;
+}
+@keyframes modPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,59,107,0.25); }
+  50%      { box-shadow: 0 0 0 4px rgba(255,59,107,0); }
+}
+/* ── SAKURA PETALS ── */
+#sakura-container {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  overflow: hidden;
+  display: none;
+}
+body.skin-sakura #sakura-container { display: block; }
+
+.petal {
+  position: absolute;
+  top: -40px;
+  width: 12px; height: 12px;
+  opacity: 0;
+  animation: petalFall linear infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes petalFall {
+  0% {
+    opacity: 0;
+    transform: translateY(0) rotate(0deg) scale(0.8);
+  }
+  5% { opacity: 1; }
+  90% { opacity: 0.7; }
+  100% {
+    opacity: 0;
+    transform: translateY(110vh) rotate(720deg) scale(0.6);
+  }
+}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="logo-wrap">
-    <div class="logo-icon">⚡</div>
-    <h1>Bypass<span>Kit</span> <span style="font-size:14px;color:var(--text3)">v5</span></h1>
+<!-- TOPBAR -->
+<div id="sakura-container"></div>
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg></div>
+    <div class="app-name">Acc<span>Monitor</span></div>
   </div>
-  <p class="subtitle">Linkvertise Bypasser</p>
-  <div class="badge">✓ Fixed Parser · Netlify Ready</div>
+  <div class="topbar-right">
+    <button class="top-btn accent" onclick="exportData()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Export</button>
+    <button class="top-btn warn" onclick="toggleNotif()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Notif</button>
+    <button class="top-btn" onclick="openHistory()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"/><path d="M3.05 11a9 9 0 1 1 .5 4"/><polyline points="3 3 3.05 11 11 11"/></svg></button>
+    <button class="top-btn" onclick="openSettings()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  </div>
 </div>
 
-<div class="card">
-  <div class="card-title">Bypass Linkvertise</div>
-  <label class="input-label">URL Linkvertise</label>
-  <input type="url" class="input-field" id="urlInput" placeholder="https://linkvertise.com/access/454392/hack-king-legacy">
-  <button class="btn-main" id="bypassBtn" onclick="runBypass()">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-    Jalankan Bypass
-  </button>
-
-  <div class="progress-wrap" id="pw">
-    <div class="bar-bg"><div class="bar-fill" id="bar"></div></div>
-    <div class="steps" id="steps"></div>
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-top">
+    <div class="hero-greeting">Halo, <span class="name" id="ownerName">Syshs</span> <svg style="display:inline;vertical-align:-3px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg></div>
+    <button class="full-akun-btn" onclick="openFullAkun()">
+      <span class="fa-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      <span>Full Akun</span>
+      <span class="fa-badge" id="faBadge">0</span>
+    </button>
   </div>
+  <div class="live-bar">
+    <div class="pulse"></div>
+    <span>LIVE</span>
+    <span class="live-sep">·</span>
+    <span class="interval-tap" onclick="openSettings()" title="Ubah interval">Tiap <span class="live-val" id="intervalSec">10</span>s</span>
+    <span class="live-sep">·</span>
+    <span>Update: <span class="live-val" id="lastUpdate">--:--:--</span></span>
+  </div>
+</div>
 
-  <div class="result-box" id="rb">
-    <div class="result-label" id="rl">Hasil</div>
-    <div class="result-val" id="rv"></div>
-    <div id="vt"></div>
-    <div class="result-acts">
-      <button class="btn-s btn-copy" id="cpBtn" onclick="copyRes()">📋 Salin</button>
-      <button class="btn-s btn-open" id="opBtn" onclick="openRes()" style="display:none">↗ Buka</button>
+<!-- STATS -->
+<div class="stats-row">
+  <div class="stat-pill s-online">
+    <div class="stat-pill-num" id="countOnline">0</div>
+    <div class="stat-pill-label">Online</div>
+  </div>
+  <div class="stat-pill s-offline">
+    <div class="stat-pill-num" id="countOffline">0</div>
+    <div class="stat-pill-label">Offline</div>
+  </div>
+  <div class="stat-pill s-total">
+    <div class="stat-pill-num" id="countTotal">0</div>
+    <div class="stat-pill-label">Total</div>
+  </div>
+</div>
+
+<!-- STATS SUMMARY BAR -->
+<div class="stats-summary-bar" id="statsSummaryBar">
+  <div class="sum-card">
+    <div class="sum-icon" style="background:rgba(255,204,0,0.1)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffcc00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 6v2m0 8v2M8.5 9.5c.5-1 1.5-1.5 3.5-1.5s3.5 1 3.5 2.5-1.5 2-3.5 2-3.5 1-3.5 2.5S10 17.5 12 17.5s3-.5 3.5-1.5"/></svg>
+    </div>
+    <div>
+      <div class="sum-label">Total Coins</div>
+      <div class="sum-val" id="sumCoins" style="color:var(--coins)">-</div>
     </div>
   </div>
-
-  <div class="debug-box" id="debugBox">
-    <div class="debug-title">Debug Response</div>
-    <div class="debug-val" id="debugVal"></div>
+  <div class="sum-card">
+    <div class="sum-icon" style="background:rgba(125,211,252,0.1)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 22 22 7 12 2"/><line x1="2" y1="7" x2="22" y2="7"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+    </div>
+    <div>
+      <div class="sum-label">Total Gems</div>
+      <div class="sum-val" id="sumGems" style="color:var(--gems)">-</div>
+    </div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-icon" style="background:rgba(0,255,136,0.08)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ff88" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    </div>
+    <div>
+      <div class="sum-label">Top Earner</div>
+      <div class="sum-val" id="sumTopEarner" style="color:var(--green);font-size:0.72rem">-</div>
+    </div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-icon" style="background:rgba(167,139,250,0.1)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    </div>
+    <div>
+      <div class="sum-label">Avg Level</div>
+      <div class="sum-val" id="sumAvgLevel" style="color:var(--level)">-</div>
+    </div>
   </div>
 </div>
 
-<div class="card">
-  <div class="card-title">Riwayat</div>
-  <div class="hist-list" id="hl"><div class="empty-h">Belum ada riwayat.</div></div>
+<!-- COL HEADERS -->
+<div class="col-headers">
+  <div class="col-hdr online-hdr">
+    <div class="dot"></div> AKTIF <div class="col-badge" id="badgeOnline">0</div>
+  </div>
+  <div class="col-hdr offline-hdr">
+    <div class="dot"></div> OFFLINE <div class="col-badge" id="badgeOffline">0</div>
+  </div>
 </div>
 
+<!-- SPLIT -->
+<div class="split">
+  <div class="col" id="colOnline">
+    <div class="empty-col">
+      <div class="em-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>
+      <div>Memuat data...</div>
+    </div>
+  </div>
+  <div class="col" id="colOffline">
+    <div class="empty-col">
+      <div class="em-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+      <div>Semua akun aktif!</div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIG MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3><svg style="display:inline;vertical-align:-3px;margin-right:6px" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Konfigurasi</h3>
+    <div class="field">
+      <label>Supabase URL</label>
+      <input type="text" id="cfgUrl" placeholder="https://xxxx.supabase.co" />
+    </div>
+    <div class="field">
+      <label>Anon Key</label>
+      <input type="password" id="cfgKey" placeholder="eyJhbGci..." />
+    </div>
+    <div class="field">
+      <label>Nama Pemilik</label>
+      <input type="text" id="cfgOwner" placeholder="Syshs" />
+    </div>
+    <div class="field">
+      <label>Refresh Interval (detik)</label>
+      <input type="number" id="cfgInterval" placeholder="10" min="5" max="60" />
+    </div>
+    <div class="modal-footer">
+      <button class="mbtn mbtn-cancel" onclick="closeModal()">Batal</button>
+      <button class="mbtn mbtn-primary" onclick="saveConfig()">Simpan & Connect</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- DETAIL MODAL -->
+<div class="detail-overlay" id="detailOverlay">
+  <div class="detail-modal" id="detailModal">
+    <div class="detail-header">
+
+      <button class="detail-close-btn" onclick="closeDetail()">✕ Tutup</button>
+      <div class="detail-hero">
+        <div class="detail-avi" id="detailAvi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><div class="detail-avi-dot"></div></div>
+        <div class="detail-name-wrap">
+          <div class="detail-name" id="detailName">-</div>
+          <div class="detail-username" id="detailUsername">@-</div>
+        </div>
+        <div class="detail-status" id="detailStatus">-</div>
+      </div>
+    </div>
+    <div class="detail-body">
+      <div class="detail-section-title">Daily & Match</div>
+      <div class="coins-match-card">
+        <div class="coins-match-top">
+          <div class="coins-match-label">🌅 Daily Coins</div>
+          <div class="coins-match-val" id="detailDailyEarned">+0</div>
+        </div>
+        <div class="coins-match-sub" id="detailDailyDate">-</div>
+      </div>
+      <div class="coins-match-card" style="margin-top:8px">
+        <div class="coins-match-top">
+          <div class="coins-match-label">🎮 Match Terakhir</div>
+          <div class="coins-match-val" id="detailLastEarned">+0</div>
+        </div>
+        <div class="coins-match-sub" id="detailMatchCount">0 match dimainkan</div>
+      </div>
+      <div class="detail-section-title">Stats</div>
+      <div class="detail-stats-grid">
+        <div class="detail-stat ds-coins">
+          <div class="detail-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--coins)"><circle cx="12" cy="12" r="8"/><path d="M12 6v2m0 8v2M8.5 9.5c.5-1 1.5-1.5 3.5-1.5s3.5 1 3.5 2.5-1.5 2-3.5 2-3.5 1-3.5 2.5S10 17.5 12 17.5s3-.5 3.5-1.5"/></svg></div>
+          <div class="detail-stat-val" id="detailCoins">-</div>
+          <div class="detail-stat-key">Coins</div>
+        </div>
+        <div class="detail-stat ds-gems">
+          <div class="detail-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--gems)"><polygon points="12 2 2 7 12 22 22 7 12 2"/><line x1="2" y1="7" x2="22" y2="7"/><line x1="12" y1="2" x2="12" y2="22"/></svg></div>
+          <div class="detail-stat-val" id="detailGems">-</div>
+          <div class="detail-stat-key">Gems</div>
+        </div>
+        <div class="detail-stat ds-level">
+          <div class="detail-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--level)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+          <div class="detail-stat-val" id="detailLevel">-</div>
+          <div class="detail-stat-key">Level</div>
+        </div>
+      </div>
+      <div class="detail-section-title">Info</div>
+      <div class="detail-info-list">
+        <div class="detail-info-row">
+          <span class="detail-info-label">Player ID</span>
+          <span class="detail-info-val accent" id="detailPid">-</span>
+        </div>
+        <div class="detail-info-row">
+          <span class="detail-info-label">Game</span>
+          <span class="detail-info-val" id="detailGame">-</span>
+        </div>
+        <div class="detail-info-row">
+          <span class="detail-info-label">Status</span>
+          <span class="detail-info-val green" id="detailOnlineInfo">-</span>
+        </div>
+        <div class="detail-info-row">
+          <span class="detail-info-label">Terakhir Aktif</span>
+          <span class="detail-info-val" id="detailLastSeen">-</span>
+        </div>
+        <div class="detail-info-row">
+          <span class="detail-info-label">Total Coins</span>
+          <span class="detail-info-val yellow" id="detailTotalCoins">-</span>
+        </div>
+        <div class="detail-info-row">
+          <span class="detail-info-label">Coins di Match</span>
+          <span class="detail-info-val accent" id="detailCoinsMatch">-</span>
+        </div>
+        <div class="detail-info-row">
+          <span class="detail-info-label">Total Match</span>
+          <span class="detail-info-val" id="detailMatchCountInfo">-</span>
+        </div>
+      </div>
+      <button class="detail-del-btn" id="detailDelBtn"><svg style="display:inline;vertical-align:-3px;margin-right:5px" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Hapus Akun Ini</button>
+    </div>
+  </div>
+</div>
+
+<!-- FULL AKUN PANEL -->
+<div class="fa-overlay" id="faOverlay">
+  <div class="fa-panel" id="faPanel">
+    <div class="fa-header">
+
+      <div class="fa-title-row">
+        <button class="fa-back-btn" onclick="closeFullAkun()">‹</button>
+        <button class="fa-ss-btn" onclick="exportFaPanel()" title="Screenshot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>
+        <div class="fa-title"><svg style="display:inline;vertical-align:-3px;margin-right:6px" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Full Akun</div>
+        <div class="fa-tabs">
+          <button class="fa-tab active" id="faTabAll" onclick="setFaTab('all')">Semua</button>
+          <button class="fa-tab" id="faTabOn" onclick="setFaTab('on')"><svg style="display:inline;vertical-align:-2px;margin-right:3px" width="10" height="10" viewBox="0 0 24 24" fill="var(--green)" stroke="none"><circle cx="12" cy="12" r="10"/></svg>Live</button>
+          <button class="fa-tab" id="faTabOff" onclick="setFaTab('off')"><svg style="display:inline;vertical-align:-2px;margin-right:3px" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg>Offline</button>
+          <button class="fa-tab" id="faTabMove" onclick="setFaTab('move')">⇄ Pindah</button>
+        </div>
+
+      </div>
+      <input class="fa-search" id="faSearch" type="text" placeholder="⌕  Cari nama akun..." oninput="renderFaPanel()" />
+    </div>
+    <div class="fa-grid" id="faGrid"></div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="settings-overlay" id="settingsOverlay" onclick="handleSettingsOverlay(event)">
+  <div class="settings-modal" id="settingsModal">
+    <div class="settings-handle"></div>
+    <div class="settings-header">
+      <div class="settings-header-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </div>
+      <div class="settings-title">Pengaturan</div>
+    </div>
+    <div class="settings-body">
+
+      <!-- Profile -->
+      <div>
+        <div class="settings-section-label">Profil</div>
+        <div class="settings-field">
+          <label>Username</label>
+          <input class="settings-input" type="text" id="stgOwner" placeholder="Nama kamu..." />
+        </div>
+      </div>
+
+      <!-- Tema Warna -->
+      <div>
+        <div class="settings-section-label">Tema Warna</div>
+        <div class="theme-grid" id="themeGrid">
+          <div class="theme-btn active" data-theme="cyan" onclick="selectTheme('cyan')">
+            <div class="theme-dot" style="background:linear-gradient(135deg,#0066ff,#00f0ff)"></div>
+            Cyan
+          </div>
+          <div class="theme-btn" data-theme="green" onclick="selectTheme('green')">
+            <div class="theme-dot" style="background:linear-gradient(135deg,#00aa55,#00ff88)"></div>
+            Green
+          </div>
+          <div class="theme-btn" data-theme="purple" onclick="selectTheme('purple')">
+            <div class="theme-dot" style="background:linear-gradient(135deg,#6d28d9,#a78bfa)"></div>
+            Purple
+          </div>
+          <div class="theme-btn" data-theme="orange" onclick="selectTheme('orange')">
+            <div class="theme-dot" style="background:linear-gradient(135deg,#c2410c,#fb923c)"></div>
+            Orange
+          </div>
+        </div>
+      </div>
+
+      <!-- Skin UI -->
+      <div>
+        <div class="settings-section-label">Style UI</div>
+        <div class="skin-grid">
+          <div class="skin-btn active" data-skin="cyber" onclick="selectSkin('cyber')">
+            <div class="skin-preview skin-preview-cyber">
+              <div class="skin-preview-bar" style="background:#0066ff"></div>
+              <div class="skin-preview-bar" style="background:#1e2538;width:70%"></div>
+              <div class="skin-preview-bar" style="background:#00f0ff;width:50%"></div>
+            </div>
+            <div class="skin-btn-label">Cyberpunk</div>
+          </div>
+          <div class="skin-btn" data-skin="minimal" onclick="selectSkin('minimal')">
+            <div class="skin-preview skin-preview-minimal">
+              <div class="skin-preview-bar" style="background:#4a90e2"></div>
+              <div class="skin-preview-bar" style="background:#dde1e9;width:70%"></div>
+              <div class="skin-preview-bar" style="background:#34c76f;width:50%"></div>
+            </div>
+            <div class="skin-btn-label">Minimal</div>
+          </div>
+          <div class="skin-btn" data-skin="neon" onclick="selectSkin('neon')">
+            <div class="skin-preview skin-preview-neon">
+              <div class="skin-preview-bar" style="background:#ff0080"></div>
+              <div class="skin-preview-bar" style="background:#1a1a1a;width:70%"></div>
+              <div class="skin-preview-bar" style="background:#00ff88;width:50%"></div>
+            </div>
+            <div class="skin-btn-label">Neon</div>
+          </div>
+          <div class="skin-btn" data-skin="sakura" onclick="selectSkin('sakura')">
+            <div class="skin-preview" style="background:#1a0a12;border:1px solid #4a1e35">
+              <div class="skin-preview-bar" style="background:#c2185b"></div>
+              <div class="skin-preview-bar" style="background:#4a1e35;width:70%"></div>
+              <div class="skin-preview-bar" style="background:#ff6eb4;width:50%"></div>
+            </div>
+            <div class="skin-btn-label">Sakura 🌸</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ukuran Kartu -->
+      <div>
+        <div class="settings-section-label">Ukuran Kartu</div>
+        <div class="size-grid">
+          <div class="size-btn" data-size="compact" onclick="selectCardSize('compact')">
+            <div class="size-icon">▪️</div>
+            <div class="size-label">Compact</div>
+          </div>
+          <div class="size-btn active" data-size="normal" onclick="selectCardSize('normal')">
+            <div class="size-icon">🔲</div>
+            <div class="size-label">Normal</div>
+          </div>
+          <div class="size-btn" data-size="large" onclick="selectCardSize('large')">
+            <div class="size-icon">⬛</div>
+            <div class="size-label">Besar</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Font -->
+      <div>
+        <div class="settings-section-label">Font</div>
+        <div class="font-grid">
+          <div class="font-btn active" data-font="jakarta" onclick="selectFont('jakarta')">
+            <div class="font-sample" style="font-family:'Plus Jakarta Sans',sans-serif">Aa</div>
+            <div class="font-label">Jakarta</div>
+          </div>
+          <div class="font-btn" data-font="mono" onclick="selectFont('mono')">
+            <div class="font-sample" style="font-family:'JetBrains Mono',monospace">Aa</div>
+            <div class="font-label">Mono</div>
+          </div>
+          <div class="font-btn" data-font="rounded" onclick="selectFont('rounded')">
+            <div class="font-sample" style="font-family:'Outfit',sans-serif">Aa</div>
+            <div class="font-label">Rounded</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Refresh Interval -->
+      <div>
+        <div class="settings-section-label">Refresh Interval</div>
+        <div class="interval-row" id="intervalRow">
+          <div class="interval-chip" data-sec="5" onclick="selectInterval(5)">5s</div>
+          <div class="interval-chip active" data-sec="10" onclick="selectInterval(10)">10s</div>
+          <div class="interval-chip" data-sec="15" onclick="selectInterval(15)">15s</div>
+          <div class="interval-chip" data-sec="30" onclick="selectInterval(30)">30s</div>
+          <div class="interval-chip" data-sec="60" onclick="selectInterval(60)">60s</div>
+        </div>
+      </div>
+
+      <!-- Koneksi -->
+      <div>
+        <div class="settings-section-label">Koneksi Supabase</div>
+        <div class="settings-field" style="margin-bottom:8px">
+          <label>URL</label>
+          <input class="settings-input" type="text" id="stgUrl" placeholder="https://xxxx.supabase.co" />
+        </div>
+        <div class="settings-field">
+          <label>Anon Key</label>
+          <input class="settings-input" type="password" id="stgKey" placeholder="eyJhbGci..." />
+        </div>
+      </div>
+
+      <button class="settings-save-btn" onclick="saveSettings()">Simpan Pengaturan</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY LOG -->
+<div class="history-overlay" id="historyOverlay" onclick="handleHistoryOverlay(event)">
+  <div class="history-panel">
+    <div class="settings-handle" style="margin-bottom:0"></div>
+    <div class="history-header">
+      <div class="history-title">
+        <svg style="display:inline;vertical-align:-3px;margin-right:6px" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"/><path d="M3.05 11a9 9 0 1 1 .5 4"/><polyline points="3 3 3.05 11 11 11"/></svg>Activity Log
+      </div>
+      <button class="history-clear-btn" onclick="clearHistory()">Hapus Log</button>
+      <button class="fa-back-btn" onclick="closeHistory()" style="margin-left:4px">‹</button>
+    </div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+</div>
+
+<!-- VIP PICKER -->
+<div class="vip-picker-overlay" id="vipPickerOverlay" onclick="handleVipPickerOverlay(event)">
+  <div class="vip-picker-panel">
+    <div class="vip-picker-handle"></div>
+    <div class="vip-picker-header">
+      <div>
+        <div class="vip-picker-title">Pindah ke VIP</div>
+        <div class="vip-picker-name" id="vipPickerName">-</div>
+      </div>
+      <button class="vip-picker-close" onclick="closeVipPicker()">✕</button>
+    </div>
+    <div class="vip-picker-grid" id="vipPickerGrid"></div>
+  </div>
+</div>
+
 <script>
-const STEPS_DEF = [
-  "Parsing URL Linkvertise...",
-  "Fetch link info (Step 1)...",
-  "Generate serial token...",
-  "Fetch URL target (Step 2)...",
-];
+// ─── STATE ───
+let cfg = { url: 'https://doqxklmdtmadmjfhxlsd.supabase.co', key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvcXhrbG1kdG1hZG1qZmh4bHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1OTQ5OTEsImV4cCI6MjA5MDE3MDk5MX0.WKNN-RtyXSGEztIzsxgR6lds9ZKIXis81A6DA2POTmE', owner: 'Syshs', interval: 10 };
+let accounts = {};
+let accountOrder = [];
+let notifEnabled = true;
+let refreshTimer = null;
+let prevSnapshot = {};
+// job_id → [moderator_name, ...] (moderator aktif per server)
+let modByJobId = {};
 
-const PROXY = "https://api.allorigins.win/get?url=";
-let lastRes = null;
-let hist = JSON.parse(localStorage.getItem("bk5_hist") || "[]");
-let dbg = [];
+// ─── INIT ───
+loadConfig();
+try { applyTheme(localStorage.getItem('am_theme') || 'cyan'); } catch(_){}
+try { applySkin(localStorage.getItem('am_skin') || 'cyber'); } catch(_){}
+try { applyCardSize(localStorage.getItem('am_cardsize') || 'normal'); } catch(_){}
+try { applyFont(localStorage.getItem('am_font') || 'jakarta'); } catch(_){}
+startMonitor();
 
-// ─── PARSER YANG BENAR ───
-// Handle semua format:
-// linkvertise.com/{id}/{slug}
-// linkvertise.com/access/{id}/{slug}  ← format lo
-// linkvertise.com/free/{id}/{slug}
-function parseLV(url) {
+// ─── FETCH ───
+async function fetchLatest() {
   try {
-    const u = new URL(url);
-    if (!u.hostname.includes("linkvertise")) return null;
+    const [resEvents, resMods] = await Promise.all([
+      fetch(`${cfg.url}/rest/v1/game_events?order=created_at.desc&limit=500`,
+        { headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key } }),
+      fetch(`${cfg.url}/rest/v1/moderator_events?order=created_at.desc&limit=200`,
+        { headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key } })
+    ]);
 
-    // Hapus leading slash, split
-    const parts = u.pathname.replace(/^\//, "").replace(/\/$/, "").split("/");
-    // Filter bagian yang bukan angka di posisi prefix (access, free, dll)
-    // ID linkvertise selalu berupa angka
-    const SKIP = ["access", "free", "download", "go"];
+    if (!resEvents.ok) throw new Error('HTTP ' + resEvents.status);
+    const rows = await resEvents.json();
 
-    let id = null, slugParts = [];
-
-    for (let i = 0; i < parts.length; i++) {
-      if (SKIP.includes(parts[i].toLowerCase())) continue;
-      if (!id && /^\d+$/.test(parts[i])) {
-        id = parts[i];
-      } else if (id) {
-        slugParts.push(parts[i]);
+    // ── Parse moderator_events ──
+    if (resMods.ok) {
+      const modRows = await resMods.json();
+      const now = Date.now();
+      const newModByJobId = {};
+      // Anggap moderator masih aktif kalau < 5 menit
+      for (const m of modRows) {
+        const diffSec = (now - new Date(m.created_at).getTime()) / 1000;
+        if (diffSec > 300) continue;
+        if (!m.job_id) continue;
+        if (!newModByJobId[m.job_id]) newModByJobId[m.job_id] = new Set();
+        newModByJobId[m.job_id].add(m.moderator_name);
+      }
+      // Convert Set → array
+      modByJobId = {};
+      for (const [jid, names] of Object.entries(newModByJobId)) {
+        modByJobId[jid] = [...names];
       }
     }
 
-    if (!id || slugParts.length === 0) return null;
-    return { id, slug: slugParts.join("/") };
-  } catch { return null; }
+    const seen = {};
+    for (const row of rows) {
+      const pid = row.player_id || row.player_name;
+      if (!seen[pid]) seen[pid] = row;
+    }
+
+    const now = Date.now();
+    const newAccounts = {};
+    for (const [pid, row] of Object.entries(seen)) {
+      const lastMs = new Date(row.created_at).getTime();
+      const diffSec = (now - lastMs) / 1000;
+      const isOnline = (row.event_type === 'join' || row.event_type === 'update' || row.event_type === 'moderator_join')
+        ? diffSec < 300
+        : false;
+
+      newAccounts[pid] = {
+        id: pid,
+        name: row.player_name || 'Unknown',
+        coins: row.coins ?? null,
+        gems: row.gems ?? null,
+        level: row.level ?? null,
+        game: row.game_name || null,
+        event: row.event_type,
+        lastSeen: row.created_at,
+        sessionStart: row.session_start ?? null,
+        online: isOnline,
+        isMod: row.event_type === 'moderator_join',
+        jobId: row.job_id || null,
+        coinsMatch: row.coins_match ?? null,
+        lastEarned: row.last_earned ?? null,
+        matchCount: row.match_count ?? null,
+        dailyEarned: row.coins_daily_earned ?? null,
+        dailyDate: row.daily_date || null,
+      };
+    }
+
+    checkChanges(newAccounts);
+    for (const pid of Object.keys(newAccounts)) {
+      if (!accountOrder.includes(pid)) accountOrder.push(pid);
+    }
+    accounts = newAccounts;
+    render();
+    updateTime();
+  } catch(e) {
+    showToast('⚠️ Gagal fetch: ' + e.message, 'error');
+  }
 }
 
-// ─── PROXY FETCH ───
-async function pFetch(url) {
-  const res = await fetch(PROXY + encodeURIComponent(url), {
-    signal: AbortSignal.timeout(15000)
+// ─── CHANGES NOTIF ───
+function checkChanges(newAcc) {
+  if (!notifEnabled) return;
+  for (const [pid, acc] of Object.entries(newAcc)) {
+    const prev = prevSnapshot[pid];
+    if (!prev) continue;
+    if (acc.online !== prev.online) {
+      addLog(acc.name, acc.online);
+      showToast(acc.online
+        ? `✅ ${acc.name} online`
+        : `⭕ ${acc.name} offline`, acc.online ? 'success' : 'error');
+    }
+  }
+  prevSnapshot = { ...newAcc };
+}
+
+// ─── RENDER ───
+function render() {
+  const ordered = accountOrder.map(pid => accounts[pid]).filter(Boolean);
+  const online  = ordered.filter(a => a.online);
+  const offline = ordered.filter(a => !a.online);
+
+  document.getElementById('countOnline').textContent  = online.length;
+  document.getElementById('countOffline').textContent = offline.length;
+  document.getElementById('countTotal').textContent   = ordered.length;
+  document.getElementById('badgeOnline').textContent  = online.length;
+  document.getElementById('badgeOffline').textContent = offline.length;
+  document.getElementById('faBadge').textContent      = ordered.length;
+
+  const colOn  = document.getElementById('colOnline');
+  const colOff = document.getElementById('colOffline');
+
+  updateColumn(colOn,  online,  '<div class="empty-col"><div class="em-icon">🌫️</div><div>Ga ada yang online</div></div>');
+  updateColumn(colOff, offline, '<div class="empty-col"><div class="em-icon">🎊</div><div>Semua akun aktif!</div></div>');
+
+  updateSummary();
+  // refresh fa panel kalau lagi terbuka
+  if (document.getElementById('faOverlay').classList.contains('open')) {
+    renderFaPanel();
+  }
+}
+
+function updateColumn(col, list, emptyHTML) {
+  if (!list.length) { col.innerHTML = emptyHTML; return; }
+
+  const empty = col.querySelector('.empty-col');
+  if (empty) empty.remove();
+
+  const currentIds = new Set(list.map(a => a.id));
+  col.querySelectorAll('.acc-card').forEach(el => {
+    if (!currentIds.has(el.dataset.pid)) el.remove();
   });
-  if (!res.ok) throw new Error("Proxy HTTP " + res.status);
-  const w = await res.json();
-  if (!w.contents) throw new Error("Proxy: contents kosong");
-  return JSON.parse(w.contents);
+
+  list.forEach(a => {
+    let card = col.querySelector(`.acc-card[data-pid="${CSS.escape(a.id)}"]`);
+    if (card) {
+      updateCardInPlace(card, a);
+    } else {
+      const div = document.createElement('div');
+      div.innerHTML = buildCardHTML(a);
+      col.appendChild(div.firstElementChild);
+    }
+  });
+
+  list.forEach(a => {
+    const card = col.querySelector(`.acc-card[data-pid="${CSS.escape(a.id)}"]`);
+    if (card) col.appendChild(card);
+  });
 }
 
-// ─── BYPASS LOGIC ───
-async function bypassLV(rawUrl) {
-  dbg = [];
+function updateCardInPlace(card, a) {
+  const coinsDisplay = (a.coins !== null && a.coins !== undefined) ? fmtNum(a.coins) : '-';
+  const gemsDisplay  = (a.gems  !== null && a.gems  !== undefined) ? fmtNum(a.gems)  : '-';
+  const levelDisplay = (a.level !== null && a.level !== undefined) ? a.level         : '-';
+  const timeAgo  = relativeTime(a.lastSeen);
+  const ts = a.lastSeen ? new Date(a.lastSeen).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '--:--';
+  const activeFor = a.online && a.sessionStart ? sessionDuration(a.sessionStart) : null;
 
-  const parsed = parseLV(rawUrl);
-  if (!parsed) return { ok: false, err: "URL tidak valid.\nContoh: linkvertise.com/access/454392/nama-script" };
+  card.classList.toggle('online', a.online);
+  card.classList.toggle('offline', !a.online);
 
-  const { id, slug } = parsed;
-  dbg.push(`✅ Parsed OK → id: ${id}, slug: ${slug}`);
+  const aviDot = card.querySelector('.avi-dot');
+  if (aviDot) aviDot.className = `avi-dot`;
 
-  // STEP 1: Get link info
-  const step1 = `https://publisher.linkvertise.com/api/v1/redirect/link/static/${id}/${slug}`;
-  dbg.push(`\nStep1: ${step1}`);
+  const nameEl = card.querySelector('.card-name');
+  if (nameEl) nameEl.textContent = a.name + (a.isMod ? ' 🔰' : '');
 
-  let info;
+  const chip = card.querySelector('.status-chip');
+  if (chip) chip.textContent = a.online ? 'ON' : 'OFF';
+
+  const vals = card.querySelectorAll('.cstat-val');
+  if (vals[0]) vals[0].textContent = coinsDisplay;
+  if (vals[1]) vals[1].textContent = gemsDisplay;
+  if (vals[2]) vals[2].textContent = levelDisplay;
+
+  const gameSpan = card.querySelector('.game-tag span');
+  if (gameSpan) {
+    gameSpan.style.color = a.game ? '' : 'var(--muted)';
+    gameSpan.textContent = a.game || '—';
+  }
+
+  const footLabels = card.querySelectorAll('.foot-label');
+  const footVals   = card.querySelectorAll('.foot-val');
+  if (footLabels[0]) footLabels[0].textContent = a.online && activeFor ? 'Aktif selama' : 'Terakhir aktif';
+  if (footVals[0]) {
+    footVals[0].textContent = a.online && activeFor ? activeFor : timeAgo;
+    footVals[0].className = `foot-val ${a.online && activeFor ? 'active' : 'inactive'}`;
+  }
+  if (footVals[1]) {
+    footVals[1].textContent = '+' + (a.dailyEarned !== null ? fmtNum(a.dailyEarned) : '0');
+  }
+}
+
+function buildCardHTML(a) {
+  const coinsDisplay = (a.coins !== null && a.coins !== undefined) ? fmtNum(a.coins) : '-';
+  const gemsDisplay  = (a.gems  !== null && a.gems  !== undefined) ? fmtNum(a.gems)  : '-';
+  const levelDisplay = (a.level !== null && a.level !== undefined) ? a.level         : '-';
+  const activeFor = a.online && a.sessionStart ? sessionDuration(a.sessionStart) : null;
+  const timeAgo = relativeTime(a.lastSeen);
+  const ts = a.lastSeen ? new Date(a.lastSeen).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '--:--';
+
+  return `
+  <div class="acc-card ${a.online ? 'online' : 'offline'}" data-pid="${esc(a.id)}" onclick="openDetail('${esc(a.id)}')">
+    <div class="card-top">
+      <div class="avi">🧑<div class="avi-dot"></div></div>
+      <div class="card-info">
+        <div class="card-name">${esc(a.name)}${a.isMod ? ' 🔰' : ''}</div>
+        <div class="card-sub">#${esc(a.id).slice(0,7)}</div>
+      </div>
+      <div class="status-chip">${a.online ? 'ON' : 'OFF'}</div>
+    </div>
+    <div class="card-stats">
+      <div class="cstat">
+        <div class="cstat-icon">🪙</div>
+        <div class="cstat-val c">${coinsDisplay}</div>
+        <div class="cstat-key">Coins</div>
+      </div>
+      <div class="cstat">
+        <div class="cstat-icon">✅</div>
+        <div class="cstat-val g">${gemsDisplay}</div>
+        <div class="cstat-key">Gems</div>
+      </div>
+      <div class="cstat">
+        <div class="cstat-icon">⚠️</div>
+        <div class="cstat-val l">${levelDisplay}</div>
+        <div class="cstat-key">Level</div>
+      </div>
+    </div>
+    <div class="game-tag">🕹️ ${a.game ? '⚔' : ''} <span ${a.game ? '' : 'style="color:var(--muted)"'}>${a.game ? esc(a.game) : '—'}</span></div>
+    <div class="card-foot">
+      <div>
+        <div class="foot-label">${a.online && activeFor ? 'Aktif selama' : 'Terakhir aktif'}</div>
+        <div class="foot-val ${a.online && activeFor ? 'active' : 'inactive'}">${a.online && activeFor ? activeFor : timeAgo}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="foot-label">Daily</div>
+        <div class="foot-val" style="color:var(--green)">+${a.dailyEarned !== null ? fmtNum(a.dailyEarned) : '0'}</div>
+      </div>
+    </div>
+    <button class="del-btn" onclick="deleteAccount('${esc(a.id)}', '${esc(a.name)}')">🗑️ Hapus</button>
+  </div>`;
+}
+
+function updateTime() {
+  document.getElementById('lastUpdate').textContent =
+    new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+// ─── MONITOR ───
+function startMonitor() {
+  document.getElementById('ownerName').textContent = cfg.owner || 'Syshs';
+  document.getElementById('intervalSec').textContent = cfg.interval;
+  if (refreshTimer) clearInterval(refreshTimer);
+  fetchLatest();
+  refreshTimer = setInterval(fetchLatest, cfg.interval * 1000);
+}
+
+// ─── CONFIG ───
+function saveConfig() {
+  const url      = document.getElementById('cfgUrl').value.trim().replace(/\/$/,'');
+  const key      = document.getElementById('cfgKey').value.trim();
+  const owner    = document.getElementById('cfgOwner').value.trim() || 'Syshs';
+  const interval = parseInt(document.getElementById('cfgInterval').value) || 10;
+  if (!url || !key) { showToast('⚠️ Isi URL dan Key dulu!', 'error'); return; }
+  cfg = { url, key, owner, interval };
+  try { localStorage.setItem('am_cfg', JSON.stringify(cfg)); } catch(_) {}
+  closeModal();
+  showToast('✅ Config tersimpan!', 'success');
+  startMonitor();
+}
+
+function loadConfig() {
   try {
-    info = await pFetch(step1);
-    dbg.push(`Step1 response:\n${JSON.stringify(info, null, 2).slice(0, 300)}`);
-  } catch (e) {
-    return { ok: false, err: `Step1 gagal: ${e.message}`, debug: dbg.join("\n") };
+    const saved = JSON.parse(localStorage.getItem('am_cfg') || '{}');
+    if (saved.url) cfg = { ...cfg, ...saved };
+    document.getElementById('cfgUrl').value      = cfg.url      || '';
+    document.getElementById('cfgKey').value      = cfg.key      || '';
+    document.getElementById('cfgOwner').value    = cfg.owner    || 'Syshs';
+    document.getElementById('cfgInterval').value = cfg.interval || 10;
+    document.getElementById('ownerName').textContent = cfg.owner || 'Syshs';
+  } catch(_) {}
+}
+
+// ─── SKIN ───
+let currentSkin = 'cyber';
+let currentCardSize = 'normal';
+let currentFont = 'jakarta';
+
+function selectSkin(name) {
+  currentSkin = name;
+  document.querySelectorAll('[data-skin]').forEach(el =>
+    el.classList.toggle('active', el.dataset.skin === name));
+  applySkin(name);
+}
+
+function selectCardSize(size) {
+  currentCardSize = size;
+  document.querySelectorAll('[data-size]').forEach(el =>
+    el.classList.toggle('active', el.dataset.size === size));
+  applyCardSize(size);
+}
+
+function selectFont(font) {
+  currentFont = font;
+  document.querySelectorAll('[data-font]').forEach(el =>
+    el.classList.toggle('active', el.dataset.font === font));
+  applyFont(font);
+}
+
+function applySkin(name) {
+  document.body.classList.remove('skin-minimal', 'skin-neon', 'skin-sakura');
+  if (name === 'minimal') document.body.classList.add('skin-minimal');
+  if (name === 'neon')    document.body.classList.add('skin-neon');
+  if (name === 'sakura')  document.body.classList.add('skin-sakura');
+  try { localStorage.setItem('am_skin', name); } catch(_){}
+}
+
+function applyCardSize(size) {
+  document.body.classList.remove('card-compact', 'card-large');
+  if (size === 'compact') document.body.classList.add('card-compact');
+  if (size === 'large')   document.body.classList.add('card-large');
+  try { localStorage.setItem('am_cardsize', size); } catch(_){}
+}
+
+function applyFont(font) {
+  document.body.classList.remove('font-mono', 'font-rounded');
+  if (font === 'mono')    document.body.classList.add('font-mono');
+  if (font === 'rounded') document.body.classList.add('font-rounded');
+  try { localStorage.setItem('am_font', font); } catch(_){}
+}
+
+// ─── SETTINGS ───
+let currentTheme = 'cyan';
+let selectedInterval = 10;
+
+const THEMES = {
+  cyan:   { accent: '#00f0ff', accent2: '#0066ff' },
+  green:  { accent: '#00ff88', accent2: '#00aa55' },
+  purple: { accent: '#a78bfa', accent2: '#6d28d9' },
+  orange: { accent: '#fb923c', accent2: '#c2410c' },
+};
+
+function openSettings() {
+  // Populate fields
+  document.getElementById('stgOwner').value = cfg.owner || '';
+  document.getElementById('stgUrl').value   = cfg.url   || '';
+  document.getElementById('stgKey').value   = cfg.key   || '';
+  // Theme
+  try { currentTheme = localStorage.getItem('am_theme') || 'cyan'; } catch(_){}
+  document.querySelectorAll('[data-theme]').forEach(el =>
+    el.classList.toggle('active', el.dataset.theme === currentTheme));
+  // Skin
+  try { currentSkin = localStorage.getItem('am_skin') || 'cyber'; } catch(_){}
+  document.querySelectorAll('[data-skin]').forEach(el =>
+    el.classList.toggle('active', el.dataset.skin === currentSkin));
+  // Card size
+  try { currentCardSize = localStorage.getItem('am_cardsize') || 'normal'; } catch(_){}
+  document.querySelectorAll('[data-size]').forEach(el =>
+    el.classList.toggle('active', el.dataset.size === currentCardSize));
+  // Font
+  try { currentFont = localStorage.getItem('am_font') || 'jakarta'; } catch(_){}
+  document.querySelectorAll('[data-font]').forEach(el =>
+    el.classList.toggle('active', el.dataset.font === currentFont));
+  // Interval
+  selectedInterval = cfg.interval || 10;
+  document.querySelectorAll('[data-sec]').forEach(el =>
+    el.classList.toggle('active', parseInt(el.dataset.sec) === selectedInterval));
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsOverlay').classList.remove('open');
+}
+
+function handleSettingsOverlay(e) {
+  if (e.target === document.getElementById('settingsOverlay')) closeSettings();
+}
+
+function selectTheme(name) {
+  currentTheme = name;
+  document.querySelectorAll('[data-theme]').forEach(el =>
+    el.classList.toggle('active', el.dataset.theme === name));
+}
+
+function selectInterval(sec) {
+  selectedInterval = sec;
+  document.querySelectorAll('[data-sec]').forEach(el =>
+    el.classList.toggle('active', parseInt(el.dataset.sec) === sec));
+}
+
+function applyTheme(name) {
+  const t = THEMES[name] || THEMES.cyan;
+  document.documentElement.style.setProperty('--accent',  t.accent);
+  document.documentElement.style.setProperty('--accent2', t.accent2);
+  try { localStorage.setItem('am_theme', name); } catch(_){}
+}
+
+function saveSettings() {
+  const owner = document.getElementById('stgOwner').value.trim() || 'Syshs';
+  const url   = document.getElementById('stgUrl').value.trim().replace(/\/$/,'');
+  const key   = document.getElementById('stgKey').value.trim();
+
+  if (url && key) {
+    cfg = { ...cfg, url, key, owner, interval: selectedInterval };
+    try { localStorage.setItem('am_cfg', JSON.stringify(cfg)); } catch(_){}
+  } else {
+    cfg = { ...cfg, owner, interval: selectedInterval };
+    try { localStorage.setItem('am_cfg', JSON.stringify(cfg)); } catch(_){}
   }
 
-  // Cari link_id
-  const linkId =
-    info?.data?.link?.id ||
-    info?.data?.id ||
-    info?.link?.id ||
-    info?.id ||
-    null;
+  applyTheme(currentTheme);
+  applySkin(currentSkin);
+  applyCardSize(currentCardSize);
+  applyFont(currentFont);
+  document.getElementById('ownerName').textContent = owner;
+  document.getElementById('intervalSec').textContent = selectedInterval;
 
-  dbg.push(`\nLink ID: ${linkId}`);
+  // Restart monitor dengan interval baru
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(fetchLatest, selectedInterval * 1000);
 
-  if (!linkId) {
-    return {
-      ok: false,
-      err: "Link ID tidak ada. Cek debug untuk struktur response.",
-      debug: dbg.join("\n")
+  closeSettings();
+  showToast('✅ Pengaturan tersimpan!', 'success');
+}
+
+// ─── HISTORY LOG ───
+let activityLog = [];
+try { activityLog = JSON.parse(localStorage.getItem('am_log') || '[]'); } catch(_){}
+
+function addLog(name, isOnline) {
+  const now = new Date();
+  const time = now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  activityLog.unshift({ name, online: isOnline, time, ts: Date.now() });
+  if (activityLog.length > 200) activityLog = activityLog.slice(0, 200);
+  try { localStorage.setItem('am_log', JSON.stringify(activityLog)); } catch(_){}
+}
+
+function openHistory() {
+  renderHistory();
+  document.getElementById('historyOverlay').classList.add('open');
+}
+
+function closeHistory() {
+  document.getElementById('historyOverlay').classList.remove('open');
+}
+
+function handleHistoryOverlay(e) {
+  if (e.target === document.getElementById('historyOverlay')) closeHistory();
+}
+
+function clearHistory() {
+  activityLog = [];
+  try { localStorage.removeItem('am_log'); } catch(_){}
+  renderHistory();
+  showToast('🗑 Log dihapus', 'success');
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!activityLog.length) {
+    list.innerHTML = '<div class="history-empty">BELUM ADA AKTIVITAS</div>';
+    return;
+  }
+  list.innerHTML = activityLog.map(e => `
+    <div class="history-item">
+      <div class="history-dot ${e.online ? 'on' : 'off'}"></div>
+      <div class="history-name">${esc(e.name)}</div>
+      <div class="history-event ${e.online ? 'on' : 'off'}">${e.online ? 'ONLINE' : 'OFFLINE'}</div>
+      <div class="history-time">${e.time}</div>
+    </div>`).join('');
+}
+
+// ─── STATS SUMMARY ───
+function updateSummary() {
+  const all = Object.values(accounts);
+  if (!all.length) return;
+
+  const totalCoins = all.reduce((s, a) => s + (a.coins || 0), 0);
+  const totalGems  = all.reduce((s, a) => s + (a.gems  || 0), 0);
+  const withLevel  = all.filter(a => a.level !== null && a.level !== undefined);
+  const avgLevel   = withLevel.length ? Math.round(withLevel.reduce((s,a) => s + a.level, 0) / withLevel.length) : null;
+  const topEarner  = all.filter(a => a.coins !== null).sort((a,b) => b.coins - a.coins)[0];
+
+  document.getElementById('sumCoins').textContent    = fmtNum(totalCoins);
+  document.getElementById('sumGems').textContent     = fmtNum(totalGems);
+  document.getElementById('sumAvgLevel').textContent = avgLevel !== null ? avgLevel : '-';
+  document.getElementById('sumTopEarner').textContent = topEarner ? topEarner.name.slice(0,10) : '-';
+}
+
+async function exportData() {
+  showToast('📸 Mengambil screenshot...', 'success');
+
+  // Load dom-to-image-more (stabil, ga kena canvas taint error)
+  if (!window.domtoimage) {
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/3.4.0/dom-to-image-more.min.js';
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+
+  try {
+    const scale = Math.min(window.devicePixelRatio || 2, 3);
+    const node  = document.body;
+    // Hanya capture viewport yang keliatan, bukan full scroll height
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    const dataUrl = await domtoimage.toPng(node, {
+      bgcolor: '#07090f',
+      width:  w * scale,
+      height: h * scale,
+      style: {
+        transform: `scale(${scale})`,
+        transformOrigin: 'top left',
+        width:  w + 'px',
+        height: h + 'px',
+        overflow: 'hidden',
+      }
+    });
+
+    // Render ke canvas baru (bukan canvas dari DOM) supaya ga tainted
+    const img = new Image();
+    await new Promise(r => { img.onload = r; img.src = dataUrl; });
+    const canvas = document.createElement('canvas');
+    canvas.width  = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+
+    // ── Gambar timestamp overlay di atas canvas ──
+    const now = new Date();
+
+    const DAYS   = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+    const H   = String(now.getHours()).padStart(2,'0');
+    const Min = String(now.getMinutes()).padStart(2,'0');
+    const Sec = String(now.getSeconds()).padStart(2,'0');
+    const day = DAYS[now.getDay()];
+    const tgl = now.getDate();
+    const bln = MONTHS[now.getMonth()];
+    const thn = now.getFullYear();
+
+    const timeStr = `${H}:${Min}:${Sec}`;
+    const dateStr = `${day}, ${tgl} ${bln} ${thn}`;
+
+    drawTimestampOverlay(ctx, canvas.width, canvas.height, timeStr, dateStr);
+
+    // ── Download ──
+    const link = document.createElement('a');
+    const fname = `am_${thn}${String(now.getMonth()+1).padStart(2,'0')}${String(tgl).padStart(2,'0')}_${H}${Min}${Sec}.png`;
+    link.download = fname;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('✅ Screenshot tersimpan!', 'success');
+
+  } catch(e) {
+    showToast('⚠️ Gagal screenshot: ' + e.message, 'error');
+  }
+}
+
+// ── SHARED: gambar timestamp overlay pojok kanan bawah, putih kecil ──
+function drawTimestampOverlay(ctx, cw, ch, timeStr, dateStr) {
+  const fs  = Math.round(cw * 0.022);   // kecil ~2.2% lebar
+  const pad = Math.round(fs * 0.55);
+
+  ctx.font = `700 ${fs}px "IBM Plex Mono", monospace`;
+  const twTime = ctx.measureText(timeStr).width;
+  ctx.font = `400 ${Math.round(fs * 0.72)}px "IBM Plex Mono", monospace`;
+  const twDate = ctx.measureText(dateStr).width;
+
+  const bw = Math.max(twTime, twDate) + pad * 2.2;
+  const bh = fs * 1.3 + Math.round(fs * 0.72) * 1.3 + pad * 1.4;
+  const r  = Math.round(fs * 0.4);
+  const mg = Math.round(cw * 0.018);
+
+  // Kanan bawah
+  const bx = cw - bw - mg;
+  const by = ch - bh - mg;
+
+  function rr(x, y, w, h, rad) {
+    ctx.beginPath();
+    ctx.moveTo(x+rad,y);
+    ctx.lineTo(x+w-rad,y); ctx.quadraticCurveTo(x+w,y,x+w,y+rad);
+    ctx.lineTo(x+w,y+h-rad); ctx.quadraticCurveTo(x+w,y+h,x+w-rad,y+h);
+    ctx.lineTo(x+rad,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-rad);
+    ctx.lineTo(x,y+rad); ctx.quadraticCurveTo(x,y,x+rad,y);
+    ctx.closePath();
+  }
+
+  // Box putih semi-transparan
+  ctx.save();
+  rr(bx, by, bw, bh, r);
+  ctx.fillStyle = 'rgba(255,255,255,0.88)';
+  ctx.shadowColor = 'rgba(0,0,0,0.3)';
+  ctx.shadowBlur = Math.round(fs * 0.8);
+  ctx.fill();
+  ctx.restore();
+
+  // Border tipis abu
+  ctx.save();
+  rr(bx, by, bw, bh, r);
+  ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+  ctx.lineWidth = Math.max(1, Math.round(cw * 0.001));
+  ctx.stroke();
+  ctx.restore();
+
+  // Separator
+  const sepY = by + pad * 0.8 + fs * 1.28;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(bx + pad * 0.8, sepY);
+  ctx.lineTo(bx + bw - pad * 0.8, sepY);
+  ctx.stroke();
+  ctx.restore();
+
+  // Time — hitam bold
+  ctx.save();
+  ctx.font = `700 ${fs}px "IBM Plex Mono", monospace`;
+  ctx.fillStyle = '#111111';
+  ctx.fillText(timeStr, bx + pad, by + pad * 0.8 + fs);
+  ctx.restore();
+
+  // Date — abu gelap
+  ctx.save();
+  ctx.font = `400 ${Math.round(fs * 0.72)}px "IBM Plex Mono", monospace`;
+  ctx.fillStyle = '#555555';
+  ctx.fillText(dateStr, bx + pad, by + pad * 0.8 + fs * 1.3 + Math.round(fs * 0.72 * 1.15));
+  ctx.restore();
+}
+
+// ── EXPORT FULL AKUN (screenshot panel) ──
+async function exportFaPanel() {
+  showToast('📸 Screenshot Full Akun...', 'success');
+
+  if (!window.domtoimage) {
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/3.4.0/dom-to-image-more.min.js';
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+
+  try {
+    const panel = document.getElementById('faPanel');
+    const scale = Math.min(window.devicePixelRatio || 2, 3);
+    const w = panel.offsetWidth;
+    const h = panel.offsetHeight;
+
+    const dataUrl = await domtoimage.toPng(panel, {
+      bgcolor: '#161c2a',
+      width:  w * scale,
+      height: h * scale,
+      style: {
+        transform: `scale(${scale})`,
+        transformOrigin: 'top left',
+        width:  w + 'px',
+        height: h + 'px',
+        overflow: 'hidden',
+        borderRadius: '0',
+      }
+    });
+
+    const img = new Image();
+    await new Promise(r => { img.onload = r; img.src = dataUrl; });
+    const canvas = document.createElement('canvas');
+    canvas.width  = img.width;
+    canvas.height = img.height;
+    const fCtx = canvas.getContext('2d');
+    fCtx.drawImage(img, 0, 0);
+
+    const now = new Date();
+    const DAYS   = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    const H   = String(now.getHours()).padStart(2,'0');
+    const Min = String(now.getMinutes()).padStart(2,'0');
+    const Sec = String(now.getSeconds()).padStart(2,'0');
+    const timeStr = `${H}:${Min}:${Sec}`;
+    const dateStr = `${DAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+
+    drawTimestampOverlay(fCtx, canvas.width, canvas.height, timeStr, dateStr);
+
+    const link = document.createElement('a');
+    const thn = now.getFullYear();
+    const tgl = String(now.getDate()).padStart(2,'0');
+    const bln = String(now.getMonth()+1).padStart(2,'0');
+    link.download = `fa_${thn}${bln}${tgl}_${H}${Min}${Sec}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('✅ Tersimpan!', 'success');
+
+  } catch(e) {
+    showToast('⚠️ Gagal: ' + e.message, 'error');
+  }
+}
+
+let notifState = true;
+function toggleNotif() {
+  notifState = !notifState;
+  notifEnabled = notifState;
+  showToast(notifState ? '🛎 Notif aktif' : '🔇 Notif mati', 'success');
+}
+
+async function deleteAccount(pid, name) {
+  if (!confirm(`Hapus akun ${name}?`)) return;
+  try {
+    const res = await fetch(
+      `${cfg.url}/rest/v1/game_events?player_id=eq.${encodeURIComponent(pid)}`,
+      { method: 'DELETE', headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key } }
+    );
+    if (res.ok) {
+      delete accounts[pid];
+      accountOrder = accountOrder.filter(id => id !== pid);
+      render();
+      showToast(`🗑️ ${name} dihapus!`, 'success');
+    } else {
+      showToast('⚠️ Gagal hapus!', 'error');
+    }
+  } catch(e) {
+    showToast('⚠️ Error: ' + e.message, 'error');
+  }
+}
+
+
+// ─── DETAIL MODAL ───
+let detailCurrentPid = null;
+let coinsOnOpen = {};
+
+function openDetail(pid) {
+  const a = accounts[pid];
+  if (!a) return;
+  detailCurrentPid = pid;
+
+  const avi = document.getElementById('detailAvi');
+  avi.className = 'detail-avi ' + (a.online ? 'online' : 'offline');
+
+  document.getElementById('detailName').textContent = a.name + (a.isMod ? ' 🔰' : '');
+  document.getElementById('detailUsername').textContent = '@' + a.name.toLowerCase();
+
+  const status = document.getElementById('detailStatus');
+  status.className = 'detail-status ' + (a.online ? 'online' : 'offline');
+  status.textContent = a.online ? 'ONLINE' : 'OFFLINE';
+
+  document.getElementById('detailCoins').textContent = a.coins !== null ? fmtNum(a.coins) : '-';
+  document.getElementById('detailGems').textContent  = a.gems  !== null ? fmtNum(a.gems)  : '-';
+  document.getElementById('detailLevel').textContent = a.level !== null ? a.level : '-';
+  document.getElementById('detailTotalCoins').textContent = a.coins !== null ? fmtNum(a.coins) + ' coins' : '-';
+
+  document.getElementById('detailPid').textContent = pid.toString().slice(0,10) + '...';
+  document.getElementById('detailGame').textContent = a.game || 'Survive the Killer';
+  document.getElementById('detailOnlineInfo').textContent = a.online ? 'Online sekarang' : 'Offline';
+  document.getElementById('detailLastSeen').textContent = relativeTime(a.lastSeen);
+
+  // Daily coins
+  const daily = a.dailyEarned !== null ? a.dailyEarned : 0;
+  document.getElementById('detailDailyEarned').textContent = '+' + fmtNum(daily);
+  document.getElementById('detailDailyDate').textContent = a.dailyDate ? ('Hari ini ' + a.dailyDate) : '-';
+
+  // Match terakhir
+  const lastE = a.lastEarned !== null ? a.lastEarned : 0;
+  const mCount = a.matchCount !== null ? a.matchCount : 0;
+  document.getElementById('detailLastEarned').textContent = '+' + fmtNum(lastE);
+  document.getElementById('detailMatchCount').textContent = mCount + ' match dimainkan';
+
+  // Coins di match & total match di info list
+  document.getElementById('detailCoinsMatch').textContent = a.coinsMatch !== null ? '+' + fmtNum(a.coinsMatch) : '-';
+  document.getElementById('detailMatchCountInfo').textContent = mCount + ' match';
+
+  // delete button
+  document.getElementById('detailDelBtn').onclick = () => {
+    closeDetail();
+    deleteAccount(pid, a.name);
+  };
+
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detailOverlay').classList.remove('open');
+  detailCurrentPid = null;
+}
+
+// detail backdrop click disabled
+
+// ─── MODAL ───
+function openModal()  { document.getElementById('modalOverlay').classList.add('open'); }
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+function handleOverlayClick(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+
+// ─── FULL AKUN PANEL ───
+let faTab = 'all';
+
+// VIP group labels
+let vipLabels = {};
+try { vipLabels = JSON.parse(localStorage.getItem('fa_vip_labels') || '{}'); } catch(_) {}
+
+// Urutan akun per grup — key: groupIndex, value: [pid, pid]
+// Disimpan terpisah agar urutan persist
+let vipOrder = []; // array of arrays of pids (string)
+try { vipOrder = JSON.parse(localStorage.getItem('fa_vip_order') || '[]'); } catch(_) {}
+
+function saveVipLabels() {
+  try { localStorage.setItem('fa_vip_labels', JSON.stringify(vipLabels)); } catch(_) {}
+}
+function saveVipOrder() {
+  try { localStorage.setItem('fa_vip_order', JSON.stringify(vipOrder)); } catch(_) {}
+}
+
+// Sync vipOrder dengan accountOrder — tambah pid baru, hapus yang udah ga ada
+function syncVipOrder(list) {
+  const allPids = list.map(a => String(a.id));
+  const assignedSet = new Set(vipOrder.flat());
+
+  // Hapus pid yg udah ga ada
+  vipOrder = vipOrder.map(grp => grp.filter(p => allPids.includes(p))).filter(g => g.length > 0);
+
+  // Pid baru yang belum masuk grup mana pun
+  const unassigned = allPids.filter(p => !assignedSet.has(p));
+  for (let i = 0; i < unassigned.length; i += 2) {
+    vipOrder.push(unassigned.slice(i, i + 2));
+  }
+
+  saveVipOrder();
+}
+
+function openFullAkun() {
+  document.getElementById('faSearch').value = '';
+  document.getElementById('faSearch').style.display = '';
+  moveSelectedPid = null;
+  window._moveSearch = '';
+  faTab = 'all';
+  document.querySelectorAll('.fa-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('faTabAll').classList.add('active');
+  renderFaPanel();
+  document.getElementById('faOverlay').classList.add('open');
+}
+
+function closeFullAkun() {
+  document.getElementById('faOverlay').classList.remove('open');
+}
+
+// backdrop click disabled
+
+function setFaTab(tab) {
+  faTab = tab;
+  document.querySelectorAll('.fa-tab').forEach(el => el.classList.remove('active'));
+  const tabId = 'faTab' + tab.charAt(0).toUpperCase() + tab.slice(1);
+  if (document.getElementById(tabId)) document.getElementById(tabId).classList.add('active');
+  // Toggle search visibility
+  document.getElementById('faSearch').style.display = tab === 'move' ? 'none' : '';
+  renderFaPanel();
+}
+
+function buildFaCardHTML(a, gi) {
+  const coins = (a.coins !== null && a.coins !== undefined) ? fmtNum(a.coins) : '-';
+  const gems  = (a.gems  !== null && a.gems  !== undefined) ? fmtNum(a.gems)  : '-';
+  const level = (a.level !== null && a.level !== undefined) ? a.level         : '-';
+  const daily = (a.dailyEarned !== null && a.dailyEarned !== undefined) ? fmtNum(a.dailyEarned) : '0';
+  const onCls = a.online ? 'fa-online' : '';
+  const rawName = a.name || '???';
+  const rawId   = String(a.id || '');
+  const safeName = rawName.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const safeId   = rawId.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return `<div class="fa-card ${onCls}" data-pid="${rawId}" data-gi="${gi}">
+    <div class="fa-card-top">
+      <div class="fa-avi">🧑<div class="fa-avi-dot"></div></div>
+      <div class="fa-chip">${a.online ? 'ON' : 'OFF'}</div>
+    </div>
+    <div class="fa-name">${safeName}${a.isMod ? ' 🔰' : ''}</div>
+    <div class="fa-id">#${safeId.slice(0,10)}</div>
+    <div class="fa-stats">
+      <div class="fa-stat"><div class="fa-stat-val c">${coins}</div><div class="fa-stat-key">Coins</div></div>
+      <div class="fa-stat"><div class="fa-stat-val g">${gems}</div><div class="fa-stat-key">Gems</div></div>
+      <div class="fa-stat"><div class="fa-stat-val l">${level}</div><div class="fa-stat-key">Lvl</div></div>
+    </div>
+    <div style="margin-top:5px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:0.44rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">Daily</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;font-weight:700;color:var(--green)">+${daily}</span>
+    </div>
+  </div>`;
+}
+
+// ─── MOVE TAB ───
+let moveSelectedPid = null;
+
+function renderMoveTab() {
+  const grid = document.getElementById('faGrid');
+  const q = (window._moveSearch || '').toLowerCase();
+  const ordered = accountOrder.map(pid => accounts[pid]).filter(Boolean);
+
+  if (!ordered.length) {
+    grid.innerHTML = '<div class="fa-empty">😶 Ga ada akun</div>';
+    return;
+  }
+
+  const filtered = q ? ordered.filter(a => a.name.toLowerCase().includes(q) || String(a.id).includes(q)) : [];
+
+  // Cari VIP index untuk setiap pid
+  function getVipIdx(pid) {
+    const strPid = String(pid);
+    for (let i = 0; i < vipOrder.length; i++) {
+      if (vipOrder[i] && vipOrder[i].includes(strPid)) return i;
+    }
+    return null;
+  }
+
+  function getVipLabel(gi) {
+    if (gi === null) return '—';
+    return vipLabels[gi] || ('VIP ' + (gi + 1));
+  }
+
+  // Build akun list
+  let accListHTML = '';
+  if (!q) {
+    accListHTML = '<div class="move-placeholder">🔍 Ketik nama akun di atas untuk mencari</div>';
+  } else if (!filtered.length) {
+    accListHTML = '<div class="move-placeholder">😶 Akun tidak ditemukan</div>';
+  } else {
+    accListHTML = filtered.map(a => {
+    const gi = getVipIdx(a.id);
+    const label = getVipLabel(gi);
+    const isSelected = String(a.id) === String(moveSelectedPid);
+    return `<div class="move-acc-item${isSelected ? ' selected' : ''}" onclick="selectMoveAcc('${String(a.id).replace(/'/g,"\\'")}')">
+      <div class="move-acc-dot ${a.online ? 'on' : 'off'}"></div>
+      <div class="move-acc-name">${esc(a.name)}${a.isMod ? ' 🔰' : ''}</div>
+      <div class="move-acc-vip">${esc(label)}</div>
+    </div>`;
+  }).join('');
+  }
+
+  // Build VIP pilihan kalau ada yang dipilih
+  let vipPickHTML = '';
+  if (moveSelectedPid !== null) {
+    const selAcc = accounts[moveSelectedPid];
+    const curGi = getVipIdx(moveSelectedPid);
+    const vipBtns = vipOrder.map((grp, gi) => {
+      const label = vipLabels[gi] || ('VIP ' + (gi + 1));
+      const isCurrent = gi === curGi;
+      return `<button class="move-vip-btn${isCurrent ? ' current' : ''}"
+        onclick="${isCurrent ? '' : `doMoveFromTab('${String(moveSelectedPid).replace(/'/g,"\\'")}',${curGi},${gi})`}"
+        ${isCurrent ? 'disabled' : ''}>
+        ${esc(label)}
+        <span class="move-vip-btn-count">${grp.length} akun</span>
+      </button>`;
+    }).join('');
+
+    vipPickHTML = `
+      <div class="move-section-label">Pindah "${esc(selAcc ? selAcc.name : moveSelectedPid)}" ke VIP:</div>
+      <div class="move-vip-grid">${vipBtns}</div>`;
+  } else {
+    vipPickHTML = `<div class="move-placeholder">👆 Tap akun di atas<br>untuk pilih tujuan VIP-nya</div>`;
+  }
+
+  grid.innerHTML = `
+    <input class="fa-search" id="moveSearch" type="text" placeholder="⌕  Cari nama akun..." 
+      value="${(window._moveSearch||'').replace(/"/g,'&quot;')}"
+      oninput="window._moveSearch=this.value;renderMoveTab()" 
+      style="margin-bottom:4px" />
+    <div class="move-list">${accListHTML}</div>
+    ${vipPickHTML}
+  `;
+  // Re-focus search kalau ada query
+  if (window._moveSearch) {
+    const inp = document.getElementById('moveSearch');
+    if (inp) { inp.focus(); const l = inp.value.length; inp.setSelectionRange(l,l); }
+  }
+}
+
+function selectMoveAcc(pid) {
+  moveSelectedPid = moveSelectedPid === pid ? null : pid;
+  renderMoveTab();
+  // Scroll ke bawah biar VIP grid keliatan
+  if (moveSelectedPid !== null) {
+    setTimeout(() => {
+      const grid = document.getElementById('faGrid');
+      if (grid) grid.scrollTop = grid.scrollHeight;
+    }, 50);
+  }
+}
+
+function doMoveFromTab(pid, fromGi, toGi) {
+  if (fromGi === null) {
+    // Cari fromGi kalau null
+    for (let i = 0; i < vipOrder.length; i++) {
+      if (vipOrder[i] && vipOrder[i].includes(String(pid))) { fromGi = i; break; }
+    }
+  }
+  if (fromGi === null || toGi === fromGi) return;
+  movePidToGroup(String(pid), fromGi, toGi);
+  moveSelectedPid = null;
+  // Stay di tab move setelah pindah
+  setTimeout(() => renderMoveTab(), 100);
+}
+
+function renderFaPanel() {
+  const grid = document.getElementById('faGrid');
+  const savedScroll = grid ? grid.scrollTop : 0;
+
+  if (faTab === 'move') {
+    renderMoveTab();
+    return;
+  }
+
+  const q = (document.getElementById('faSearch').value || '').toLowerCase();
+  const ordered = accountOrder.map(pid => accounts[pid]).filter(Boolean);
+
+  let list = ordered;
+  if (faTab === 'on')  list = ordered.filter(a => a.online);
+  if (faTab === 'off') list = ordered.filter(a => !a.online);
+  if (q) list = list.filter(a => a.name.toLowerCase().includes(q) || String(a.id).includes(q));
+
+  if (!list.length) {
+    grid.innerHTML = '<div class="fa-empty">😶 Ga ada akun ditemukan</div>';
+    return;
+  }
+
+  syncVipOrder(list);
+
+  const pidMap = {};
+  list.forEach(a => { pidMap[String(a.id)] = a; });
+
+  const rendered = [];
+  vipOrder.forEach((grpPids, gi) => {
+    const grpAccounts = grpPids.map(p => pidMap[p]).filter(Boolean);
+    if (!grpAccounts.length) return;
+
+    const label = vipLabels[gi] || ('VIP ' + (gi + 1));
+    const safeLabel = label.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const cards = grpAccounts.map(a => buildFaCardHTML(a, gi)).join('');
+
+    // Cari moderator di server yang sama (match job_id)
+    const grpJobIds = [...new Set(grpAccounts.map(a => a.jobId).filter(Boolean))];
+    const modNames = [];
+    for (const jid of grpJobIds) {
+      if (modByJobId[jid]) modNames.push(...modByJobId[jid]);
+    }
+    const uniqueMods = [...new Set(modNames)];
+    const modBadgeHTML = uniqueMods.length
+      ? `<div class="fa-mod-badge">🚨 Mod: ${uniqueMods.map(n => `<span class="fa-mod-name">${n.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`).join(', ')}</div>`
+      : '';
+
+    rendered.push(`<div class="fa-vip-group" data-gi="${gi}">
+      <div class="fa-vip-label-wrap">
+        <div class="fa-vip-dot"></div>
+        <input class="fa-vip-name" value="${safeLabel}" data-gi="${gi}" />
+        <div class="fa-vip-count">${grpAccounts.length}</div>
+        ${modBadgeHTML}
+      </div>
+      <div class="fa-vip-cards" data-gi="${gi}">${cards}</div>
+    </div>`);
+  });
+
+  grid.innerHTML = rendered.join('');
+  attachFaEvents();
+
+  // Restore scroll position setelah render
+  grid.scrollTop = savedScroll;
+}
+
+function movePidUp(pid, fromGi) {
+  // Cari grup sebelumnya yang ada (gi lebih kecil)
+  let toGi = null;
+  for (let i = fromGi - 1; i >= 0; i--) {
+    if (vipOrder[i] && vipOrder[i].length > 0) { toGi = i; break; }
+  }
+  if (toGi === null) { showToast('⚠️ Sudah di grup pertama!', 'error'); return; }
+  movePidToGroup(pid, fromGi, toGi);
+}
+
+function movePidDown(pid, fromGi) {
+  // Cari grup berikutnya yang ada (gi lebih besar)
+  let toGi = null;
+  for (let i = fromGi + 1; i < vipOrder.length; i++) {
+    if (vipOrder[i] && vipOrder[i].length > 0) { toGi = i; break; }
+  }
+  if (toGi === null) { showToast('⚠️ Sudah di grup terakhir!', 'error'); return; }
+  movePidToGroup(pid, fromGi, toGi);
+}
+
+// ─── DRAG STATE ───
+let dragPid = null;
+let dragFromGi = null;
+
+function attachFaEvents() {
+  const grid = document.getElementById('faGrid');
+
+  // Label edit
+  grid.querySelectorAll('.fa-vip-name').forEach(el => {
+    el.addEventListener('click', e => e.stopPropagation());
+    el.addEventListener('change', e => {
+      const gi = parseInt(e.target.dataset.gi);
+      vipLabels[gi] = e.target.value || ('VIP ' + (gi + 1));
+      saveVipLabels();
+    });
+    el.addEventListener('blur', e => {
+      const gi = parseInt(e.target.dataset.gi);
+      vipLabels[gi] = e.target.value || ('VIP ' + (gi + 1));
+      saveVipLabels();
+    });
+  });
+
+  // Desktop drag (skip di touch device)
+  const isTouch = navigator.maxTouchPoints > 0;
+  if (!isTouch) {
+    grid.querySelectorAll('.fa-card').forEach(el => {
+      el.setAttribute('draggable', 'true');
+      el.addEventListener('click', () => {
+        if (!dragPid) openDetailFromFa(el.dataset.pid);
+      });
+
+      el.addEventListener('dragstart', e => {
+        dragPid = el.dataset.pid;
+        dragFromGi = parseInt(el.closest('.fa-vip-group').dataset.gi);
+        el.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      el.addEventListener('dragend', e => {
+        el.classList.remove('dragging');
+        grid.querySelectorAll('.fa-vip-group').forEach(g => g.classList.remove('drag-target'));
+        dragPid = null;
+        dragFromGi = null;
+      });
+    });
+
+    grid.querySelectorAll('.fa-vip-group').forEach(grpEl => {
+      grpEl.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        grid.querySelectorAll('.fa-vip-group').forEach(g => g.classList.remove('drag-target'));
+        grpEl.classList.add('drag-target');
+      });
+
+      grpEl.addEventListener('dragleave', e => {
+        if (!grpEl.contains(e.relatedTarget)) grpEl.classList.remove('drag-target');
+      });
+
+      grpEl.addEventListener('drop', e => {
+        e.preventDefault();
+        grpEl.classList.remove('drag-target');
+        const toGi = parseInt(grpEl.dataset.gi);
+        if (dragPid === null || dragFromGi === null || toGi === dragFromGi) return;
+        movePidToGroup(dragPid, dragFromGi, toGi);
+      });
+    });
+  }
+
+  // Touch drag (mobile) — long press 400ms, smooth clone
+  grid.querySelectorAll('.fa-card').forEach(el => {
+    let touchStartX, touchStartY, clone, isDragging, longPressTimer;
+    let offsetX, offsetY;
+    let lastTargetGi = null; // simpan target grup dari touchmove terakhir
+
+    el.addEventListener('touchstart', e => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      isDragging = false;
+      clone = null;
+      lastTargetGi = null;
+
+      longPressTimer = setTimeout(() => {
+        isDragging = true;
+        dragPid = el.dataset.pid;
+        dragFromGi = parseInt(el.dataset.gi);
+
+        if (navigator.vibrate) navigator.vibrate(35);
+
+        const rect = el.getBoundingClientRect();
+        offsetX = touchStartX - rect.left;
+        offsetY = touchStartY - rect.top;
+
+        el.style.visibility = 'hidden';
+
+        clone = el.cloneNode(true);
+        clone.style.cssText = [
+          'position:fixed',
+          'z-index:9999',
+          'pointer-events:none',
+          `width:${rect.width}px`,
+          `height:${rect.height}px`,
+          `left:${touchStartX - offsetX}px`,
+          `top:${touchStartY - offsetY}px`,
+          'border-radius:14px',
+          'transform:scale(1.07) rotate(1.2deg)',
+          'box-shadow:0 16px 48px rgba(0,0,0,0.65),0 0 0 2px rgba(0,240,255,0.35)',
+          'will-change:transform,left,top',
+        ].join(';');
+        document.body.appendChild(clone);
+
+        grid.style.overflow = 'hidden';
+      }, 400);
+    }, { passive: true });
+
+    el.addEventListener('touchmove', e => {
+      if (!isDragging) {
+        const dx = Math.abs(e.touches[0].clientX - touchStartX);
+        const dy = Math.abs(e.touches[0].clientY - touchStartY);
+        if (dx > 6 || dy > 6) { clearTimeout(longPressTimer); longPressTimer = null; }
+        return;
+      }
+      e.preventDefault();
+
+      const cx = e.touches[0].clientX;
+      const cy = e.touches[0].clientY;
+
+      if (clone) {
+        clone.style.left = (cx - offsetX) + 'px';
+        clone.style.top  = (cy - offsetY) + 'px';
+      }
+
+      // Deteksi grup target — sembunyiin clone dulu biar elementFromPoint akurat
+      if (clone) clone.style.visibility = 'hidden';
+      const under = document.elementFromPoint(cx, cy);
+      if (clone) clone.style.visibility = '';
+
+      const targetGrp = under ? under.closest('.fa-vip-group') : null;
+      grid.querySelectorAll('.fa-vip-group').forEach(g => g.classList.remove('drag-target'));
+      if (targetGrp) {
+        targetGrp.classList.add('drag-target');
+        lastTargetGi = parseInt(targetGrp.dataset.gi); // simpan selalu
+      } else {
+        lastTargetGi = null;
+      }
+
+    }, { passive: false });
+
+    const endDrag = (e) => {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+      grid.querySelectorAll('.fa-vip-group').forEach(g => g.classList.remove('drag-target'));
+
+      if (!isDragging) {
+        grid.style.overflow = 'auto';
+        // Hanya buka detail kalau jari beneran tap (ga gerak jauh)
+        if (e.type === 'touchend') {
+          const ex = e.changedTouches ? e.changedTouches[0].clientX : touchStartX;
+          const ey = e.changedTouches ? e.changedTouches[0].clientY : touchStartY;
+          const dx = Math.abs(ex - touchStartX);
+          const dy = Math.abs(ey - touchStartY);
+          if (dx < 8 && dy < 8) openDetailFromFa(el.dataset.pid);
+        }
+        dragPid = null; dragFromGi = null;
+        return;
+      }
+
+      isDragging = false;
+
+      // Pakai lastTargetGi dari touchmove terakhir — jauh lebih reliable dari elementFromPoint saat touchend
+      const toGi = lastTargetGi;
+      const savedPid = dragPid;
+      const savedFromGi = dragFromGi;
+
+      dragPid = null;
+      dragFromGi = null;
+      lastTargetGi = null;
+
+      // Animasi clone fade out
+      if (clone) {
+        clone.style.transition = 'transform 0.15s ease, opacity 0.15s ease';
+        clone.style.transform = 'scale(0.93) rotate(0deg)';
+        clone.style.opacity = '0';
+      }
+
+      setTimeout(() => {
+        if (clone) { clone.remove(); clone = null; }
+        el.style.visibility = '';
+        grid.style.overflow = 'auto';
+
+        if (toGi !== null && savedPid !== null && savedFromGi !== null && toGi !== savedFromGi) {
+          movePidToGroup(savedPid, savedFromGi, toGi);
+        } else if (toGi === savedFromGi) {
+          // diam di tempat
+        } else {
+          showToast('⚠️ Lepas di atas grup tujuan', 'error');
+        }
+      }, 150);
     };
-  }
 
-  // STEP 2: Build serial & fetch target
-  const ts = Math.floor(Date.now() / 1000);
-  const serial = btoa(JSON.stringify({ timestamp: ts, random: "6548307", link_id: linkId }));
-  dbg.push(`\nSerial token generated (ts: ${ts})`);
+    el.addEventListener('touchend', endDrag);
+    el.addEventListener('touchcancel', endDrag);
+  });
+}
 
-  // Coba beberapa endpoint target
-  const targets = [
-    `https://publisher.linkvertise.com/api/v1/redirect/link/${id}/${slug}/target?serial=${encodeURIComponent(serial)}`,
-    `https://publisher.linkvertise.com/api/v1/redirect/link/${id}/${slug}/target`,
+function movePidToGroup(pid, fromGi, toGi) {
+  vipOrder[fromGi] = vipOrder[fromGi].filter(p => p !== pid);
+  if (!vipOrder[toGi]) vipOrder[toGi] = [];
+  vipOrder[toGi].push(pid);
+  saveVipOrder();
+
+  // Re-render dengan animasi
+  renderFaPanel();
+
+  // Kasih class just-dropped ke card yang baru masuk
+  requestAnimationFrame(() => {
+    const grid = document.getElementById('faGrid');
+    const movedCard = grid.querySelector(`.fa-card[data-pid="${pid}"]`);
+    if (movedCard) {
+      movedCard.classList.add('just-dropped');
+      movedCard.addEventListener('animationend', () => movedCard.classList.remove('just-dropped'), { once: true });
+    }
+  });
+
+  showToast('✅ Akun dipindah!', 'success');
+}
+
+function openDetailFromFa(pid) {
+  closeFullAkun();
+  // pid bisa number atau string, cari di accounts
+  const key = Object.keys(accounts).find(k => String(k) === String(pid));
+  if (key) setTimeout(() => openDetail(key), 120);
+}
+
+// ─── VIP PICKER ───
+let vipPickerPid = null;
+let vipPickerFromGi = null;
+
+function openVipPicker(pid, fromGi) {
+  vipPickerPid = pid;
+  vipPickerFromGi = fromGi;
+
+  const acc = accounts[pid];
+  document.getElementById('vipPickerName').textContent = acc ? acc.name : pid;
+
+  // Build grid tombol VIP
+  const grid = document.getElementById('vipPickerGrid');
+  grid.innerHTML = vipOrder.map((grp, idx) => {
+    const label = vipLabels[idx] || ('VIP ' + (idx + 1));
+    const isActive = idx === fromGi;
+    const count = grp.length;
+    return `<button class="vip-picker-btn ${isActive ? 'active-vip' : ''}"
+      onclick="${isActive ? '' : `doMoveVip(${idx});event.stopPropagation()`}"
+      ${isActive ? 'disabled' : ''}>
+      ${label}
+      <span class="vip-picker-btn-label">${count} akun</span>
+    </button>`;
+  }).join('');
+
+  document.getElementById('vipPickerOverlay').classList.add('open');
+}
+
+function doMoveVip(toGi) {
+  if (vipPickerPid === null || vipPickerFromGi === null) return;
+  closeVipPicker();
+  movePidToGroup(vipPickerPid, vipPickerFromGi, toGi);
+}
+
+function closeVipPicker() {
+  document.getElementById('vipPickerOverlay').classList.remove('open');
+  vipPickerPid = null;
+  vipPickerFromGi = null;
+}
+
+function handleVipPickerOverlay(e) {
+  if (e.target === document.getElementById('vipPickerOverlay')) closeVipPicker();
+}
+
+// ─── TOAST ───
+let toastTimer;
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─── HELPERS ───
+function fmtNum(n) {
+  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return n;
+}
+
+function relativeTime(iso) {
+  if (!iso) return '-';
+  const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (diff < 60) return diff + 'dtk lalu';
+  if (diff < 3600) return Math.floor(diff/60) + 'm lalu';
+  return Math.floor(diff/3600) + 'j lalu';
+}
+
+function sessionDuration(sessionStart) {
+  if (!sessionStart) return '-';
+  const diff = Math.floor(Date.now() / 1000) - sessionStart;
+  if (diff < 0) return '-';
+  const h = Math.floor(diff / 3600);
+  const m = Math.floor((diff % 3600) / 60);
+  const s = diff % 60;
+  if (h > 0) return h + 'j ' + m + 'm';
+  if (m > 0) return m + 'm ' + s + 'dtk';
+  return s + 'dtk';
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── SAKURA PETALS ──
+(function() {
+  const PETAL_COUNT = 22;
+  const container = document.getElementById('sakura-container');
+
+  // SVG shapes: kelopak bunga & daun kecil
+  const shapes = [
+    // Kelopak oval
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 24" width="14" height="17">
+      <ellipse cx="10" cy="12" rx="7" ry="11" fill="#ffb7d5" opacity="0.85"/>
+      <ellipse cx="10" cy="12" rx="4" ry="8" fill="#ff85bb" opacity="0.4"/>
+    </svg>`,
+    // Kelopak hati
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="12" height="12">
+      <path d="M10 17 C10 17 2 11 2 6 A4 4 0 0 1 10 5 A4 4 0 0 1 18 6 C18 11 10 17 10 17Z" fill="#ffadd2" opacity="0.9"/>
+    </svg>`,
+    // Daun kecil
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 20" width="10" height="13">
+      <path d="M8 1 C12 4 15 9 13 14 C11 19 5 19 3 14 C1 9 4 4 8 1Z" fill="#f48fb1" opacity="0.75"/>
+      <line x1="8" y1="3" x2="8" y2="17" stroke="#e91e63" stroke-width="0.6" opacity="0.5"/>
+    </svg>`,
+    // Bunga 5 kelopak mini
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14">
+      <ellipse cx="12" cy="5" rx="3.5" ry="5.5" fill="#ffb7d5" opacity="0.85" transform="rotate(0 12 12)"/>
+      <ellipse cx="12" cy="5" rx="3.5" ry="5.5" fill="#ffb7d5" opacity="0.85" transform="rotate(72 12 12)"/>
+      <ellipse cx="12" cy="5" rx="3.5" ry="5.5" fill="#ffb7d5" opacity="0.85" transform="rotate(144 12 12)"/>
+      <ellipse cx="12" cy="5" rx="3.5" ry="5.5" fill="#ffb7d5" opacity="0.85" transform="rotate(216 12 12)"/>
+      <ellipse cx="12" cy="5" rx="3.5" ry="5.5" fill="#ffb7d5" opacity="0.85" transform="rotate(288 12 12)"/>
+      <circle cx="12" cy="12" r="3" fill="#ff85bb" opacity="0.9"/>
+    </svg>`,
   ];
 
-  for (const ep of targets) {
-    dbg.push(`\nTrying: ${ep}`);
-    try {
-      const t = await pFetch(ep);
-      dbg.push(`Response:\n${JSON.stringify(t, null, 2).slice(0, 300)}`);
+  function rand(min, max) { return Math.random() * (max - min) + min; }
 
-      const finalUrl =
-        t?.data?.target?.url ||
-        t?.data?.url ||
-        t?.url ||
-        t?.target ||
-        t?.link ||
-        null;
+  function createPetal(i) {
+    const el = document.createElement('div');
+    el.className = 'petal';
 
-      if (finalUrl) {
-        dbg.push(`\n✅ SUCCESS: ${finalUrl}`);
-        return { ok: true, result: finalUrl, via: "publisher.linkvertise.com", debug: dbg.join("\n") };
+    const shape = shapes[i % shapes.length];
+    el.innerHTML = shape;
+
+    const left     = rand(0, 100);         // % dari kiri
+    const duration = rand(6, 14);          // detik jatuh
+    const delay    = rand(0, 12);          // detik delay
+    const swing    = rand(30, 100);        // px ayun kiri-kanan
+    const dir      = Math.random() > 0.5 ? 1 : -1;
+    const scale    = rand(0.7, 1.3);
+
+    el.style.cssText = `
+      left: ${left}%;
+      animation-duration: ${duration}s;
+      animation-delay: ${delay}s;
+      transform-origin: center;
+    `;
+
+    // Tambah animasi swinging lewat JS keyframes
+    const keyframeName = `petalSwing${i}`;
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes ${keyframeName} {
+        0%   { opacity:0; transform: translateX(0px) translateY(0) rotate(0deg) scale(${scale}); }
+        5%   { opacity:1; }
+        25%  { transform: translateX(${swing*dir}px) translateY(22vh) rotate(${rand(60,120)}deg) scale(${scale}); }
+        50%  { transform: translateX(${swing*dir*-0.5}px) translateY(50vh) rotate(${rand(200,280)}deg) scale(${scale*0.9}); }
+        75%  { transform: translateX(${swing*dir*0.8}px) translateY(78vh) rotate(${rand(380,460)}deg) scale(${scale*0.85}); }
+        92%  { opacity:0.6; }
+        100% { opacity:0; transform: translateX(${swing*dir*-0.3}px) translateY(108vh) rotate(${rand(600,720)}deg) scale(${scale*0.7}); }
       }
-    } catch (e) {
-      dbg.push(`Error: ${e.message}`);
-    }
+    `;
+    document.head.appendChild(style);
+    el.style.animation = `${keyframeName} ${duration}s ${delay}s linear infinite`;
+
+    return el;
   }
 
-  return {
-    ok: false,
-    err: "Dapat link ID tapi URL target tidak ditemukan. Cek debug.",
-    debug: dbg.join("\n")
-  };
-}
-
-// ─── UI ───
-const STEPS_EL = () => document.getElementById("steps");
-
-function renderSteps(activeIdx, errIdx = -1) {
-  STEPS_EL().innerHTML = STEPS_DEF.map((s, i) => {
-    let c = "", d = String(i+1);
-    if (i < activeIdx) { c = "done"; d = "✓"; }
-    else if (i === errIdx) { c = "error"; d = "✕"; }
-    else if (i === activeIdx) { c = "active"; d = "●"; }
-    return `<div class="step ${c}"><div class="sdot">${d}</div><span>${s}</span></div>`;
-  }).join("");
-}
-function setBar(p) { document.getElementById("bar").style.width = p + "%"; }
-
-async function runBypass() {
-  const url = document.getElementById("urlInput").value.trim();
-  if (!url) { toast("Masukkin URL dulu!"); return; }
-  if (!url.includes("linkvertise")) { toast("Harus URL Linkvertise!"); return; }
-
-  const btn = document.getElementById("bypassBtn");
-  btn.disabled = true;
-  btn.innerHTML = `⏳ Processing...`;
-
-  document.getElementById("pw").classList.add("show");
-  document.getElementById("rb").classList.remove("show","ok","fail");
-  document.getElementById("debugBox").classList.remove("show");
-
-  renderSteps(0); setBar(10);
-  await w(200); renderSteps(1); setBar(30);
-
-  const res = await bypassLV(url);
-
-  setBar(100);
-  renderSteps(res.ok ? 4 : 3, res.ok ? -1 : 3);
-  await w(150);
-
-  showResult(res.ok, res.ok ? res.result : res.err, res.via);
-
-  if (res.debug) {
-    document.getElementById("debugBox").classList.add("show");
-    document.getElementById("debugVal").textContent = res.debug;
+  // Generate semua petal
+  for (let i = 0; i < PETAL_COUNT; i++) {
+    container.appendChild(createPetal(i));
   }
 
-  addHist(url, res.ok ? res.result : "GAGAL", res.ok);
-
-  btn.disabled = false;
-  btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Jalankan Bypass`;
-}
-
-function showResult(ok, val, via) {
-  lastRes = val;
-  const rb = document.getElementById("rb");
-  rb.className = "result-box show " + (ok ? "ok" : "fail");
-  document.getElementById("rl").textContent = ok ? "✅ Bypass Berhasil" : "❌ Bypass Gagal";
-  document.getElementById("rv").textContent = val;
-  document.getElementById("vt").innerHTML = via ? `<span class="via">via ${via}</span>` : "";
-  document.getElementById("opBtn").style.display = ok && val?.startsWith("http") ? "inline-flex" : "none";
-  document.getElementById("cpBtn").textContent = "📋 Salin";
-  document.getElementById("cpBtn").className = "btn-s btn-copy";
-}
-
-function copyRes() {
-  if (!lastRes) return;
-  doCopy(lastRes, () => {
-    const b = document.getElementById("cpBtn");
-    b.textContent = "✅ Tersalin!"; b.classList.add("copied");
-    toast("Tersalin! ✅");
-    setTimeout(() => { b.textContent = "📋 Salin"; b.classList.remove("copied"); }, 2000);
+  // Observer: aktifkan/nonaktifkan kalau skin berubah
+  const observer = new MutationObserver(() => {
+    const active = document.body.classList.contains('skin-sakura');
+    container.style.display = active ? 'block' : 'none';
   });
-}
-function openRes() { if (lastRes?.startsWith("http")) window.open(lastRes, "_blank"); }
-
-function addHist(url, result, ok) {
-  const t = new Date();
-  const time = t.getHours().toString().padStart(2,"0") + ":" + t.getMinutes().toString().padStart(2,"0");
-  hist.unshift({ url, result, ok, time });
-  if (hist.length > 30) hist.pop();
-  localStorage.setItem("bk5_hist", JSON.stringify(hist));
-  renderHist();
-}
-function renderHist() {
-  const el = document.getElementById("hl");
-  if (!hist.length) { el.innerHTML = '<div class="empty-h">Belum ada riwayat.</div>'; return; }
-  el.innerHTML = hist.map(h => `
-    <div class="hist-item">
-      <div class="hdot ${h.ok?'ok':'fail'}"></div>
-      <div class="hurl">${h.url}</div>
-      <div class="hres">${h.result}</div>
-      <div class="htime">${h.time}</div>
-    </div>`).join("");
-}
-
-function w(ms) { return new Promise(r => setTimeout(r, ms)); }
-function doCopy(t, cb) {
-  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(cb).catch(() => fb(t,cb));
-  else fb(t, cb);
-}
-function fb(t, cb) {
-  const ta = document.createElement("textarea");
-  ta.value = t; ta.style.cssText = "position:fixed;top:-9999px;opacity:0";
-  document.body.appendChild(ta); ta.focus(); ta.select();
-  try { document.execCommand("copy"); cb(); } catch(e){}
-  document.body.removeChild(ta);
-}
-let tt;
-function toast(msg) {
-  const el = document.getElementById("toast");
-  el.textContent = msg; el.classList.add("show");
-  clearTimeout(tt); tt = setTimeout(() => el.classList.remove("show"), 2500);
-}
-
-renderHist();
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+})();
 </script>
 </body>
 </html>
