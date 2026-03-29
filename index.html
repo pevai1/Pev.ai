@@ -232,7 +232,7 @@ body::after {
   border-radius: 50%; flex-shrink: 0;
 }
 .online-hdr  { color: var(--green); }
-.offline-hdr { color: var(--red); }
+.offline-hdr { color: var(--red); display: flex; align-items: center; justify-content: space-between; }
 .online-hdr  .dot { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 2s infinite; }
 .offline-hdr .dot { background: var(--red); }
 
@@ -667,6 +667,54 @@ body::after {
   font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
 }
 .detail-del-btn:active { background: rgba(255,59,107,0.18); transform: scale(0.98); }
+
+
+/* ── BURGER BTN ── */
+.burger-btn {
+  margin-left: auto;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px; border: 1px solid var(--border2);
+  background: var(--card); color: var(--muted2);
+  cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+}
+.burger-btn.active { background: rgba(0,240,255,0.1); color: var(--accent); border-color: rgba(0,240,255,0.3); }
+.burger-btn:active { transform: scale(0.9); }
+
+/* ── SORT MENU ── */
+.sort-menu {
+  display: none; padding: 6px 16px 10px;
+  position: relative; z-index: 1;
+}
+.sort-menu.open { display: block; }
+.sort-menu-row {
+  display: flex; gap: 5px; flex-wrap: wrap;
+}
+.sort-chip {
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px 10px; border-radius: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem; font-weight: 700;
+  border: 1px solid var(--border2);
+  background: var(--card);
+  color: var(--muted2);
+  cursor: pointer; transition: all 0.15s;
+  white-space: nowrap;
+}
+.sort-chip:active { transform: scale(0.94); }
+.sort-chip.active-asc {
+  background: rgba(0,240,255,0.1);
+  border-color: rgba(0,240,255,0.35);
+  color: var(--accent);
+}
+.sort-chip.active-desc {
+  background: rgba(255,204,0,0.1);
+  border-color: rgba(255,204,0,0.35);
+  color: var(--yellow);
+}
+.sort-chip-icon { font-size: 0.75rem; }
+.sort-arrow { font-size: 0.65rem; opacity: 0.8; }
 
 /* ── TOAST ── */
 .toast {
@@ -1703,6 +1751,20 @@ body.skin-sakura #sakura-container { display: block; }
   </div>
   <div class="col-hdr offline-hdr">
     <div class="dot"></div> OFFLINE <div class="col-badge" id="badgeOffline">0</div>
+    <button class="burger-btn" onclick="toggleSortMenu()" id="burgerBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- SORT MENU -->
+<div class="sort-menu" id="sortMenu">
+  <div class="sort-menu-row">
+    <button class="sort-chip" id="sortDefault" onclick="setSort('default')">⟳ Default</button>
+    <button class="sort-chip" id="sortCoins" onclick="setSort('coins')">🪙 Coins <span id="arrowCoins"></span></button>
+    <button class="sort-chip" id="sortGems" onclick="setSort('gems')">💎 Gems <span id="arrowGems"></span></button>
+    <button class="sort-chip" id="sortLevel" onclick="setSort('level')">⭐ Level <span id="arrowLevel"></span></button>
+    <button class="sort-chip" id="sortDaily" onclick="setSort('daily')">🌅 Daily <span id="arrowDaily"></span></button>
   </div>
 </div>
 
@@ -2046,6 +2108,9 @@ body.skin-sakura #sakura-container { display: block; }
 // ─── STATE ───
 let cfg = { url: 'https://doqxklmdtmadmjfhxlsd.supabase.co', key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvcXhrbG1kdG1hZG1qZmh4bHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1OTQ5OTEsImV4cCI6MjA5MDE3MDk5MX0.WKNN-RtyXSGEztIzsxgR6lds9ZKIXis81A6DA2POTmE', owner: 'Syshs', interval: 10 };
 let accounts = {};
+// ─── SORT STATE (harus di atas render) ───
+let currentSort = 'default';
+let sortDir = {};
 let accountOrder = [];
 let notifEnabled = true;
 let refreshTimer = null;
@@ -2060,6 +2125,7 @@ try { applySkin(localStorage.getItem('am_skin') || 'cyber'); } catch(_){}
 try { applyCardSize(localStorage.getItem('am_cardsize') || 'normal'); } catch(_){}
 try { applyFont(localStorage.getItem('am_font') || 'jakarta'); } catch(_){}
 startMonitor();
+updateSortUI();
 
 // ─── FETCH ───
 async function fetchLatest() {
@@ -2161,8 +2227,8 @@ function checkChanges(newAcc) {
 // ─── RENDER ───
 function render() {
   const ordered = accountOrder.map(pid => accounts[pid]).filter(Boolean);
-  const online  = ordered.filter(a => a.online);
-  const offline = ordered.filter(a => !a.online);
+  const online  = sortAccounts(ordered.filter(a => a.online));
+  const offline = sortAccounts(ordered.filter(a => !a.online));
 
   document.getElementById('countOnline').textContent  = online.length;
   document.getElementById('countOffline').textContent = offline.length;
@@ -2275,17 +2341,17 @@ function buildCardHTML(a) {
     </div>
     <div class="card-stats">
       <div class="cstat">
-        <div class="cstat-icon">🪙</div>
+        <div class="cstat-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffcc00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 6v2m0 8v2M8.5 9.5c.5-1 1.5-1.5 3.5-1.5s3.5 1 3.5 2.5-1.5 2-3.5 2-3.5 1-3.5 2.5S10 17.5 12 17.5s3-.5 3.5-1.5"/></svg></div>
         <div class="cstat-val c">${coinsDisplay}</div>
         <div class="cstat-key">Coins</div>
       </div>
       <div class="cstat">
-        <div class="cstat-icon">✅</div>
+        <div class="cstat-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 22 22 7 12 2"/><line x1="2" y1="7" x2="22" y2="7"/><line x1="12" y1="2" x2="12" y2="22"/></svg></div>
         <div class="cstat-val g">${gemsDisplay}</div>
         <div class="cstat-key">Gems</div>
       </div>
       <div class="cstat">
-        <div class="cstat-icon">⚠️</div>
+        <div class="cstat-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
         <div class="cstat-val l">${levelDisplay}</div>
         <div class="cstat-key">Level</div>
       </div>
@@ -3421,6 +3487,61 @@ function closeVipPicker() {
 
 function handleVipPickerOverlay(e) {
   if (e.target === document.getElementById('vipPickerOverlay')) closeVipPicker();
+}
+
+
+// ─── SORT ───
+function toggleSortMenu() {
+  const menu = document.getElementById('sortMenu');
+  const btn = document.getElementById('burgerBtn');
+  const isOpen = menu.classList.contains('open');
+  menu.classList.toggle('open', !isOpen);
+  btn.classList.toggle('active', !isOpen);
+}
+
+function setSort(field) {
+  if (currentSort === field) {
+    // toggle asc/desc
+    sortDir[field] = sortDir[field] === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort = field;
+    if (!sortDir[field]) sortDir[field] = 'desc';
+  }
+  updateSortUI();
+  render();
+}
+
+function updateSortUI() {
+  const fields = ['default', 'coins', 'gems', 'level', 'daily'];
+  fields.forEach(f => {
+    const chip = document.getElementById('sort' + f.charAt(0).toUpperCase() + f.slice(1));
+    const arrow = document.getElementById('arrow' + f.charAt(0).toUpperCase() + f.slice(1));
+    if (!chip) return;
+    chip.className = 'sort-chip';
+    if (f === currentSort && f !== 'default') {
+      chip.classList.add(sortDir[f] === 'asc' ? 'active-asc' : 'active-desc');
+      if (arrow) arrow.textContent = sortDir[f] === 'asc' ? '↑' : '↓';
+    } else {
+      if (arrow) arrow.textContent = '';
+    }
+    if (f === 'default' && currentSort === 'default') {
+      chip.classList.add('active-asc');
+    }
+  });
+}
+
+function sortAccounts(list) {
+  if (currentSort === 'default') return list;
+  const dir = sortDir[currentSort] === 'asc' ? 1 : -1;
+  const fieldMap = {
+    coins: a => a.coins ?? -1,
+    gems:  a => a.gems  ?? -1,
+    level: a => a.level ?? -1,
+    daily: a => a.dailyEarned ?? -1,
+  };
+  const fn = fieldMap[currentSort];
+  if (!fn) return list;
+  return [...list].sort((a, b) => sortDir[currentSort] === 'desc' ? fn(a) - fn(b) : fn(b) - fn(a));
 }
 
 // ─── TOAST ───
