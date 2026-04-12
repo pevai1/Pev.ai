@@ -1580,11 +1580,36 @@ local function getActiveExits()
     return exits
 end
 
-local function escapeLoop()
-    local hasEscaped = false
-    local exitOpen = false
+-- ══════════════════════════════════════════════
+--  SMART ESCAPE CONSTANTS
+-- ══════════════════════════════════════════════
+local ESCAPE_SAFE_RADIUS   = 40   -- studs — kalau killer < ini dari exit, tunda dulu
+local ESCAPE_KILLER_BAIT   = 5    -- detik — kalau killer nunggu di exit > ini, skip exit itu
+local ESCAPE_RECHECK_CD    = 3    -- detik — cooldown keputusan (anti flip-flop)
+local ESCAPE_RETRY_WAIT    = 3    -- detik — tunggu sebelum coba escape lagi saat killer deket
 
-    -- pasang listener banner notif
+local function isKillerNearPos(pos, radius)
+    for _, kpos in ipairs(getKillerPositions()) do
+        if (pos - kpos).Magnitude <= radius then
+            return true
+        end
+    end
+    return false
+end
+
+local function escapeLoop()
+    local hasEscaped   = false
+    local exitOpen     = false
+    local lastDecision = 0  -- timestamp keputusan terakhir (anti flip-flop)
+
+    -- killerBaitTimer[exitKey] = tick() pertama kali killer ketahuan nunggu di exit itu
+    local killerBaitTimer = {}
+
+    local function getExitKey(pos)
+        return math.floor(pos.X)..","..math.floor(pos.Z)
+    end
+
+    -- ── listener banner notif ────────────────────
     local function listenBanner()
         pcall(function()
             local banner = game.Players.LocalPlayer.PlayerGui
@@ -1593,13 +1618,11 @@ local function escapeLoop()
             if notif then
                 notif:GetPropertyChangedSignal("Text"):Connect(function()
                     local t = notif.Text:lower()
-                    -- keyword escape: "escaped", "exit", "has escaped"
                     if t:find("escaped") or t:find("exit is now open") or t:find("exit open") then
                         exitOpen = true
                     end
                 end)
             end
-            -- juga monitor ChildAdded kalau notif dibuat ulang
             banner.ChildAdded:Connect(function(child)
                 if child:IsA("TextLabel") or child.Name == "BannerNotification" then
                     child:GetPropertyChangedSignal("Text"):Connect(function()
@@ -1615,7 +1638,7 @@ local function escapeLoop()
 
     listenBanner()
 
-    -- tunggu round mulai (PlayersAlive > 0)
+    -- ── tunggu round mulai ───────────────────────
     while escapeRunning do
         task.wait(1)
         local ok, amt = pcall(function()
@@ -1625,6 +1648,7 @@ local function escapeLoop()
         if ok and tonumber(amt) and tonumber(amt) > 0 then break end
     end
 
+    -- ── LOOP UTAMA ───────────────────────────────
     while escapeRunning do
         task.wait(0.5)
         char = player.Character
@@ -1638,20 +1662,67 @@ local function escapeLoop()
         local exits = getActiveExits()
         if #exits == 0 then continue end
 
-        local nearest, dist = nil, math.huge
-        for _, e in ipairs(exits) do
-            local d = (e.pos - hrp.Position).Magnitude
-            if d < dist then dist = d; nearest = e end
+        -- Cooldown keputusan (anti flip-flop tiap frame)
+        local now = tick()
+        if now - lastDecision < ESCAPE_RECHECK_CD then
+            task.wait(0.5)
+            continue
         end
-        if not nearest then continue end
+        lastDecision = now
 
-        hrp.CFrame = CFrame.new(nearest.pos + Vector3.new(0, 3, 0))
+        -- ── Pilih exit terbaik (aman dari killer) ──
+        local bestExit, bestDist = nil, math.huge
+
+        for _, e in ipairs(exits) do
+            local eKey = getExitKey(e.pos)
+            local killerNear = isKillerNearPos(e.pos, ESCAPE_SAFE_RADIUS)
+
+            if killerNear then
+                -- Mulai / update timer bait untuk exit ini
+                if not killerBaitTimer[eKey] then
+                    killerBaitTimer[eKey] = tick()
+                end
+                -- Skip exit ini (killer masih nunggu)
+                setStatus("⚠️ Killer nunggu di exit, farming dulu...", true)
+                continue
+            else
+                -- Killer udah pergi dari exit ini → reset timer bait
+                killerBaitTimer[eKey] = nil
+            end
+
+            local d = (e.pos - hrp.Position).Magnitude
+            if d < bestDist then
+                bestDist  = d
+                bestExit  = e
+            end
+        end
+
+        -- Kalau semua exit dijaga killer
+        if not bestExit then
+            setStatus("🔴 Semua exit dijaga killer, farming dulu "..ESCAPE_RETRY_WAIT.."s...", true)
+            task.wait(ESCAPE_RETRY_WAIT)
+            continue
+        end
+
+        -- ── EKSEKUSI ESCAPE ──────────────────────
+        setStatus("🏃 Kabur ke exit ("..math.floor(bestDist).." studs)...", true)
+        GUIPrint("🏃 Escape! Jarak "..math.floor(bestDist).." studs", C.cyan)
+
+        -- Double-check killer sebelum teleport (safety terakhir)
+        if isKillerNearPos(bestExit.pos, ESCAPE_SAFE_RADIUS) then
+            setStatus("⚠️ Killer muncul lagi di exit, batal!", true)
+            task.wait(ESCAPE_RETRY_WAIT)
+            continue
+        end
+
+        hrp.CFrame = CFrame.new(bestExit.pos + Vector3.new(0, 3, 0))
         hasEscaped = true
-        exitOpen = false
+        exitOpen   = false
+        killerBaitTimer = {}  -- reset semua bait timer
         GUIPrint("✅ Escaped!", C.green)
         setStatus("✅ Escaped — tunggu round berikut", false)
 
-        -- tunggu round selesai (PlayersAlive balik 0)
+        -- ── Tunggu round selesai ─────────────────
         while escapeRunning do
             task.wait(1)
             local ok2, amt2 = pcall(function()
@@ -1661,8 +1732,9 @@ local function escapeLoop()
             if ok2 and (not tonumber(amt2) or tonumber(amt2) == 0) then break end
         end
 
-        -- tunggu round baru mulai
+        -- ── Tunggu round baru ────────────────────
         hasEscaped = false
+        killerBaitTimer = {}
         while escapeRunning do
             task.wait(1)
             local ok3, amt3 = pcall(function()
@@ -1768,23 +1840,16 @@ local function killLoop()
         -- Tarik semua player ke depan lo secara sejajar (bukan numpuk)
         -- Susun dalam baris horizontal tegak lurus arah hadap lo
         local myLook = hrp.CFrame.LookVector
-        local myRight = hrp.CFrame.RightVector
-        local basePos = hrp.Position + myLook * 3  -- 3 studs di depan lo
+        -- Semua numpuk di satu titik persis depan killer
+        local stackPos = hrp.Position + myLook * 1.5 + Vector3.new(0, 0.5, 0)
 
-        local total = #targets
-        local spacing = 2.5  -- jarak antar player (studs)
-        -- Hitung offset tengah biar susunannya simetris
-        local startOffset = -((total - 1) * spacing) / 2
-
-        for i, t in ipairs(targets) do
+        for _, t in ipairs(targets) do
             pcall(function()
-                local lateralOffset = myRight * (startOffset + (i - 1) * spacing)
-                local targetPos = basePos + lateralOffset
-                t.pHrp.CFrame = CFrame.new(targetPos, targetPos + myLook)
+                t.pHrp.CFrame = CFrame.new(stackPos, stackPos + myLook)
             end)
         end
 
-        task.wait(0.5)
+        task.wait(0.3)
     end
 end
 
@@ -1807,11 +1872,24 @@ end
 -- ══════════════════════════════════════════════
 --  AUTO SELF-REVIVE
 -- ══════════════════════════════════════════════
+-- ══════════════════════════════════════════════
+--  SMART REVIVE / SELF-REVIVE CONSTANTS (harus di atas semua fungsi yang pakai)
+-- ══════════════════════════════════════════════
+local REVIVE_SAFE_RADIUS  = 35   -- studs — killer harus lebih jauh dari ini ke target
+local REVIVE_DECISION_CD  = 3    -- detik — cooldown keputusan (anti flip-flop)
+local REVIVE_BAIT_LIMIT   = 5    -- detik — kalau killer stay deket target > ini, skip target itu
+local REVIVE_WAIT_DANGER  = 2    -- detik — tunggu saat kondisi bahaya sebelum cek ulang
+local SELF_REVIVE_SAFE_RADIUS = 25  -- studs, radius killer check untuk self-revive
+
 local function isSelfKnocked()
     char = player.Character
     if not char then return false end
+
+    -- Cek 1: Humanoid health = 0
     local myHum = char:FindFirstChild("Humanoid")
     if myHum and myHum.Health <= 0 then return true end
+
+    -- Cek 2: BleedOutHealth di HumanoidRootPart
     local myHrp = char:FindFirstChild("HumanoidRootPart")
     if myHrp then
         local bleed = myHrp:FindFirstChild("BleedOutHealth")
@@ -1820,21 +1898,35 @@ local function isSelfKnocked()
             if bleed:IsA("BoolValue") and bleed.Value then return true end
         end
     end
+
+    -- Cek 3: BleedOutHealth di seluruh char (recursive)
     local bleed2 = char:FindFirstChild("BleedOutHealth", true)
     if bleed2 then
         if (bleed2:IsA("BillboardGui") or bleed2:IsA("ScreenGui")) and bleed2.Enabled then return true end
         if bleed2:IsA("BoolValue") and bleed2.Value then return true end
     end
+
+    -- Cek 4: GUI knocked di PlayerGui (BleedOutGui / BleedOut / KnockedGui)
     local ok, bleedGui = pcall(function()
         return player.PlayerGui:FindFirstChild("BleedOutGui", true)
             or player.PlayerGui:FindFirstChild("BleedOut", true)
             or player.PlayerGui:FindFirstChild("KnockedGui", true)
     end)
     if ok and bleedGui and bleedGui.Enabled then return true end
+
+    -- Cek 5: Attribute "Knocked" atau "IsKnocked" di player/char
+    if player:GetAttribute("Knocked") == true then return true end
+    if player:GetAttribute("IsKnocked") == true then return true end
+    if char:GetAttribute("Knocked") == true then return true end
+
+    -- Cek 6: Humanoid StateType = Dead atau Physics (knocked biasanya Physics)
+    if myHum then
+        local state = myHum:GetState()
+        if state == Enum.HumanoidStateType.Dead then return true end
+    end
+
     return false
 end
-
-local SELF_REVIVE_SAFE_RADIUS = 25  -- studs, kalau killer lebih deket dari ini ke target, skip/ganti target
 
 local function isKillerNearTarget(targetHrp)
     if not targetHrp or not targetHrp.Parent then return false end
@@ -1857,55 +1949,81 @@ local function getSafeReviveTarget(aliveList)
 end
 
 local function selfReviveLoop()
+    local lastDecision = 0
+
     while selfReviveRunning do
         task.wait(0.5)
-        if isSelfKnocked() then
-            local alive = getAlivePlayers()
-            if #alive > 0 then
-                -- Pilih target yang aman (killer jauh)
-                local t = getSafeReviveTarget(alive)
-                if not t then
-                    -- Semua target dekat killer, tunggu sebentar
-                    GUIPrint("⚠️ Semua teman dekat killer, nunggu...", C.yellow)
-                    task.wait(1)
-                    continue
-                end
-                char = player.Character
-                if char then
-                    local myHrp = char:FindFirstChild("HumanoidRootPart")
-                    if myHrp then
-                        -- ngikutin target terus sampai revive selesai
-                        while selfReviveRunning and isSelfKnocked() do
-                            local targetHrp = t.pHrp
-                            -- Cek ulang setiap iterasi: kalau killer udah deket target, ganti target
-                            if isKillerNearTarget(targetHrp) then
-                                GUIPrint("⚠️ Killer deket target, cari yang lain...", C.yellow)
-                                local newAlive = getAlivePlayers()
-                                local safeTarget = getSafeReviveTarget(newAlive)
-                                if safeTarget then
-                                    t = safeTarget
-                                    GUIPrint("🔄 Ganti target revive ke aman", C.cyan)
-                                else
-                                    -- Tidak ada yang aman, tunggu
-                                    task.wait(1)
-                                end
-                            elseif targetHrp and targetHrp.Parent then
-                                myHrp.CFrame = CFrame.new(targetHrp.Position)
-                            else
-                                -- target disconnect/mati, cari yang lain
-                                local newAlive = getAlivePlayers()
-                                local safeTarget = getSafeReviveTarget(newAlive)
-                                if safeTarget then
-                                    t = safeTarget
-                                else
-                                    break
-                                end
-                            end
-                            task.wait(0.3)
-                        end
+        if not isSelfKnocked() then
+            continue
+        end
+
+        -- Cooldown keputusan (anti flip-flop)
+        local now = tick()
+        if now - lastDecision < REVIVE_DECISION_CD then
+            task.wait(0.3)
+            continue
+        end
+        lastDecision = now
+
+        local alive = getAlivePlayers()
+        if #alive == 0 then continue end
+
+        -- Pilih target aman (killer jauh)
+        local safeTarget = nil
+        for _, t in ipairs(alive) do
+            if not isKillerNearTarget(t.pHrp) then
+                safeTarget = t
+                break
+            end
+        end
+
+        if not safeTarget then
+            GUIPrint("⚠️ Semua teman dekat killer, nunggu...", C.yellow)
+            task.wait(REVIVE_WAIT_DANGER)
+            continue
+        end
+
+        char = player.Character
+        if not char then continue end
+        local myHrp = char:FindFirstChild("HumanoidRootPart")
+        if not myHrp then continue end
+
+        -- Ikutin target sampai revive selesai
+        while selfReviveRunning and isSelfKnocked() do
+            local targetHrp = safeTarget.pHrp
+
+            -- Cek ulang: kalau killer deket target, ganti
+            if isKillerNearTarget(targetHrp) then
+                GUIPrint("⚠️ Killer deket target, cari yang lain...", C.yellow)
+                local newAlive = getAlivePlayers()
+                local newSafe = nil
+                for _, t in ipairs(newAlive) do
+                    if not isKillerNearTarget(t.pHrp) then
+                        newSafe = t
+                        break
                     end
                 end
+                if newSafe then
+                    safeTarget = newSafe
+                    GUIPrint("🔄 Ganti target revive ke aman", C.cyan)
+                else
+                    task.wait(REVIVE_WAIT_DANGER)
+                end
+            elseif targetHrp and targetHrp.Parent then
+                myHrp.CFrame = CFrame.new(targetHrp.Position)
+            else
+                -- target disconnect/mati
+                local newAlive = getAlivePlayers()
+                local newSafe = nil
+                for _, t in ipairs(newAlive) do
+                    if not isKillerNearTarget(t.pHrp) then
+                        newSafe = t
+                        break
+                    end
+                end
+                if newSafe then safeTarget = newSafe else break end
             end
+            task.wait(0.3)
         end
     end
 end
@@ -1929,28 +2047,109 @@ end
 -- ══════════════════════════════════════════════
 --  AUTO REVIVE
 -- ══════════════════════════════════════════════
+-- killerStayTimer[playerName] = tick() pertama kali killer ketahuan deket target itu
+local killerStayTimers = {}
+
+local function isKillerNearReviveTarget(targetHrp)
+    if not targetHrp or not targetHrp.Parent then return false end
+    for _, kpos in ipairs(getKillerPositions()) do
+        if (targetHrp.Position - kpos).Magnitude <= REVIVE_SAFE_RADIUS then
+            return true
+        end
+    end
+    return false
+end
+
+local function getKnockedPlayers()
+    local list = {}
+    for _, p in ipairs(game.Players:GetPlayers()) do
+        if p == player then continue end
+        local pChar = p.Character
+        if not pChar then continue end
+        local pHrp = pChar:FindFirstChild("HumanoidRootPart")
+        if not pHrp then continue end
+        local bleed = pHrp:FindFirstChild("BleedOutHealth")
+        if bleed and bleed.Enabled then
+            table.insert(list, { plr = p, pHrp = pHrp })
+        end
+    end
+    return list
+end
+
 local function reviveLoop()
+    local lastDecision = 0
+
     while reviveRunning do
-        task.wait(1)
+        task.wait(0.5)
         char = player.Character
-        if not char then continue end
+        if not char then task.wait(1); continue end
         hrp = char:FindFirstChild("HumanoidRootPart")
         hum = char:FindFirstChild("Humanoid")
-        if not hrp or not hum or hum.Health <= 0 then continue end
-        for _, p in ipairs(game.Players:GetPlayers()) do
-            if p == player then continue end
-            local pChar = p.Character
-            if not pChar then continue end
-            local pHrp = pChar:FindFirstChild("HumanoidRootPart")
-            if not pHrp then continue end
-            local bleed = pHrp:FindFirstChild("BleedOutHealth")
-            if bleed and bleed.Enabled then
-                local dist = (hrp.Position - pHrp.Position).Magnitude
-                if dist > 5 then
-                    hrp.CFrame = CFrame.new(pHrp.Position + Vector3.new(2, 0, 0))
+        if not hrp or not hum or hum.Health <= 0 then task.wait(1); continue end
+
+        -- Cooldown keputusan (anti flip-flop)
+        local now = tick()
+        if now - lastDecision < REVIVE_DECISION_CD then
+            task.wait(0.5)
+            continue
+        end
+        lastDecision = now
+
+        local knocked = getKnockedPlayers()
+        if #knocked == 0 then
+            killerStayTimers = {}  -- reset semua timer kalau ga ada yang knocked
+            continue
+        end
+
+        -- ── Pilih target yang aman ───────────────
+        local safeTarget = nil
+        for _, t in ipairs(knocked) do
+            local tName = t.plr.Name
+            local killerNear = isKillerNearReviveTarget(t.pHrp)
+
+            if killerNear then
+                -- Mulai timer bait untuk target ini
+                if not killerStayTimers[tName] then
+                    killerStayTimers[tName] = tick()
                 end
+
+                local stayDur = tick() - killerStayTimers[tName]
+                if stayDur > REVIVE_BAIT_LIMIT then
+                    -- Killer udah nunggu lama di target ini → skip selamanya round ini
+                    GUIPrint("🪤 Killer bait di "..tName..", skip!", C.red)
+                end
+                -- Target ini berbahaya, coba yang lain
+            else
+                -- Killer jauh dari target ini → aman
+                killerStayTimers[tName] = nil  -- reset timer bait kalau killer pergi
+                safeTarget = t
                 break
             end
+        end
+
+        -- Kalau semua target berbahaya → farming dulu
+        if not safeTarget then
+            setStatus("⚠️ Semua teman dijaga killer, farming dulu...", true)
+            task.wait(REVIVE_WAIT_DANGER)
+            continue
+        end
+
+        -- ── Eksekusi revive ke target aman ───────
+        local targetHrp = safeTarget.pHrp
+        if not targetHrp or not targetHrp.Parent then continue end
+
+        -- Double-check sebelum teleport
+        if isKillerNearReviveTarget(targetHrp) then
+            setStatus("⚠️ Killer muncul, batal revive!", true)
+            task.wait(REVIVE_WAIT_DANGER)
+            continue
+        end
+
+        local dist = (hrp.Position - targetHrp.Position).Magnitude
+        if dist > 5 then
+            setStatus("💉 Revive "..safeTarget.plr.Name.." ("..math.floor(dist).." studs)", true)
+            GUIPrint("💉 Revive "..safeTarget.plr.Name, C.yellow)
+            hrp.CFrame = CFrame.new(targetHrp.Position + Vector3.new(2, 0, 0))
         end
     end
 end
