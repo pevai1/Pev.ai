@@ -1519,7 +1519,9 @@ local function farmLoop()
                 char = newChar
                 hrp  = newChar:WaitForChild("HumanoidRootPart")
                 hum  = newChar:WaitForChild("Humanoid")
-                task.wait(2)
+                -- tunggu health > 0 beneran siap
+                while hum.Health <= 0 do task.wait(0.5) end
+                task.wait(3)
             else
                 local all   = getLootObjects()
                 local batch = {}
