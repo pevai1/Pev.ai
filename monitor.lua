@@ -29,6 +29,63 @@ local killRunning     = false
 local selfReviveRunning = false
 local totalCollected  = 0
 
+-- ══════════════════════════════════════════════
+--  SAVE / LOAD CONFIG (writefile/readfile Delta)
+-- ══════════════════════════════════════════════
+local CONFIG_FILE = "pev_stk_config.json"
+
+local function saveConfig()
+    pcall(function()
+        local data = {
+            FarmRunning      = _G.FarmRunning,
+            EscapeRunning    = _G.EscapeRunning,
+            ReviveRunning    = _G.ReviveRunning,
+            KillRunning      = _G.KillRunning,
+            SelfReviveRunning= _G.SelfReviveRunning,
+            KillerSafeOn     = _G.KillerSafeOn,
+            EscapeDelay      = _G.EscapeDelay,
+            WebhookURL       = _G.WebhookURL,
+            WhEv_Loot        = _G.WhEv_Loot,
+            WhEv_Batch       = _G.WhEv_Batch,
+            WhEv_Timer       = _G.WhEv_Timer,
+            SpeedValue       = _G.SpeedValue,
+            JumpValue        = _G.JumpValue,
+            SpeedHackOn      = _G.SpeedHackOn,
+            JumpHackOn       = _G.JumpHackOn,
+            DoubleJumpOn     = _G.DoubleJumpOn,
+        }
+        writefile(CONFIG_FILE, game:GetService("HttpService"):JSONEncode(data))
+    end)
+end
+
+local function loadConfig()
+    pcall(function()
+        if isfile(CONFIG_FILE) then
+            local raw = readfile(CONFIG_FILE)
+            local data = game:GetService("HttpService"):JSONDecode(raw)
+            if data.FarmRunning       ~= nil then _G.FarmRunning       = data.FarmRunning       end
+            if data.EscapeRunning     ~= nil then _G.EscapeRunning     = data.EscapeRunning     end
+            if data.ReviveRunning     ~= nil then _G.ReviveRunning     = data.ReviveRunning     end
+            if data.KillRunning       ~= nil then _G.KillRunning       = data.KillRunning       end
+            if data.SelfReviveRunning ~= nil then _G.SelfReviveRunning = data.SelfReviveRunning end
+            if data.KillerSafeOn      ~= nil then _G.KillerSafeOn      = data.KillerSafeOn      end
+            if data.EscapeDelay       ~= nil then _G.EscapeDelay       = data.EscapeDelay       end
+            if data.WebhookURL        ~= nil then _G.WebhookURL        = data.WebhookURL        end
+            if data.WhEv_Loot         ~= nil then _G.WhEv_Loot         = data.WhEv_Loot         end
+            if data.WhEv_Batch        ~= nil then _G.WhEv_Batch        = data.WhEv_Batch        end
+            if data.WhEv_Timer        ~= nil then _G.WhEv_Timer        = data.WhEv_Timer        end
+            if data.SpeedValue        ~= nil then _G.SpeedValue        = data.SpeedValue        end
+            if data.JumpValue         ~= nil then _G.JumpValue         = data.JumpValue         end
+            if data.SpeedHackOn       ~= nil then _G.SpeedHackOn       = data.SpeedHackOn       end
+            if data.JumpHackOn        ~= nil then _G.JumpHackOn        = data.JumpHackOn        end
+            if data.DoubleJumpOn      ~= nil then _G.DoubleJumpOn      = data.DoubleJumpOn      end
+        end
+    end)
+end
+
+-- Load config sebelum GUI dibuat biar nilai awal sudah benar
+loadConfig()
+
 -- forward declarations (diisi setelah UI dibuat)
 local setStatus = function() end
 local GUIPrint  = function() end
@@ -375,7 +432,7 @@ pageScroll.BackgroundTransparency = 1
 pageScroll.BorderSizePixel = 0
 pageScroll.ScrollBarThickness = 2
 pageScroll.ScrollBarImageColor3 = C.accent
-pageScroll.CanvasSize = UDim2.new(0, 0, 0, 800)
+pageScroll.CanvasSize = UDim2.new(0, 0, 0, 900)
 
 -- ══════════════════════════════════════════════
 --  NAV ITEM FACTORY
@@ -544,13 +601,40 @@ end
 local s1val = makeStatCard(statsRow, 0,   0, C.green,  "Collected")
 local s2val = makeStatCard(statsRow, 0.5, 4, C.yellow, "Di Area")
 
-local STEP = 56
-local _, farmTgl,        setFarmCb,        getFarmCb        = makeFeatureRow(pages.Main,  82, "AF", C.green,  "Auto Farm",       "Max 50 loot/batch · CD 10s",    false, C.green)
-local _, escapeTgl,      setEscapeCb,      getEscapeCb      = makeFeatureRow(pages.Main, 138, "AE", C.cyan,   "Auto Escape",     "Teleport ke ExitGateway",       false, C.cyan)
-local _, reviveTgl,      setReviveCb,      getReviveCb      = makeFeatureRow(pages.Main, 194, "RV", C.yellow, "Auto Revive",     "TP ke teman yang knocked",      false, C.yellow)
-local _, selfReviveTgl,  setSelfReviveCb,  getSelfReviveCb  = makeFeatureRow(pages.Main, 250, "SR", C.cyan,   "Auto Self-Revive","Saat knock, TP ke teman hidup", false, C.cyan)
-local _, killTgl,        setKillCb,        getKillCb        = makeFeatureRow(pages.Main, 306, "AK", C.red,    "Auto Kill",       "TP & serang player lain",       false, C.red)
-local _, killerSafeTgl,  setKillerSafeCb,  getKillerSafeCb  = makeFeatureRow(pages.Main, 362, "KS", C.red,    "Killer Safe",     "TP random jika killer < 20 studs",false,C.red)
+-- ── Section Helper: label pembatas ─────────────
+local function makeSectionLabel(parent, yOff, labelText, col)
+    local lineL = Instance.new("Frame")
+    lineL.Parent = parent
+    lineL.Size = UDim2.new(0, 18, 0, 1)
+    lineL.Position = UDim2.new(0, 5, 0, yOff + 8)
+    lineL.BackgroundColor3 = col or C.muted
+    lineL.BorderSizePixel = 0
+
+    local lbl = newLabel(parent, labelText, 9, col or C.muted, true, Enum.TextXAlignment.Left)
+    lbl.Size = UDim2.new(0, 80, 0, 16)
+    lbl.Position = UDim2.new(0, 26, 0, yOff)
+
+    local lineR = Instance.new("Frame")
+    lineR.Parent = parent
+    lineR.Size = UDim2.new(1, -114, 0, 1)
+    lineR.Position = UDim2.new(0, 108, 0, yOff + 8)
+    lineR.BackgroundColor3 = col or C.muted
+    lineR.BorderSizePixel = 0
+end
+
+-- ── SECTION: SURVIVOR ───────────────────────
+makeSectionLabel(pages.Main, 82, "— SURVIVOR —", C.cyan)
+
+local _, farmTgl,       setFarmCb,       getFarmCb       = makeFeatureRow(pages.Main, 100, "AF", C.green,  "Auto Farm",        "Max 50 loot/batch · CD 2s",     false, C.green)
+local _, escapeTgl,     setEscapeCb,     getEscapeCb     = makeFeatureRow(pages.Main, 156, "AE", C.cyan,   "Auto Escape",      "Teleport ke ExitGateway",       false, C.cyan)
+local _, reviveTgl,     setReviveCb,     getReviveCb     = makeFeatureRow(pages.Main, 212, "RV", C.yellow, "Auto Revive",      "TP ke teman yang knocked",      false, C.yellow)
+local _, selfReviveTgl, setSelfReviveCb, getSelfReviveCb = makeFeatureRow(pages.Main, 268, "SR", C.cyan,   "Auto Self-Revive", "Cek killer sebelum revive",     false, C.cyan)
+
+-- ── SECTION: KILLER ─────────────────────────
+makeSectionLabel(pages.Main, 332, "— KILLER —", C.red)
+
+local _, killTgl,       setKillCb,       getKillCb       = makeFeatureRow(pages.Main, 350, "AK", C.red,    "Auto Kill",        "Tarik player saat jadi killer", false, C.red)
+local _, killerSafeTgl, setKillerSafeCb, getKillerSafeCb = makeFeatureRow(pages.Main, 406, "KS", C.red,    "Killer Safe",      "TP jauh jika killer < 20 studs",false, C.red)
 
 -- ══════════════════════════════════════════════
 --  PAGE: PLAYER  (Speed / Jump / Double Jump)
@@ -636,10 +720,12 @@ end
 onTap(spMinus, function()
     _G.SpeedValue = math.max(16, _G.SpeedValue - 8)
     updateSpeedUI()
+    saveConfig()
 end)
 onTap(spPlus, function()
     _G.SpeedValue = math.min(200, _G.SpeedValue + 8)
     updateSpeedUI()
+    saveConfig()
 end)
 
 onTap(speedTgl, function()
@@ -657,6 +743,7 @@ onTap(speedTgl, function()
         end
         GUIPrint("⚡ Speed Hack OFF", C.sub)
     end
+    saveConfig()
 end)
 
 -- ── Jump Hack ───────────────────────────────
@@ -737,10 +824,12 @@ end
 onTap(jpMinus, function()
     _G.JumpValue = math.max(7, _G.JumpValue - 10)
     updateJumpUI()
+    saveConfig()
 end)
 onTap(jpPlus, function()
     _G.JumpValue = math.min(300, _G.JumpValue + 10)
     updateJumpUI()
+    saveConfig()
 end)
 
 onTap(jumpTgl, function()
@@ -758,6 +847,7 @@ onTap(jumpTgl, function()
         end
         GUIPrint("🦘 Jump Hack OFF", C.sub)
     end
+    saveConfig()
 end)
 
 -- ── Double Jump ─────────────────────────────
@@ -810,6 +900,7 @@ onTap(djTgl, function()
         if djConn then djConn:Disconnect() djConn = nil end
         GUIPrint("🌀 Double Jump OFF", C.sub)
     end
+    saveConfig()
 end)
 
 if _G.DoubleJumpOn then
@@ -953,10 +1044,12 @@ onTap(afkTgl, function()
     local val = not getAfkCb()
     setAfkCb(val)
     if val then
-        afkConn = game:GetService("RunService").Heartbeat:Connect(function()
-            pcall(function()
-                game:GetService("VirtualInputManager"):SendMouseMoveEvent(0,1,false)
-            end)
+        -- Gerakin karakter micro-movement tiap 25 detik biar ga ke-kick idle
+        -- Cara yang beneran works: listen Idled event lalu simulate input via VirtualUser
+        local VU = game:GetService("VirtualUser")
+        afkConn = game:GetService("Players").LocalPlayer.Idled:Connect(function()
+            VU:CaptureController()
+            VU:ClickButton2(Vector2.new(0, 0))
         end)
         GUIPrint("🌙 AFK Mode ON", C.cyan)
     else
@@ -1022,6 +1115,7 @@ onTap(escSaveBtn, function()
     local val = tonumber(escTimingBox.Text)
     if val and val > 0 and val < 300 then
         _G.EscapeDelay = val
+        saveConfig()
         escSaveBtn.Text = "✅ Tersimpan!"
         task.delay(2, function()
             if escSaveBtn and escSaveBtn.Parent then escSaveBtn.Text = "💾 Simpan" end
@@ -1123,9 +1217,9 @@ local evLootChip, getEvLoot   = makeChip(chipsF, "Per Loot",  C.green,  _G.WhEv_
 local evBatchChip, getEvBatch = makeChip(chipsF, "Per Batch", C.yellow, _G.WhEv_Batch)
 local evTimerChip, getEvTimer = makeChip(chipsF, "Timer 5m",  C.cyan,   _G.WhEv_Timer)
 
-onTap(evLootChip, function() _G.WhEv_Loot  = getEvLoot()  end)
-onTap(evBatchChip, function() _G.WhEv_Batch = getEvBatch() end)
-onTap(evTimerChip, function() _G.WhEv_Timer = getEvTimer() end)
+onTap(evLootChip, function() _G.WhEv_Loot  = getEvLoot()  saveConfig() end)
+onTap(evBatchChip, function() _G.WhEv_Batch = getEvBatch() saveConfig() end)
+onTap(evTimerChip, function() _G.WhEv_Timer = getEvTimer() saveConfig() end)
 
 local saveWhBtn = Instance.new("TextButton")
 saveWhBtn.Parent = whCard
@@ -1141,6 +1235,7 @@ corner(saveWhBtn, 8)
 
 onTap(saveWhBtn, function()
     _G.WebhookURL = webhookBox.Text
+    saveConfig()
     saveWhBtn.Text = "✅  Tersimpan!"
     task.delay(2, function()
         if saveWhBtn and saveWhBtn.Parent then saveWhBtn.Text = "💾  Simpan Webhook" end
@@ -1448,6 +1543,7 @@ onTap(farmTgl, function()
         GUIPrint("⏹ Farm dimatikan. Total: "..totalCollected, C.red)
         setStatus("Idle — menunggu", false)
     end
+    saveConfig()
 end)
 
 onTap(killerSafeTgl, function()
@@ -1455,6 +1551,7 @@ onTap(killerSafeTgl, function()
     setKillerSafeCb(val)
     _G.KillerSafeOn = val
     GUIPrint(val and "🛡️ Killer Safe ON" or "🛡️ Killer Safe OFF", val and C.red or C.sub)
+    saveConfig()
 end)
 
 if _G.KillerSafeOn then setKillerSafeCb(true) end
@@ -1586,6 +1683,7 @@ onTap(escapeTgl, function()
     escapeRunning = val
     _G.EscapeRunning = val
     if val then task.spawn(escapeLoop) end
+    saveConfig()
 end)
 
 if _G.EscapeRunning then
@@ -1614,6 +1712,41 @@ local function getAlivePlayers()
     return list
 end
 
+-- Cek apakah player lagi jadi killer berdasarkan tag/team/nilai di game
+local function isKillerRole()
+    -- Cek via Team (biasanya killer punya team berbeda)
+    if player.Team then
+        local teamName = player.Team.Name:lower()
+        if teamName:find("killer") or teamName:find("monster") or teamName:find("enemy") then
+            return true
+        end
+    end
+    -- Cek via attribute/tag di karakter atau player
+    if player:GetAttribute("IsKiller") == true then return true end
+    if player:GetAttribute("Role") then
+        local role = tostring(player:GetAttribute("Role")):lower()
+        if role:find("killer") or role:find("monster") then return true end
+    end
+    -- Cek via karakter: kalau nama karakter lo ada di daftar killer workspace
+    char = player.Character
+    if char then
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("Model") and obj == char then
+                local name = obj.Name:lower()
+                if name:find("killer") or name:find("monster") then return true end
+            end
+        end
+    end
+    -- Cek via PlayerGui: biasanya ada UI khusus killer
+    local ok, killerGui = pcall(function()
+        return player.PlayerGui:FindFirstChild("KillerGui", true)
+            or player.PlayerGui:FindFirstChild("KillerHUD", true)
+            or player.PlayerGui:FindFirstChild("MonsterGui", true)
+    end)
+    if ok and killerGui and killerGui.Enabled then return true end
+    return false
+end
+
 local function killLoop()
     while killRunning do
         task.wait(0.5)
@@ -1623,15 +1756,31 @@ local function killLoop()
         hum = char:FindFirstChild("Humanoid")
         if not hrp or not hum or hum.Health <= 0 then task.wait(1); continue end
 
+        -- Hanya aktif saat lo jadi killer, bukan survivor
+        if not isKillerRole() then
+            task.wait(1)
+            continue
+        end
+
         local targets = getAlivePlayers()
         if #targets == 0 then task.wait(2); continue end
 
-        -- kumpulin semua player ke posisi lo (killer)
-        -- masing2 dikasih offset kecil biar ga numpuk persis
+        -- Tarik semua player ke depan lo secara sejajar (bukan numpuk)
+        -- Susun dalam baris horizontal tegak lurus arah hadap lo
+        local myLook = hrp.CFrame.LookVector
+        local myRight = hrp.CFrame.RightVector
+        local basePos = hrp.Position + myLook * 3  -- 3 studs di depan lo
+
+        local total = #targets
+        local spacing = 2.5  -- jarak antar player (studs)
+        -- Hitung offset tengah biar susunannya simetris
+        local startOffset = -((total - 1) * spacing) / 2
+
         for i, t in ipairs(targets) do
             pcall(function()
-                local offset = Vector3.new((i - 1) * 2, 0, 0)
-                t.pHrp.CFrame = CFrame.new(hrp.Position + Vector3.new(0, 0, 2) + offset)
+                local lateralOffset = myRight * (startOffset + (i - 1) * spacing)
+                local targetPos = basePos + lateralOffset
+                t.pHrp.CFrame = CFrame.new(targetPos, targetPos + myLook)
             end)
         end
 
@@ -1646,6 +1795,7 @@ onTap(killTgl, function()
     _G.KillRunning = val
     if val then task.spawn(killLoop)
     else GUIPrint("🗡️ Auto Kill OFF", C.sub) end
+    saveConfig()
 end)
 
 if _G.KillRunning then
@@ -1684,28 +1834,71 @@ local function isSelfKnocked()
     return false
 end
 
+local SELF_REVIVE_SAFE_RADIUS = 25  -- studs, kalau killer lebih deket dari ini ke target, skip/ganti target
+
+local function isKillerNearTarget(targetHrp)
+    if not targetHrp or not targetHrp.Parent then return false end
+    for _, kpos in ipairs(getKillerPositions()) do
+        if (targetHrp.Position - kpos).Magnitude <= SELF_REVIVE_SAFE_RADIUS then
+            return true
+        end
+    end
+    return false
+end
+
+local function getSafeReviveTarget(aliveList)
+    -- Cari target yang killer jauh darinya
+    for _, t in ipairs(aliveList) do
+        if not isKillerNearTarget(t.pHrp) then
+            return t
+        end
+    end
+    return nil  -- semua target dekat killer, skip dulu
+end
+
 local function selfReviveLoop()
     while selfReviveRunning do
         task.wait(0.5)
         if isSelfKnocked() then
             local alive = getAlivePlayers()
             if #alive > 0 then
-                local t = alive[math.random(1, #alive)]
+                -- Pilih target yang aman (killer jauh)
+                local t = getSafeReviveTarget(alive)
+                if not t then
+                    -- Semua target dekat killer, tunggu sebentar
+                    GUIPrint("⚠️ Semua teman dekat killer, nunggu...", C.yellow)
+                    task.wait(1)
+                    continue
+                end
                 char = player.Character
                 if char then
                     local myHrp = char:FindFirstChild("HumanoidRootPart")
                     if myHrp then
                         -- ngikutin target terus sampai revive selesai
                         while selfReviveRunning and isSelfKnocked() do
-                            -- update posisi ngikutin target kalau dia gerak
                             local targetHrp = t.pHrp
-                            if targetHrp and targetHrp.Parent then
+                            -- Cek ulang setiap iterasi: kalau killer udah deket target, ganti target
+                            if isKillerNearTarget(targetHrp) then
+                                GUIPrint("⚠️ Killer deket target, cari yang lain...", C.yellow)
+                                local newAlive = getAlivePlayers()
+                                local safeTarget = getSafeReviveTarget(newAlive)
+                                if safeTarget then
+                                    t = safeTarget
+                                    GUIPrint("🔄 Ganti target revive ke aman", C.cyan)
+                                else
+                                    -- Tidak ada yang aman, tunggu
+                                    task.wait(1)
+                                end
+                            elseif targetHrp and targetHrp.Parent then
                                 myHrp.CFrame = CFrame.new(targetHrp.Position)
                             else
                                 -- target disconnect/mati, cari yang lain
                                 local newAlive = getAlivePlayers()
-                                if #newAlive > 0 then
-                                    t = newAlive[math.random(1, #newAlive)]
+                                local safeTarget = getSafeReviveTarget(newAlive)
+                                if safeTarget then
+                                    t = safeTarget
+                                else
+                                    break
                                 end
                             end
                             task.wait(0.3)
@@ -1724,6 +1917,7 @@ onTap(selfReviveTgl, function()
     _G.SelfReviveRunning = val
     if val then task.spawn(selfReviveLoop)
     else GUIPrint("🩹 Self-Revive OFF", C.sub) end
+    saveConfig()
 end)
 
 if _G.SelfReviveRunning then
@@ -1768,6 +1962,7 @@ onTap(reviveTgl, function()
     _G.ReviveRunning = val
     if val then task.spawn(reviveLoop)
     else GUIPrint("💉 Auto Revive OFF", C.sub) end
+    saveConfig()
 end)
 
 if _G.ReviveRunning then
