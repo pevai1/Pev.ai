@@ -311,6 +311,20 @@ tbDotTxt.Name = "TbDotTxt"
 tbDotTxt.Size = UDim2.new(0, 50, 1, 0)
 tbDotTxt.Position = UDim2.new(1, -80, 0, 0)
 
+-- minimize button
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Parent = titlebar
+minimizeBtn.Size = UDim2.new(0, 24, 0, 24)
+minimizeBtn.Position = UDim2.new(1, -62, 0.5, -12)
+minimizeBtn.BackgroundColor3 = C.accDim
+minimizeBtn.Text = "—"
+minimizeBtn.TextColor3 = C.sub
+minimizeBtn.TextSize = 11
+minimizeBtn.Font = Enum.Font.GothamBold
+minimizeBtn.BorderSizePixel = 0
+corner(minimizeBtn, 7)
+stroke(minimizeBtn, C.border, 1)
+
 -- close button
 local closeBtn = Instance.new("TextButton")
 closeBtn.Parent = titlebar
@@ -324,6 +338,24 @@ closeBtn.Font = Enum.Font.GothamBold
 closeBtn.BorderSizePixel = 0
 corner(closeBtn, 7)
 stroke(closeBtn, C.border, 1)
+
+-- ── FLOATING BUBBLE (muncul saat minimize/hide) ──
+local bubble = Instance.new("TextButton")
+bubble.Parent = sg
+bubble.Size = UDim2.new(0, 52, 0, 52)
+bubble.Position = UDim2.new(0, 16, 0.5, -26)
+bubble.BackgroundColor3 = C.accDim
+bubble.Text = "P"
+bubble.TextColor3 = C.accLt
+bubble.TextSize = 20
+bubble.Font = Enum.Font.GothamBold
+bubble.BorderSizePixel = 0
+bubble.Visible = false
+bubble.ZIndex = 10
+corner(bubble, 99)
+stroke(bubble, C.accent, 2)
+
+makeDraggable(bubble, bubble)
 
 makeDraggable(win, titlebar)
 
@@ -1365,10 +1397,12 @@ local function getLootObjects()
     return results
 end
 
-local KILLER_SAFE_RADIUS = 20
+local KILLER_SAFE_RADIUS = 40
 
 local function getKillerPositions()
     local positions = {}
+
+    -- Method 1: Scan via nama model workspace (cara lama)
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj:IsA("Model") and obj:FindFirstChild("Humanoid") then
             local name = obj.Name:lower()
@@ -1378,6 +1412,51 @@ local function getKillerPositions()
             end
         end
     end
+
+    -- Method 2: Scan via Team "Killer" di semua player (lebih reliable di STK)
+    for _, p in ipairs(game.Players:GetPlayers()) do
+        if p == player then continue end
+        local isKiller = false
+
+        -- Cek team
+        if p.Team then
+            local tn = p.Team.Name:lower()
+            if tn:find("killer") or tn:find("monster") or tn:find("enemy") then
+                isKiller = true
+            end
+        end
+        -- Cek attribute
+        if not isKiller and p:GetAttribute("IsKiller") == true then isKiller = true end
+        if not isKiller and p:GetAttribute("Role") then
+            local r = tostring(p:GetAttribute("Role")):lower()
+            if r:find("killer") or r:find("monster") then isKiller = true end
+        end
+        -- Cek KillerGui di PlayerGui
+        if not isKiller then
+            local ok, kg = pcall(function()
+                return p.PlayerGui:FindFirstChild("KillerGui", true)
+                    or p.PlayerGui:FindFirstChild("KillerHUD", true)
+                    or p.PlayerGui:FindFirstChild("MonsterGui", true)
+            end)
+            if ok and kg and kg.Enabled then isKiller = true end
+        end
+
+        if isKiller then
+            local pChar = p.Character
+            if pChar then
+                local pHrp = pChar:FindFirstChild("HumanoidRootPart")
+                if pHrp then
+                    -- Hindari duplikat dengan method 1
+                    local isDup = false
+                    for _, existing in ipairs(positions) do
+                        if (existing - pHrp.Position).Magnitude < 1 then isDup = true; break end
+                    end
+                    if not isDup then table.insert(positions, pHrp.Position) end
+                end
+            end
+        end
+    end
+
     return positions
 end
 
@@ -1410,6 +1489,18 @@ end
 local MAX_BATCH = 50
 local CD_SECS   = 2
 
+-- Raycast ke bawah dari posisi loot, return Y aman atau nil kalau void
+local function getSafeY(pos)
+    local ray = workspace:Raycast(
+        pos + Vector3.new(0, 10, 0),
+        Vector3.new(0, -100, 0)
+    )
+    if ray then
+        return ray.Position.Y + 3
+    end
+    return nil
+end
+
 local function farmLoop()
     while running do
         char = player.Character
@@ -1436,7 +1527,26 @@ local function farmLoop()
                 updateStats(totalCollected, #batch)
 
                 if #batch == 0 then
-                    -- semua loot habis, tunggu respawn
+                    -- fallback: coba lewat ESP loot
+                    local espTargets = getTargets("Loot")
+                    if #espTargets > 0 then
+                        GUIPrint("🔍 Fallback ESP loot ("..#espTargets.." found)", C.cyan)
+                        for _, obj in ipairs(espTargets) do
+                            local pos
+                            if obj.PrimaryPart then
+                                pos = obj.PrimaryPart.Position
+                            else
+                                pcall(function() pos = obj:GetModelCFrame().Position end)
+                            end
+                            if pos then
+                                table.insert(batch, {name = obj.Name, pos = pos})
+                            end
+                        end
+                    end
+                end
+
+                if #batch == 0 then
+                    -- semua loot habis, diem di tempat sambil nunggu respawn
                     setStatus("⌛ Loot habis, nunggu respawn...", true)
                     while running do
                         task.wait(3)
@@ -1444,6 +1554,19 @@ local function farmLoop()
                         if #check > 0 then
                             GUIPrint("🔄 Loot respawn! Lanjut farm", C.green)
                             break
+                        end
+                        -- coba fallback ESP juga
+                        local espCheck = getTargets("Loot")
+                        if #espCheck > 0 then
+                            GUIPrint("🔍 ESP detect loot! Lanjut farm", C.cyan)
+                            break
+                        end
+                        -- sambil nunggu, kabur kalau killer deket
+                        if getKillerSafeCb() then
+                            local nearKiller, kpos = isNearKiller()
+                            if nearKiller then
+                                teleportAwayFromKiller(kpos)
+                            end
                         end
                     end
                 else
@@ -1474,7 +1597,9 @@ local function farmLoop()
                         end
 
                         setStatus("🔄 "..i.."/"..#batch.." — "..loot.name, true)
-                        hrp.CFrame = CFrame.new(loot.pos + Vector3.new(0, 3, 0))
+                        local safeY = getSafeY(loot.pos)
+                        if not safeY then continue end  -- void zone, skip loot ini
+                        hrp.CFrame = CFrame.new(Vector3.new(loot.pos.X, safeY, loot.pos.Z))
 
                         if getKillerSafeCb() then
                             task.wait(0.05)
@@ -1502,7 +1627,7 @@ local function farmLoop()
                             end)
                         end
                         -- jeda random biar pattern susah ketebak
-                        task.wait(math.random(2, 5) * 0.1)
+                        task.wait(math.random(5, 15) * 0.1)
                     end
 
                     if not running then break end
@@ -1597,56 +1722,74 @@ local function isKillerNearPos(pos, radius)
     return false
 end
 
+-- ── HELPER: cek exit open via ReplicatedStorage (path resmi game) ──
+local function isExitOpen()
+    -- Method 1: ReplicatedStorage.MatchInfo.ExitsOpen (paling reliable)
+    local ok1, val = pcall(function()
+        return game:GetService("ReplicatedStorage").MatchInfo.ExitsOpen.Value
+    end)
+    if ok1 and val == true then return true end
+
+    -- Method 2: ExitsOpen via FindFirstChild (fallback)
+    local ok2, mi = pcall(function()
+        return game:GetService("ReplicatedStorage"):FindFirstChild("MatchInfo")
+    end)
+    if ok2 and mi then
+        local eo = mi:FindFirstChild("ExitsOpen")
+        if eo and eo.Value == true then return true end
+    end
+
+    return false
+end
+
+-- ── HELPER: dapatkan posisi pintu exit (ExitDoor di CurrentMap) ──
+local function getExitDoorPos()
+    -- Method 1: scan CurrentMap cari nama yang mengandung "exit" atau "door"
+    local ok2, cm = pcall(function() return workspace.CurrentMap end)
+    if ok2 and cm then
+        for _, obj in ipairs(cm:GetDescendants()) do
+            local name = obj.Name:lower()
+            if name:find("exit") or name:find("exitdoor") then
+                if obj:IsA("BasePart") then return obj.Position end
+                local ok3, cf = pcall(function() return obj:GetModelCFrame() end)
+                if ok3 then return cf.Position end
+            end
+        end
+    end
+
+    -- Method 2: scan seluruh workspace cari ExitGateway / ExitDoor
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        local name = obj.Name:lower()
+        if name == "exitdoor" or name == "exitgateway" or name == "exit" then
+            if obj:IsA("BasePart") then return obj.Position end
+            local ok4, cf = pcall(function() return obj:GetModelCFrame() end)
+            if ok4 then return cf.Position end
+        end
+    end
+
+    -- Method 3: fallback ke getActiveExits() lama
+    local exits = getActiveExits()
+    if #exits > 0 then return exits[1].pos end
+
+    return nil
+end
+
 local function escapeLoop()
     local hasEscaped   = false
-    local exitOpen     = false
-    local lastDecision = 0  -- timestamp keputusan terakhir (anti flip-flop)
-
-    -- killerBaitTimer[exitKey] = tick() pertama kali killer ketahuan nunggu di exit itu
+    local lastDecision = 0
     local killerBaitTimer = {}
-
-    local function getExitKey(pos)
-        return math.floor(pos.X)..","..math.floor(pos.Z)
-    end
-
-    -- ── listener banner notif ────────────────────
-    local function listenBanner()
-        pcall(function()
-            local banner = game.Players.LocalPlayer.PlayerGui
-                .GameHUD.BannerNotificationStream
-            local notif = banner:FindFirstChild("BannerNotification")
-            if notif then
-                notif:GetPropertyChangedSignal("Text"):Connect(function()
-                    local t = notif.Text:lower()
-                    if t:find("escaped") or t:find("exit is now open") or t:find("exit open") then
-                        exitOpen = true
-                    end
-                end)
-            end
-            banner.ChildAdded:Connect(function(child)
-                if child:IsA("TextLabel") or child.Name == "BannerNotification" then
-                    child:GetPropertyChangedSignal("Text"):Connect(function()
-                        local t = child.Text:lower()
-                        if t:find("escaped") or t:find("exit is now open") or t:find("exit open") then
-                            exitOpen = true
-                        end
-                    end)
-                end
-            end)
-        end)
-    end
-
-    listenBanner()
 
     -- ── tunggu round mulai ───────────────────────
     while escapeRunning do
         task.wait(1)
-        local ok, amt = pcall(function()
-            return game.Players.LocalPlayer.PlayerGui
-                .GameHUD.PlayerHUD.XP_OLD.RoundInfo.PlayersAlive.Amount.Text
-        end)
-        if ok and tonumber(amt) and tonumber(amt) > 0 then break end
+        -- Cek MatchInfo ada di ReplicatedStorage
+        local mi = game:GetService("ReplicatedStorage"):FindFirstChild("MatchInfo")
+        if mi then break end
+        -- Fallback: tunggu CurrentMap ada
+        if workspace:FindFirstChild("CurrentMap") then break end
     end
+
+    GUIPrint("🚪 Auto Escape aktif, nunggu exit kebuka...", C.cyan)
 
     -- ── LOOP UTAMA ───────────────────────────────
     while escapeRunning do
@@ -1657,84 +1800,69 @@ local function escapeLoop()
         hum = char:FindFirstChild("Humanoid")
         if not hrp or not hum or hum.Health <= 0 then continue end
         if hasEscaped then continue end
-        if not exitOpen then continue end
 
-        local exits = getActiveExits()
-        if #exits == 0 then continue end
-
-        -- Cooldown keputusan (anti flip-flop tiap frame)
-        local now = tick()
-        if now - lastDecision < ESCAPE_RECHECK_CD then
-            task.wait(0.5)
+        -- CEK EXIT OPEN via ReplicatedStorage (reliable!)
+        if not isExitOpen() then
+            setStatus("🚪 Nunggu exit kebuka...", true)
             continue
         end
+
+        -- Cooldown keputusan
+        local now = tick()
+        if now - lastDecision < ESCAPE_RECHECK_CD then continue end
         lastDecision = now
 
-        -- ── Pilih exit terbaik (aman dari killer) ──
-        local bestExit, bestDist = nil, math.huge
+        -- Dapatkan posisi pintu
+        local exitPos = getExitDoorPos()
+        if not exitPos then
+            setStatus("🚪 Exit open tapi pintu ga ketemu...", true)
+            continue
+        end
 
-        for _, e in ipairs(exits) do
-            local eKey = getExitKey(e.pos)
-            local killerNear = isKillerNearPos(e.pos, ESCAPE_SAFE_RADIUS)
-
-            if killerNear then
-                -- Mulai / update timer bait untuk exit ini
-                if not killerBaitTimer[eKey] then
-                    killerBaitTimer[eKey] = tick()
-                end
-                -- Skip exit ini (killer masih nunggu)
-                setStatus("⚠️ Killer nunggu di exit, farming dulu...", true)
-                continue
+        -- Killer check sebelum escape
+        if isKillerNearPos(exitPos, ESCAPE_SAFE_RADIUS) then
+            local eKey = math.floor(exitPos.X)..","..math.floor(exitPos.Z)
+            if not killerBaitTimer[eKey] then
+                killerBaitTimer[eKey] = tick()
+                GUIPrint("⚠️ Killer di depan exit, nunggu aman...", C.yellow)
+            end
+            local waitDur = tick() - (killerBaitTimer[eKey] or tick())
+            if waitDur > REVIVE_BAIT_LIMIT then
+                -- Killer bait terlalu lama, tetap escape (risiko sendiri)
+                GUIPrint("⚠️ Killer bait lama, nekat escape!", C.red)
             else
-                -- Killer udah pergi dari exit ini → reset timer bait
-                killerBaitTimer[eKey] = nil
+                setStatus("⚠️ Killer nunggu di exit, farming dulu...", true)
+                task.wait(ESCAPE_RETRY_WAIT)
+                continue
             end
-
-            local d = (e.pos - hrp.Position).Magnitude
-            if d < bestDist then
-                bestDist  = d
-                bestExit  = e
-            end
+        else
+            killerBaitTimer = {}
         end
 
-        -- Kalau semua exit dijaga killer
-        if not bestExit then
-            setStatus("🔴 Semua exit dijaga killer, farming dulu "..ESCAPE_RETRY_WAIT.."s...", true)
-            task.wait(ESCAPE_RETRY_WAIT)
-            continue
-        end
+        -- Double check sebelum TP
+        if not isExitOpen() then continue end
 
-        -- ── EKSEKUSI ESCAPE ──────────────────────
-        setStatus("🏃 Kabur ke exit ("..math.floor(bestDist).." studs)...", true)
-        GUIPrint("🏃 Escape! Jarak "..math.floor(bestDist).." studs", C.cyan)
+        local dist = (exitPos - hrp.Position).Magnitude
+        setStatus("🏃 Escape! ("..math.floor(dist).." studs)", true)
+        GUIPrint("🏃 Escape ke ExitDoor ("..math.floor(dist).." studs)", C.cyan)
 
-        -- Double-check killer sebelum teleport (safety terakhir)
-        if isKillerNearPos(bestExit.pos, ESCAPE_SAFE_RADIUS) then
-            setStatus("⚠️ Killer muncul lagi di exit, batal!", true)
-            task.wait(ESCAPE_RETRY_WAIT)
-            continue
-        end
-
-        hrp.CFrame = CFrame.new(bestExit.pos + Vector3.new(0, 3, 0))
+        hrp.CFrame = CFrame.new(exitPos + Vector3.new(0, 3, 0))
         hasEscaped = true
-        exitOpen   = false
-        killerBaitTimer = {}  -- reset semua bait timer
+        killerBaitTimer = {}
         GUIPrint("✅ Escaped!", C.green)
         setStatus("✅ Escaped — tunggu round berikut", false)
 
-        -- ── Tunggu round selesai ─────────────────
+        -- ── Tunggu exit tutup lagi (round selesai) ──
         while escapeRunning do
             task.wait(1)
-            local ok2, amt2 = pcall(function()
-                return game.Players.LocalPlayer.PlayerGui
-                    .GameHUD.PlayerHUD.XP_OLD.RoundInfo.PlayersAlive.Amount.Text
-            end)
-            if ok2 and (not tonumber(amt2) or tonumber(amt2) == 0) then break end
+            local stillOpen = isExitOpen()
+            if not stillOpen then break end
         end
 
-        -- ── Tunggu round baru ────────────────────
+        -- ── Reset untuk round berikutnya ────────
         hasEscaped = false
         killerBaitTimer = {}
+        GUIPrint("⏱️ Round baru, siap escape!", C.accent)
         while escapeRunning do
             task.wait(1)
             local ok3, amt3 = pcall(function()
@@ -1767,10 +1895,38 @@ end
 -- ══════════════════════════════════════════════
 --  AUTO KILL LOGIC
 -- ══════════════════════════════════════════════
+local function isPlayerKiller(p)
+    -- Cek via Team
+    if p.Team then
+        local tn = p.Team.Name:lower()
+        if tn:find("killer") or tn:find("monster") or tn:find("enemy") then return true end
+    end
+    -- Cek via Attribute
+    if p:GetAttribute("IsKiller") == true then return true end
+    if p:GetAttribute("Role") then
+        local r = tostring(p:GetAttribute("Role")):lower()
+        if r:find("killer") or r:find("monster") then return true end
+    end
+    -- Cek via nama karakter
+    local pChar = p.Character
+    if pChar then
+        local cname = pChar.Name:lower()
+        if cname:find("killer") or cname:find("monster") or cname:find("enemy") then return true end
+        -- Cek KillerGui di PlayerGui target (kalau bisa diakses)
+        local ok, kg = pcall(function()
+            return p.PlayerGui:FindFirstChild("KillerGui", true)
+                or p.PlayerGui:FindFirstChild("KillerHUD", true)
+                or p.PlayerGui:FindFirstChild("MonsterGui", true)
+        end)
+        if ok and kg and kg.Enabled then return true end
+    end
+    return false
+end
+
 local function getAlivePlayers()
     local list = {}
     for _, p in ipairs(game.Players:GetPlayers()) do
-        if p ~= player then
+        if p ~= player and not isPlayerKiller(p) then
             local pChar = p.Character
             if pChar then
                 local pHum = pChar:FindFirstChild("Humanoid")
@@ -2064,12 +2220,41 @@ local function getKnockedPlayers()
     local list = {}
     for _, p in ipairs(game.Players:GetPlayers()) do
         if p == player then continue end
+        if isPlayerKiller(p) then continue end  -- skip killer
         local pChar = p.Character
         if not pChar then continue end
         local pHrp = pChar:FindFirstChild("HumanoidRootPart")
         if not pHrp then continue end
+
+        local isKnocked = false
+
+        -- Cek 1: BleedOutHealth di HRP
         local bleed = pHrp:FindFirstChild("BleedOutHealth")
-        if bleed and bleed.Enabled then
+        if bleed and bleed.Enabled then isKnocked = true end
+
+        -- Cek 2: BleedOutHealth recursive di char
+        if not isKnocked then
+            local bleed2 = pChar:FindFirstChild("BleedOutHealth", true)
+            if bleed2 then
+                if (bleed2:IsA("BillboardGui") or bleed2:IsA("ScreenGui")) and bleed2.Enabled then isKnocked = true end
+                if bleed2:IsA("BoolValue") and bleed2.Value then isKnocked = true end
+            end
+        end
+
+        -- Cek 3: Humanoid health = 0 tapi char masih ada (knocked state)
+        if not isKnocked then
+            local pHum = pChar:FindFirstChild("Humanoid")
+            if pHum and pHum.Health <= 0 then isKnocked = true end
+        end
+
+        -- Cek 4: Attribute Knocked
+        if not isKnocked then
+            if p:GetAttribute("Knocked") == true then isKnocked = true end
+            if p:GetAttribute("IsKnocked") == true then isKnocked = true end
+            if pChar:GetAttribute("Knocked") == true then isKnocked = true end
+        end
+
+        if isKnocked then
             table.insert(list, { plr = p, pHrp = pHrp })
         end
     end
@@ -2182,6 +2367,19 @@ player.CharacterAdded:Connect(function(c)
 end)
 
 -- ══════════════════════════════════════════════
+--  MINIMIZE & BUBBLE
+-- ══════════════════════════════════════════════
+onTap(minimizeBtn, function()
+    win.Visible = false
+    bubble.Visible = true
+end)
+
+onTap(bubble, function()
+    bubble.Visible = false
+    win.Visible = true
+end)
+
+-- ══════════════════════════════════════════════
 --  CLOSE
 -- ══════════════════════════════════════════════
 onTap(closeBtn, function()
@@ -2195,7 +2393,6 @@ onTap(closeBtn, function()
     _G.ReviveRunning   = false
     _G.KillRunning     = false
     _G.SelfReviveRunning = false
-    -- reset player stats
     local c = player.Character
     if c then
         local h = c:FindFirstChild("Humanoid")
