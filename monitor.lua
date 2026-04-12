@@ -2424,3 +2424,15 @@ if _G.FarmRunning then
     setFarmCb(true)
     task.spawn(farmLoop)
 end
+
+task.spawn(function()
+    while task.wait(10) do
+        pcall(function()
+            local c = player.Character
+            if not c then return end
+            local h = c:FindFirstChild("Humanoid")
+            if not h or h.Health <= 0 then return end
+            h:ChangeState(Enum.HumanoidStateType.Jumping)
+        end)
+    end
+end)
