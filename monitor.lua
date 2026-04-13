@@ -613,25 +613,26 @@ statsRow.Size = UDim2.new(1, -10, 0, 42)
 statsRow.Position = UDim2.new(0, 5, 0, 34)
 statsRow.BackgroundTransparency = 1
 
-local function makeStatCard(parent, xScale, xOff, valCol, lbl)
+local function makeStatCard(parent, xScale, xOff, wScale, valCol, lbl)
     local f = Instance.new("Frame")
     f.Parent = parent
-    f.Size = UDim2.new(0.5, -4, 1, 0)
+    f.Size = UDim2.new(wScale, -4, 1, 0)
     f.Position = UDim2.new(xScale, xOff, 0, 0)
     f.BackgroundColor3 = C.bg
     f.BorderSizePixel = 0
     corner(f, 8)
     stroke(f, C.border, 1)
-    local v = newLabel(f, "0", 15, valCol, true)
+    local v = newLabel(f, "0", 14, valCol, true)
     v.Size = UDim2.new(1, 0, 0.55, 0)
-    local l2 = newLabel(f, lbl, 10, C.sub, false)
+    local l2 = newLabel(f, lbl, 9, C.sub, false)
     l2.Size = UDim2.new(1, 0, 0.45, 0)
     l2.Position = UDim2.new(0, 0, 0.55, 0)
     return v
 end
 
-local s1val = makeStatCard(statsRow, 0,   0, C.green,  "Collected")
-local s2val = makeStatCard(statsRow, 0.5, 4, C.yellow, "Di Area")
+local s1val    = makeStatCard(statsRow, 0,     0, 0.333, C.green,  "Collected")
+local s2val    = makeStatCard(statsRow, 0.333, 4, 0.333, C.yellow, "Di Area")
+local timerVal = makeStatCard(statsRow, 0.666, 8, 0.334, C.cyan,   "Timer")
 
 -- ── Section Helper: label pembatas ─────────────
 local function makeSectionLabel(parent, yOff, labelText, col)
@@ -1397,12 +1398,10 @@ local function getLootObjects()
     return results
 end
 
-local KILLER_SAFE_RADIUS = 40
+local KILLER_SAFE_RADIUS = 20
 
 local function getKillerPositions()
     local positions = {}
-
-    -- Method 1: Scan via nama model workspace (cara lama)
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj:IsA("Model") and obj:FindFirstChild("Humanoid") then
             local name = obj.Name:lower()
@@ -1412,51 +1411,6 @@ local function getKillerPositions()
             end
         end
     end
-
-    -- Method 2: Scan via Team "Killer" di semua player (lebih reliable di STK)
-    for _, p in ipairs(game.Players:GetPlayers()) do
-        if p == player then continue end
-        local isKiller = false
-
-        -- Cek team
-        if p.Team then
-            local tn = p.Team.Name:lower()
-            if tn:find("killer") or tn:find("monster") or tn:find("enemy") then
-                isKiller = true
-            end
-        end
-        -- Cek attribute
-        if not isKiller and p:GetAttribute("IsKiller") == true then isKiller = true end
-        if not isKiller and p:GetAttribute("Role") then
-            local r = tostring(p:GetAttribute("Role")):lower()
-            if r:find("killer") or r:find("monster") then isKiller = true end
-        end
-        -- Cek KillerGui di PlayerGui
-        if not isKiller then
-            local ok, kg = pcall(function()
-                return p.PlayerGui:FindFirstChild("KillerGui", true)
-                    or p.PlayerGui:FindFirstChild("KillerHUD", true)
-                    or p.PlayerGui:FindFirstChild("MonsterGui", true)
-            end)
-            if ok and kg and kg.Enabled then isKiller = true end
-        end
-
-        if isKiller then
-            local pChar = p.Character
-            if pChar then
-                local pHrp = pChar:FindFirstChild("HumanoidRootPart")
-                if pHrp then
-                    -- Hindari duplikat dengan method 1
-                    local isDup = false
-                    for _, existing in ipairs(positions) do
-                        if (existing - pHrp.Position).Magnitude < 1 then isDup = true; break end
-                    end
-                    if not isDup then table.insert(positions, pHrp.Position) end
-                end
-            end
-        end
-    end
-
     return positions
 end
 
@@ -1489,18 +1443,6 @@ end
 local MAX_BATCH = 50
 local CD_SECS   = 2
 
--- Raycast ke bawah dari posisi loot, return Y aman atau nil kalau void
-local function getSafeY(pos)
-    local ray = workspace:Raycast(
-        pos + Vector3.new(0, 10, 0),
-        Vector3.new(0, -100, 0)
-    )
-    if ray then
-        return ray.Position.Y + 3
-    end
-    return nil
-end
-
 local function farmLoop()
     while running do
         char = player.Character
@@ -1519,9 +1461,7 @@ local function farmLoop()
                 char = newChar
                 hrp  = newChar:WaitForChild("HumanoidRootPart")
                 hum  = newChar:WaitForChild("Humanoid")
-                -- tunggu health > 0 beneran siap
-                while hum.Health <= 0 do task.wait(0.5) end
-                task.wait(3)
+                task.wait(2)
             else
                 local all   = getLootObjects()
                 local batch = {}
@@ -1529,26 +1469,7 @@ local function farmLoop()
                 updateStats(totalCollected, #batch)
 
                 if #batch == 0 then
-                    -- fallback: coba lewat ESP loot
-                    local espTargets = getTargets("Loot")
-                    if #espTargets > 0 then
-                        GUIPrint("🔍 Fallback ESP loot ("..#espTargets.." found)", C.cyan)
-                        for _, obj in ipairs(espTargets) do
-                            local pos
-                            if obj.PrimaryPart then
-                                pos = obj.PrimaryPart.Position
-                            else
-                                pcall(function() pos = obj:GetModelCFrame().Position end)
-                            end
-                            if pos then
-                                table.insert(batch, {name = obj.Name, pos = pos})
-                            end
-                        end
-                    end
-                end
-
-                if #batch == 0 then
-                    -- semua loot habis, diem di tempat sambil nunggu respawn
+                    -- semua loot habis, tunggu respawn
                     setStatus("⌛ Loot habis, nunggu respawn...", true)
                     while running do
                         task.wait(3)
@@ -1556,19 +1477,6 @@ local function farmLoop()
                         if #check > 0 then
                             GUIPrint("🔄 Loot respawn! Lanjut farm", C.green)
                             break
-                        end
-                        -- coba fallback ESP juga
-                        local espCheck = getTargets("Loot")
-                        if #espCheck > 0 then
-                            GUIPrint("🔍 ESP detect loot! Lanjut farm", C.cyan)
-                            break
-                        end
-                        -- sambil nunggu, kabur kalau killer deket
-                        if getKillerSafeCb() then
-                            local nearKiller, kpos = isNearKiller()
-                            if nearKiller then
-                                teleportAwayFromKiller(kpos)
-                            end
                         end
                     end
                 else
@@ -1599,9 +1507,7 @@ local function farmLoop()
                         end
 
                         setStatus("🔄 "..i.."/"..#batch.." — "..loot.name, true)
-                        local safeY = getSafeY(loot.pos)
-                        if not safeY then continue end  -- void zone, skip loot ini
-                        hrp.CFrame = CFrame.new(Vector3.new(loot.pos.X, safeY, loot.pos.Z))
+                        hrp.CFrame = CFrame.new(loot.pos + Vector3.new(0, 3, 0))
 
                         if getKillerSafeCb() then
                             task.wait(0.05)
@@ -1629,7 +1535,7 @@ local function farmLoop()
                             end)
                         end
                         -- jeda random biar pattern susah ketebak
-                        task.wait(math.random(5, 15) * 0.1)
+                        task.wait(math.random(2, 5) * 0.1)
                     end
 
                     if not running then break end
@@ -1746,26 +1652,20 @@ end
 
 -- ── HELPER: dapatkan posisi pintu exit (ExitDoor di CurrentMap) ──
 local function getExitDoorPos()
-    -- Method 1: scan CurrentMap cari nama yang mengandung "exit" atau "door"
+    -- Method 1: workspace.CurrentMap.ExitDoor.Glow (path ChairWare)
+    local ok1, pos1 = pcall(function()
+        return workspace.CurrentMap.ExitDoor.Glow.CFrame.Position
+    end)
+    if ok1 and pos1 then return pos1 end
+
+    -- Method 2: scan ExitDoor di CurrentMap
     local ok2, cm = pcall(function() return workspace.CurrentMap end)
     if ok2 and cm then
-        for _, obj in ipairs(cm:GetDescendants()) do
-            local name = obj.Name:lower()
-            if name:find("exit") or name:find("exitdoor") then
-                if obj:IsA("BasePart") then return obj.Position end
-                local ok3, cf = pcall(function() return obj:GetModelCFrame() end)
-                if ok3 then return cf.Position end
-            end
-        end
-    end
-
-    -- Method 2: scan seluruh workspace cari ExitGateway / ExitDoor
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        local name = obj.Name:lower()
-        if name == "exitdoor" or name == "exitgateway" or name == "exit" then
-            if obj:IsA("BasePart") then return obj.Position end
-            local ok4, cf = pcall(function() return obj:GetModelCFrame() end)
-            if ok4 then return cf.Position end
+        local door = cm:FindFirstChild("ExitDoor", true)
+        if door then
+            if door:IsA("BasePart") then return door.Position end
+            local ok3, cf = pcall(function() return door:GetModelCFrame() end)
+            if ok3 then return cf.Position end
         end
     end
 
@@ -1784,9 +1684,11 @@ local function escapeLoop()
     -- ── tunggu round mulai ───────────────────────
     while escapeRunning do
         task.wait(1)
-        -- Cek MatchInfo ada di ReplicatedStorage
-        local mi = game:GetService("ReplicatedStorage"):FindFirstChild("MatchInfo")
-        if mi then break end
+        -- Cek via ExitsOpen = false artinya round lagi jalan (exit belum kebuka)
+        local inRound = pcall(function()
+            return game:GetService("ReplicatedStorage").MatchInfo
+        end)
+        if inRound then break end
         -- Fallback: tunggu CurrentMap ada
         if workspace:FindFirstChild("CurrentMap") then break end
     end
@@ -2222,41 +2124,12 @@ local function getKnockedPlayers()
     local list = {}
     for _, p in ipairs(game.Players:GetPlayers()) do
         if p == player then continue end
-        if isPlayerKiller(p) then continue end  -- skip killer
         local pChar = p.Character
         if not pChar then continue end
         local pHrp = pChar:FindFirstChild("HumanoidRootPart")
         if not pHrp then continue end
-
-        local isKnocked = false
-
-        -- Cek 1: BleedOutHealth di HRP
         local bleed = pHrp:FindFirstChild("BleedOutHealth")
-        if bleed and bleed.Enabled then isKnocked = true end
-
-        -- Cek 2: BleedOutHealth recursive di char
-        if not isKnocked then
-            local bleed2 = pChar:FindFirstChild("BleedOutHealth", true)
-            if bleed2 then
-                if (bleed2:IsA("BillboardGui") or bleed2:IsA("ScreenGui")) and bleed2.Enabled then isKnocked = true end
-                if bleed2:IsA("BoolValue") and bleed2.Value then isKnocked = true end
-            end
-        end
-
-        -- Cek 3: Humanoid health = 0 tapi char masih ada (knocked state)
-        if not isKnocked then
-            local pHum = pChar:FindFirstChild("Humanoid")
-            if pHum and pHum.Health <= 0 then isKnocked = true end
-        end
-
-        -- Cek 4: Attribute Knocked
-        if not isKnocked then
-            if p:GetAttribute("Knocked") == true then isKnocked = true end
-            if p:GetAttribute("IsKnocked") == true then isKnocked = true end
-            if pChar:GetAttribute("Knocked") == true then isKnocked = true end
-        end
-
-        if isKnocked then
+        if bleed and bleed.Enabled then
             table.insert(list, { plr = p, pHrp = pHrp })
         end
     end
@@ -2434,5 +2307,54 @@ task.spawn(function()
             if not h or h.Health <= 0 then return end
             h:ChangeState(Enum.HumanoidStateType.Jumping)
         end)
+    end
+end)
+
+-- timer kotak ke-3
+local function getDigitSTK(folder)
+    local best = {val = 0, dist = math.huge}
+    for _, v in pairs(folder:GetChildren()) do
+        if v:IsA("TextLabel") then
+            local centerY = folder.AbsolutePosition.Y + folder.AbsoluteSize.Y / 2
+            local dist = math.abs(v.AbsolutePosition.Y - centerY)
+            if dist < best.dist then
+                best.dist = dist
+                best.val = tonumber(v.Text) or 0
+            end
+        end
+    end
+    return best.val
+end
+
+task.spawn(function()
+    while sg and sg.Parent do
+        task.wait(0.5)
+        local sisa, display = nil, nil
+        pcall(function()
+            local t = player.PlayerGui.TopBar.RoundTimer
+            local m1 = getDigitSTK(t.Minute1.InnerBox.Numbers)
+            local m2 = getDigitSTK(t.Minute2.InnerBox.Numbers)
+            local s1 = getDigitSTK(t.Second1.InnerBox.Numbers)
+            local s2 = getDigitSTK(t.Second2.InnerBox.Numbers)
+            sisa    = (m1*10+m2)*60 + (s1*10+s2)
+            display = string.format("%d%d:%d%d", m1, m2, s1, s2)
+        end)
+        if sisa and display and sisa > 0 then
+            local col
+            if sisa >= 300 then
+                col = C.green
+            elseif sisa >= 120 then
+                col = C.yellow
+            elseif sisa >= 80 then
+                col = Color3.fromRGB(255,140,80)
+            else
+                col = C.red
+            end
+            timerVal.Text = display
+            timerVal.TextColor3 = col
+        else
+            timerVal.Text = "--:--"
+            timerVal.TextColor3 = C.sub
+        end
     end
 end)
