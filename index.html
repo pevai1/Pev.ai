@@ -1,4 +1,3 @@
-
 if _G.PevGui then _G.PevGui:Destroy() end
 
 local player = game.Players.LocalPlayer
@@ -479,12 +478,14 @@ local TAB_DATA = {
     { id = "Player", sym = "PL", label = "Player" },
     { id = "Visual", sym = "VS", label = "Visual" },
     { id = "Misc",   sym = "MX", label = "Misc"   },
+    { id = "Shop",   sym = "SP", label = "Shop"   },
 }
 local TAB_INFO = {
-    Main   = { title = "Main",   sub = "Auto Farm & core features"        },
-    Player = { title = "Player", sub = "Speed · Jump · Double Jump"       },
-    Visual = { title = "Visual", sub = "ESP highlight & world scan"       },
-    Misc   = { title = "Misc",   sub = "AFK · Timing Escape · Webhook"    },
+    Main   = { title = "Main",   sub = "Auto Farm & core features"           },
+    Player = { title = "Player", sub = "Speed · Jump · Double Jump"          },
+    Visual = { title = "Visual", sub = "ESP highlight & world scan"          },
+    Misc   = { title = "Misc",   sub = "AFK · Timing Escape · Webhook"       },
+    Shop   = { title = "Shop",   sub = "Knives · Killers · Cabins · Creates" },
 }
 
 for i, td in ipairs(TAB_DATA) do
@@ -1295,6 +1296,164 @@ task.spawn(function()
 end)
 
 -- ══════════════════════════════════════════════
+--  PAGE: SHOP
+-- ══════════════════════════════════════════════
+pages.Shop = makePage()
+
+local SHOP_CATS = {
+    { id = "Knives",  label = "Knives",  col = Color3.fromRGB(232, 121, 154) },
+    { id = "Killers", label = "Killers", col = Color3.fromRGB(200, 80, 120)  },
+    { id = "Cabins",  label = "Cabins",  col = Color3.fromRGB(144, 100, 200) },
+    { id = "Creates", label = "Creates", col = Color3.fromRGB(100, 180, 200) },
+}
+
+local SHOP_ITEMS = {
+    Knives  = {},
+    Killers = {},
+    Cabins  = {},
+    Creates = {},
+}
+
+local catBar = Instance.new("Frame")
+catBar.Parent = pages.Shop
+catBar.Size = UDim2.new(1, -10, 0, 36)
+catBar.Position = UDim2.new(0, 5, 0, 4)
+catBar.BackgroundColor3 = C.card
+catBar.BorderSizePixel = 0
+corner(catBar, 9)
+stroke(catBar, C.border, 1)
+
+local catBarLayout = Instance.new("UIListLayout", catBar)
+catBarLayout.FillDirection = Enum.FillDirection.Horizontal
+catBarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local shopScroll = Instance.new("ScrollingFrame")
+shopScroll.Parent = pages.Shop
+shopScroll.Size = UDim2.new(1, -10, 0, 600)
+shopScroll.Position = UDim2.new(0, 5, 0, 46)
+shopScroll.BackgroundTransparency = 1
+shopScroll.BorderSizePixel = 0
+shopScroll.ScrollBarThickness = 2
+shopScroll.ScrollBarImageColor3 = C.accent
+shopScroll.CanvasSize = UDim2.new(0, 0, 2, 0)
+
+local shopListLayout = Instance.new("UIListLayout", shopScroll)
+shopListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+shopListLayout.Padding = UDim.new(0, 4)
+
+local shopPad = Instance.new("UIPadding", shopScroll)
+shopPad.PaddingTop = UDim.new(0, 4)
+shopPad.PaddingLeft = UDim.new(0, 2)
+shopPad.PaddingRight = UDim.new(0, 2)
+
+local activeCat = "Knives"
+local catBtns = {}
+
+local function clearShopItems()
+    for _, c in ipairs(shopScroll:GetChildren()) do
+        if c:IsA("Frame") then c:Destroy() end
+    end
+end
+
+local function makeShopItem(parent, order, itemName, catCol)
+    local row = Instance.new("Frame")
+    row.Parent = parent
+    row.Size = UDim2.new(1, -4, 0, 48)
+    row.BackgroundColor3 = C.card
+    row.BorderSizePixel = 0
+    row.LayoutOrder = order
+    corner(row, 9)
+    stroke(row, C.border, 1)
+
+    local iconF = Instance.new("Frame")
+    iconF.Parent = row
+    iconF.Size = UDim2.new(0, 30, 0, 30)
+    iconF.Position = UDim2.new(0, 8, 0.5, -15)
+    iconF.BackgroundColor3 = C.accDim
+    iconF.BorderSizePixel = 0
+    corner(iconF, 7)
+
+    local iconL = newLabel(iconF, "SP", 9, catCol or C.accent, true)
+    iconL.Size = UDim2.new(1, 0, 1, 0)
+
+    local nameL = newLabel(row, itemName, 12, C.text, false, Enum.TextXAlignment.Left)
+    nameL.Size = UDim2.new(1, -110, 1, 0)
+    nameL.Position = UDim2.new(0, 46, 0, 0)
+
+    local buyBtn = Instance.new("TextButton")
+    buyBtn.Parent = row
+    buyBtn.Size = UDim2.new(0, 56, 0, 28)
+    buyBtn.Position = UDim2.new(1, -66, 0.5, -14)
+    buyBtn.BackgroundColor3 = C.accDim
+    buyBtn.Text = "Beli"
+    buyBtn.TextColor3 = C.accent
+    buyBtn.TextSize = 11
+    buyBtn.Font = Enum.Font.GothamBold
+    buyBtn.BorderSizePixel = 0
+    corner(buyBtn, 7)
+    stroke(buyBtn, C.accent, 1)
+
+    onTap(buyBtn, function()
+        buyBtn.Text = "..."
+        task.delay(1, function()
+            if buyBtn and buyBtn.Parent then buyBtn.Text = "Beli" end
+        end)
+    end)
+end
+
+local function loadShopCat(catId)
+    clearShopItems()
+    activeCat = catId
+
+    for _, cb in ipairs(catBtns) do
+        local isActive = cb.id == catId
+        cb.btn.BackgroundColor3 = isActive and cb.col or C.card
+        cb.btn.TextColor3 = isActive and Color3.fromRGB(255, 255, 255) or C.sub
+        cb.btn.BackgroundTransparency = isActive and 0 or 1
+    end
+
+    local items = SHOP_ITEMS[catId] or {}
+    if #items == 0 then
+        local emptyF = Instance.new("Frame")
+        emptyF.Parent = shopScroll
+        emptyF.Size = UDim2.new(1, -4, 0, 50)
+        emptyF.BackgroundColor3 = C.card
+        emptyF.BorderSizePixel = 0
+        emptyF.LayoutOrder = 1
+        corner(emptyF, 9)
+        stroke(emptyF, C.border, 1)
+        local el = newLabel(emptyF, "Belum ada item", 11, C.sub, true)
+        el.Size = UDim2.new(1, 0, 1, 0)
+    else
+        for i, item in ipairs(items) do
+            local catCol = nil
+            for _, c in ipairs(SHOP_CATS) do
+                if c.id == catId then catCol = c.col; break end
+            end
+            makeShopItem(shopScroll, i, item, catCol)
+        end
+    end
+end
+
+for i, cat in ipairs(SHOP_CATS) do
+    local btn = Instance.new("TextButton")
+    btn.Parent = catBar
+    btn.Size = UDim2.new(0.25, 0, 1, 0)
+    btn.LayoutOrder = i
+    btn.BackgroundTransparency = 1
+    btn.Text = cat.label
+    btn.TextColor3 = C.sub
+    btn.TextSize = 11
+    btn.Font = Enum.Font.GothamBold
+    btn.BorderSizePixel = 0
+    corner(btn, 9)
+    table.insert(catBtns, { id = cat.id, btn = btn, col = cat.col })
+    onTap(btn, function() loadShopCat(cat.id) end)
+end
+
+loadShopCat("Knives")
+
+-- ══════════════════════════════════════════════
 --  TAB NAVIGATION
 -- ══════════════════════════════════════════════
 local function switchTab(name)
@@ -1441,7 +1600,16 @@ end
 -- ══════════════════════════════════════════════
 --  PERUBAHAN: MAX_BATCH unlimited, CD 0, jeda 0.05s
 -- ══════════════════════════════════════════════
-local MAX_BATCH = math.huge
+local function isPlayerDead()
+    local c = player.Character
+    if not c then return true end
+    local h = c:FindFirstChild("Humanoid")
+    if not h then return true end
+    if h.Health <= 0 then return true end
+    if h:GetState() == Enum.HumanoidStateType.Dead then return true end
+    return false
+end
+local MAX_BATCH = 100
 local CD_SECS   = 0
 
 local function farmLoop()
@@ -1458,11 +1626,19 @@ local function farmLoop()
                 task.wait(1)
             elseif hum.Health <= 0 then
                 setStatus("💀 Mati, nunggu respawn...", true)
+                -- stop semua aksi selama mati
+                movePriority = 0
                 local newChar = player.CharacterAdded:Wait()
                 char = newChar
                 hrp  = newChar:WaitForChild("HumanoidRootPart")
                 hum  = newChar:WaitForChild("Humanoid")
-                task.wait(2)
+                -- tunggu sampai beneran hidup (bukan cuma spawn)
+                while running do
+                    task.wait(0.5)
+                    if not isPlayerDead() then break end
+                    setStatus("💀 Mati, nunggu hidup...", true)
+                end
+                task.wait(1)
             else
                 local all   = getLootObjects()
                 local batch = {}
@@ -1471,6 +1647,7 @@ local function farmLoop()
 
                 if #batch == 0 then
                     setStatus("⌛ Loot habis, nunggu respawn...", true)
+                    local waitStart = tick()
                     while running do
                         task.wait(3)
                         local check = getLootObjects()
@@ -1478,10 +1655,31 @@ local function farmLoop()
                             GUIPrint("🔄 Loot respawn! Lanjut farm", C.green)
                             break
                         end
+                        if tick() - waitStart >= 30 then
+                            GUIPrint("⏱️ Timeout, nunggu round baru...", C.yellow)
+                            local mapWait = 0
+                            while running and mapWait < 60 do
+                                task.wait(2)
+                                mapWait = mapWait + 2
+                                char = player.Character
+                                if char then
+                                    hrp = char:FindFirstChild("HumanoidRootPart")
+                                    hum = char:FindFirstChild("Humanoid")
+                                end
+                                local newLoot = getLootObjects()
+                                if #newLoot > 0 then
+                                    GUIPrint("🆕 Round baru! Lanjut farm!", C.green)
+                                    break
+                                end
+                                setStatus("⏳ Nunggu round baru... ("..mapWait.."s)", true)
+                            end
+                            break
+                        end
                     end
                 else
                     for i, loot in ipairs(batch) do
                         if not running then break end
+                        if isPlayerDead() then break end
                         char = player.Character
                         if not char then break end
                         hrp = char:FindFirstChild("HumanoidRootPart")
@@ -1495,6 +1693,7 @@ local function farmLoop()
 
                         -- tunggu kalau revive/self-revive lagi jalan
                         while movePriority > 1 do task.wait(0.1) end
+                        if isPlayerDead() then break end
                         movePriority = 1
                         setStatus("🔄 "..i.."/"..#batch.." — "..loot.name, true)
                         hrp.CFrame = CFrame.new(loot.pos + Vector3.new(0, 3, 0))
@@ -2244,7 +2443,7 @@ local function reviveLoop()
         if not char then task.wait(1); continue end
         hrp = char:FindFirstChild("HumanoidRootPart")
         hum = char:FindFirstChild("Humanoid")
-        if not hrp or not hum or hum.Health <= 0 then task.wait(1); continue end
+        if not hrp or not hum or isPlayerDead() then task.wait(1); continue end
 
         local now = tick()
         if now - lastDecision < REVIVE_DECISION_CD then
@@ -2297,6 +2496,7 @@ local function reviveLoop()
         -- refresh hrp fresh sebelum ambil posisi
         hrp = char:FindFirstChild("HumanoidRootPart")
         if not hrp then continue end
+        if isPlayerDead() then continue end
 
         local dist = (hrp.Position - targetHrp.Position).Magnitude
         if dist <= 5 then continue end
@@ -2362,6 +2562,14 @@ local function reviveLoop()
             -- refresh hrp tiap iterasi biar posisi selalu akurat
             local freshHrp = char and char:FindFirstChild("HumanoidRootPart")
             if not freshHrp then aborted = true; break end
+
+            -- kalau lo mati saat revive, langsung stop
+            if isPlayerDead() then
+                setStatus("💀 Mati saat revive, stop!", true)
+                movePriority = 0
+                aborted = true
+                break
+            end
 
             -- ikutin posisi target kalau dia gerak
             if targetHrp and targetHrp.Parent then
